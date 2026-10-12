@@ -1,0 +1,18 @@
+# Environment variables
+.env
+.env.local
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# MLflow local artifacts
+mlruns/
+.mlruns/
+mlartifacts/
+
+# Virtual environments
+venv/
+env/
+.venv/

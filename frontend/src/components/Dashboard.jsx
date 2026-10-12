@@ -82,7 +82,10 @@ export default function Dashboard() {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-            const res = await fetch(`${API_BASE_URL}/schema`, { signal: controller.signal });
+            const res = await fetch(`${API_BASE_URL}/schema`, { 
+                credentials: 'include',
+                signal: controller.signal 
+            });
             clearTimeout(timeoutId);
 
             if (res.ok) {
@@ -141,6 +144,7 @@ export default function Dashboard() {
             const res = await fetch(`${API_BASE_URL}/predict`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify(formValues),
                 signal: controller.signal
             });

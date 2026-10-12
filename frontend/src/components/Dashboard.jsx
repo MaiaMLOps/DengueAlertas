@@ -46,7 +46,7 @@ const DEFAULT_FALLBACK_SCHEMA = [
 ];
 
 export default function Dashboard() {
-    const API_BASE_URL = "/api";
+    const API_BASE_URL = "https://api.arkoiot.com";
 
     // Estado del Schema y estado de la API
     const [schemaFields, setSchemaFields] = useState(DEFAULT_FALLBACK_SCHEMA);

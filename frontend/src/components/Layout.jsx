@@ -89,10 +89,16 @@ export default function Layout() {
             </main>
 
             {/* Footer */}
-            <footer className="border-t border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 py-4 text-center text-xs text-neutral-500">
-                <p>
-                    DengueAlertas MLOps Platform • Potenciado con Lightning AI, MLflow & Cloudflare Edge
-                </p>
+            {/* Footer con aviso de investigación y telemetría */}
+            <footer className="border-t border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 py-5 text-center text-xs text-neutral-500">
+                <div className="max-w-3xl mx-auto px-4 space-y-1.5">
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed font-normal">
+                        Esta plataforma forma parte de un proyecto de vigilancia epidemiológica y MLOps. Se recopilan métricas de telemetría, rendimiento e interacción de usuario con fines de análisis y optimización del sistema.
+                    </p>
+                    <p className="text-[10px] text-neutral-400 dark:text-neutral-500 pt-0.5">
+                        DengueAlertas MLOps Platform • Potenciado con Lightning AI, MLflow & Cloudflare Edge
+                    </p>
+                </div>
             </footer>
         </div>
     );

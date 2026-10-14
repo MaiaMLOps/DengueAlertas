@@ -117,6 +117,30 @@ export default function Dashboard() {
         }
     };
 
+    // Helper para capturar eventos y clics en la interfaz (Clickstream)
+    const trackUiEvent = (action, target, section, metadata = {}) => {
+        try {
+            fetch(`${API_BASE_URL}/telemetry/event`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ action, target, section, metadata })
+            }).catch(() => {});
+        } catch (e) {}
+    };
+
+    // Escuchador global de clics en la UI
+    useEffect(() => {
+        const handleGlobalClick = (e) => {
+            const el = e.target.closest('button, input[type="range"], a');
+            if (!el) return;
+            const label = (el.innerText || el.getAttribute('aria-label') || el.name || el.id || el.tagName).trim().slice(0, 60);
+            trackUiEvent('click', label, 'ui_interaction', { tag: el.tagName });
+        };
+        document.addEventListener('click', handleGlobalClick);
+        return () => document.removeEventListener('click', handleGlobalClick);
+    }, []);
+
     useEffect(() => {
         fetchSchema();
         // Reintentar periódicamente cada 15 segundos para auto-habilitar el formulario al conectar la API

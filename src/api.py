@@ -91,9 +91,9 @@ class TelemetryMiddleware(BaseHTTPMiddleware):
             duration = round(time.time() - start_time, 4)
             response.headers["X-Request-ID"] = req_id
 
-            # FILTRO: No registrar llamadas rutinarias de polling (/schema, /health) para evitar inundar logs
-            # Solo se registran llamadas con operaciones reales (/predict, /sync) o si ocurre un error (>=400)
-            if request.url.path not in ("/schema", "/health") or response.status_code >= 400:
+            # Ignorar el polling rutinario (/schema, /health) salvo que de error
+            # Tambien ignoramos /telemetry/event en el middleware para evitar log duplicado
+            if (request.url.path not in ("/schema", "/health", "/telemetry/event")) or response.status_code >= 400:
                 telemetry_logger.info(json.dumps({
                     "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                     "type": "http_access",
@@ -164,11 +164,9 @@ def fetch_and_load_model():
         model_version_obj = latest_versions[0]
         target_mlflow_version = model_version_obj.version
         
-        # Extraer la version semantica desde el tag (ej. 'current_version' o 'version')
         tags = model_version_obj.tags or {}
         tag_version = tags.get("current_version") or tags.get("version") or f"v{target_mlflow_version}"
 
-        # Si ya tenemos esa version de MLflow cargada, no hacemos nada
         if loaded_model is not None and current_mlflow_version == target_mlflow_version and current_version == tag_version:
             return True
 
@@ -176,7 +174,6 @@ def fetch_and_load_model():
         model_uri = f"models:/{MODEL_NAME}/{STAGE}"
         new_model = mlflow.pyfunc.load_model(model_uri)
         
-        # Extraer el esquema dinamico de entrada
         schema_info = []
         try:
             input_schema = new_model.metadata.get_input_schema()
@@ -222,10 +219,10 @@ def fetch_and_load_model():
         }))
         return False
 
-# Hilo en segundo plano para verificar cambios de version cada 45 segundos
+# Hilo en segundo plano para verificar cambios de version cada 5 minutos (300 segundos)
 def auto_sync_worker():
     while True:
-        time.sleep(45)
+        time.sleep(300)
         try:
             fetch_and_load_model()
         except Exception:
@@ -262,7 +259,6 @@ def get_schema(response: Response):
     if loaded_model is None:
         raise HTTPException(status_code=503, detail="Modelo no disponible en este momento.")
     
-    # Cache HTTP por 60 segundos para evitar saturacion de la red
     response.headers["Cache-Control"] = "public, max-age=60"
     
     return {
@@ -287,6 +283,37 @@ def sync_model():
         "schema": current_schema
     }
 
+@app.post("/telemetry/event")
+def record_ui_event(
+    request: Request,
+    event_data: Dict[str, Any]
+):
+    """
+    Captura eventos de interaccion y clics en la interfaz de usuario (UI Clickstream)
+    """
+    user_email = (
+        request.headers.get("Cf-Access-Authenticated-User-Email")
+        or request.headers.get("cf-access-authenticated-user-email")
+        or request.headers.get("x-user-email")
+        or ""
+    )
+    req_id = request.headers.get("X-Request-ID") or f"evt_{int(time.time()*1000)}"
+
+    telemetry_logger.info(json.dumps({
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "type": "ui_click_event",
+        "stage": STAGE,
+        "request_id": req_id,
+        "user_email": user_email,
+        "client_ip": request.headers.get("CF-Connecting-IP") or (request.client.host if request.client else None),
+        "origin": request.headers.get("origin"),
+        "action": event_data.get("action", "click"),
+        "target": event_data.get("target"),
+        "section": event_data.get("section"),
+        "metadata": event_data.get("metadata", {})
+    }))
+    return {"status": "ok"}
+
 @app.post("/predict")
 def predict(
     request: Request,
@@ -296,6 +323,7 @@ def predict(
     """
     Recibe cualquier payload JSON (uno o varios registros).
     Convierte a DataFrame y MLflow valida el esquema automaticamente.
+    Registra entradas (features) y resultados para analiticas de Data Drift.
     """
     if loaded_model is None:
         raise HTTPException(status_code=503, detail="El modelo aun no ha sido cargado en memoria.")
@@ -307,6 +335,7 @@ def predict(
         or request.headers.get("x-user-email")
         or ""
     )
+    req_id = request.headers.get("X-Request-ID") or ""
 
     # Normalizar entrada a lista de registros
     records = [payload] if isinstance(payload, dict) else payload
@@ -366,11 +395,12 @@ def predict(
         alertas_count = sum(1 for r in results if r["alerta_activa"])
         avg_prob = round(sum(r["probability"] for r in results) / len(results), 4) if results else 0.0
 
-        # Telemetria de inferencia vinculada al usuario
+        # Telemetria rica de inferencia: incluye entradas completas para analisis de Data Drift
         telemetry_logger.info(json.dumps({
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "type": "inference_metrics",
             "stage": STAGE,
+            "request_id": req_id,
             "user_email": user_email,
             "model_name": MODEL_NAME,
             "model_version": current_version,
@@ -378,6 +408,8 @@ def predict(
             "records_count": len(results),
             "alertas_activadas": alertas_count,
             "avg_probability": avg_prob,
+            "inputs": records if len(records) > 1 else records[0],
+            "results": results if len(results) > 1 else results[0],
             "inference_time_sec": infer_duration
         }))
 
@@ -394,9 +426,11 @@ def predict(
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "type": "inference_error",
             "stage": STAGE,
+            "request_id": req_id,
             "user_email": user_email,
             "model_name": MODEL_NAME,
             "model_version": current_version,
+            "inputs": records if len(records) > 1 else records[0],
             "error_detail": str(e),
             "traceback": traceback.format_exc()
         }))

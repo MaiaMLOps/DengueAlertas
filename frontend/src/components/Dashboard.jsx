@@ -120,7 +120,8 @@ export default function Dashboard() {
     useEffect(() => {
         fetchSchema();
         // Reintentar periódicamente cada 15 segundos para auto-habilitar el formulario al conectar la API
-        const interval = setInterval(fetchSchema, 15000);
+        // Consultar cada 2 minutos en vez de 15 segundos para evitar saturacion de logs
+        const interval = setInterval(fetchSchema, 120000);
         return () => clearInterval(interval);
     }, []);
 

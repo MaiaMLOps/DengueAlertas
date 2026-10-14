@@ -1,16 +1,21 @@
 import os
 import threading
 import time
+import json
+import logging
+import traceback
+from logging.handlers import RotatingFileHandler
 from typing import Any, Dict, List, Optional, Union
 import pandas as pd
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 load_dotenv()
 
 # ---------------------------------------------------------------------------
-# Autenticación transparente con Cloudflare Zero Trust (Service Tokens)
+# Autenticacion transparente con Cloudflare Zero Trust (Service Tokens)
 # ---------------------------------------------------------------------------
 import mlflow
 import mlflow.pyfunc
@@ -49,11 +54,79 @@ DEFAULT_THRESHOLD = float(os.getenv("MODEL_THRESHOLD", "0.205"))
 current_version = "None"
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
+# ---------------------------------------------------------------------------
+# Telemetria y Logging Estructurado (JSON rotativo)
+# ---------------------------------------------------------------------------
+LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+
+telemetry_logger = logging.getLogger("dengue_telemetry")
+telemetry_logger.setLevel(logging.INFO)
+if not telemetry_logger.handlers:
+    log_file = os.path.join(LOG_DIR, f"api_{STAGE.lower()}.jsonl")
+    handler = RotatingFileHandler(log_file, maxBytes=50 * 1024 * 1024, backupCount=10, encoding="utf-8")
+    handler.setFormatter(logging.Formatter('%(message)s'))
+    telemetry_logger.addHandler(handler)
+
 app = FastAPI(
     title=f"Dengue Risk API [{STAGE}]",
     description=f"API de inferencia de Dengue",
     version=f"{current_version}"
 )
+
+# Middleware de telemetria HTTP inteligente (filtra ruido de /schema y /health)
+class TelemetryMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        req_id = request.headers.get("X-Request-ID") or request.headers.get("CF-Ray") or f"req_{int(time.time()*1000)}"
+        user_email = (
+            request.headers.get("Cf-Access-Authenticated-User-Email")
+            or request.headers.get("cf-access-authenticated-user-email")
+            or request.headers.get("x-user-email")
+            or ""
+        )
+        start_time = time.time()
+        
+        try:
+            response = await call_next(request)
+            duration = round(time.time() - start_time, 4)
+            response.headers["X-Request-ID"] = req_id
+
+            # FILTRO: No registrar llamadas rutinarias de polling (/schema, /health) para evitar inundar logs
+            # Solo se registran llamadas con operaciones reales (/predict, /sync) o si ocurre un error (>=400)
+            if request.url.path not in ("/schema", "/health") or response.status_code >= 400:
+                telemetry_logger.info(json.dumps({
+                    "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                    "type": "http_access",
+                    "stage": STAGE,
+                    "request_id": req_id,
+                    "user_email": user_email,
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status_code": response.status_code,
+                    "duration_sec": duration,
+                    "client_ip": request.headers.get("CF-Connecting-IP") or (request.client.host if request.client else None),
+                    "origin": request.headers.get("origin")
+                }))
+            return response
+
+        except Exception as exc:
+            duration = round(time.time() - start_time, 4)
+            telemetry_logger.error(json.dumps({
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "type": "http_error",
+                "stage": STAGE,
+                "request_id": req_id,
+                "user_email": user_email,
+                "method": request.method,
+                "path": request.url.path,
+                "duration_sec": duration,
+                "error_type": type(exc).__name__,
+                "error_detail": str(exc),
+                "traceback": traceback.format_exc()
+            }))
+            raise exc
+
+app.add_middleware(TelemetryMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -61,6 +134,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID"]
 )
 
 # ---------------------------------------------------------------------------
@@ -75,7 +149,7 @@ model_lock = threading.Lock()
 def fetch_and_load_model():
     """
     Consulta MLflow para el STAGE configurado (Staging o Production),
-    obtiene la versión activa más reciente, extrae la versión desde el TAG 'current_version',
+    obtiene la version activa mas reciente, extrae la version desde el TAG 'current_version',
     y carga el modelo en caliente en memoria actualizando app.version.
     """
     global loaded_model, current_version, current_mlflow_version, current_schema
@@ -90,11 +164,11 @@ def fetch_and_load_model():
         model_version_obj = latest_versions[0]
         target_mlflow_version = model_version_obj.version
         
-        # Extraer la versión semántica desde el tag (ej. 'current_version' o 'version')
+        # Extraer la version semantica desde el tag (ej. 'current_version' o 'version')
         tags = model_version_obj.tags or {}
         tag_version = tags.get("current_version") or tags.get("version") or f"v{target_mlflow_version}"
 
-        # Si ya tenemos esa versión de MLflow cargada, no hacemos nada
+        # Si ya tenemos esa version de MLflow cargada, no hacemos nada
         if loaded_model is not None and current_mlflow_version == target_mlflow_version and current_version == tag_version:
             return True
 
@@ -102,7 +176,7 @@ def fetch_and_load_model():
         model_uri = f"models:/{MODEL_NAME}/{STAGE}"
         new_model = mlflow.pyfunc.load_model(model_uri)
         
-        # Extraer el esquema dinámico de entrada
+        # Extraer el esquema dinamico de entrada
         schema_info = []
         try:
             input_schema = new_model.metadata.get_input_schema()
@@ -121,16 +195,34 @@ def fetch_and_load_model():
             current_version = tag_version
             current_mlflow_version = target_mlflow_version
             current_schema = schema_info
-            app.version = tag_version  # Actualiza la versión de Swagger / OpenAPI dinámicamente
+            app.version = tag_version
 
         print(f"[OK] [Hot-Reload] Modelo {tag_version} (MLflow v{target_mlflow_version}) cargado con exito. Variables en schema: {len(schema_info)}")
+        
+        telemetry_logger.info(json.dumps({
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "type": "model_reloaded",
+            "stage": STAGE,
+            "model_name": MODEL_NAME,
+            "model_version": tag_version,
+            "mlflow_version": target_mlflow_version,
+            "variables_count": len(schema_info)
+        }))
         return True
 
     except Exception as e:
         print(f"[Error] Fallo al cargar modelo desde MLflow: {e}")
+        telemetry_logger.error(json.dumps({
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "type": "model_load_error",
+            "stage": STAGE,
+            "model_name": MODEL_NAME,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }))
         return False
 
-# Hilo en segundo plano para verificar cambios de versión cada 45 segundos
+# Hilo en segundo plano para verificar cambios de version cada 45 segundos
 def auto_sync_worker():
     while True:
         time.sleep(45)
@@ -162,13 +254,17 @@ def health():
     }
 
 @app.get("/schema")
-def get_schema():
+def get_schema(response: Response):
     """
-    Devuelve dinámicamente las variables que espera el modelo activo actualmente.
-    El frontend puede consumir esto para saber qué campos mostrar.
+    Devuelve dinamicamente las variables que espera el modelo activo actualmente.
+    Incluye Cache-Control para que el navegador almacene en cache 60s y reduzca llamadas.
     """
     if loaded_model is None:
         raise HTTPException(status_code=503, detail="Modelo no disponible en este momento.")
+    
+    # Cache HTTP por 60 segundos para evitar saturacion de la red
+    response.headers["Cache-Control"] = "public, max-age=60"
+    
     return {
         "stage": STAGE,
         "model_name": MODEL_NAME,
@@ -193,26 +289,33 @@ def sync_model():
 
 @app.post("/predict")
 def predict(
+    request: Request,
     payload: Union[Dict[str, Any], List[Dict[str, Any]]],
     threshold: Optional[float] = Query(default=None, description="Umbral de corte opcional")
 ):
     """
     Recibe cualquier payload JSON (uno o varios registros).
-    Convierte a DataFrame y MLflow valida el esquema automáticamente.
+    Convierte a DataFrame y MLflow valida el esquema automaticamente.
     """
     if loaded_model is None:
-        raise HTTPException(status_code=503, detail="El modelo aún no ha sido cargado en memoria.")
+        raise HTTPException(status_code=503, detail="El modelo aun no ha sido cargado en memoria.")
     
     cutoff = threshold if threshold is not None else DEFAULT_THRESHOLD
+    user_email = (
+        request.headers.get("Cf-Access-Authenticated-User-Email")
+        or request.headers.get("cf-access-authenticated-user-email")
+        or request.headers.get("x-user-email")
+        or ""
+    )
 
     # Normalizar entrada a lista de registros
     records = [payload] if isinstance(payload, dict) else payload
     if not records:
-        raise HTTPException(status_code=400, detail="El payload está vacío.")
+        raise HTTPException(status_code=400, detail="El payload esta vacio.")
 
     df = pd.DataFrame(records)
 
-    # Adaptar tipos de datos automáticamente al esquema inferido por MLflow
+    # Adaptar tipos de datos automaticamente al esquema inferido por MLflow
     if current_schema:
         for field in current_schema:
             col_name = field["name"]
@@ -229,9 +332,8 @@ def predict(
                     pass
 
     try:
-        # MLflow valida tipos y columnas requeridas contra su firma interna
+        infer_start = time.time()
         with model_lock:
-            # Intentar obtener probabilidades si el estimador base lo soporta
             probs = None
             try:
                 raw_model = getattr(loaded_model, "_model_impl", None)
@@ -243,11 +345,12 @@ def predict(
 
             raw_preds = loaded_model.predict(df)
             
-            # Normalizar predicciones
             if hasattr(raw_preds, "tolist"):
                 preds_list = raw_preds.tolist()
             else:
                 preds_list = list(raw_preds)
+
+        infer_duration = round(time.time() - infer_start, 4)
 
         results = []
         for i, pred in enumerate(preds_list):
@@ -260,6 +363,24 @@ def predict(
                 "alerta_activa": is_alert
             })
 
+        alertas_count = sum(1 for r in results if r["alerta_activa"])
+        avg_prob = round(sum(r["probability"] for r in results) / len(results), 4) if results else 0.0
+
+        # Telemetria de inferencia vinculada al usuario
+        telemetry_logger.info(json.dumps({
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "type": "inference_metrics",
+            "stage": STAGE,
+            "user_email": user_email,
+            "model_name": MODEL_NAME,
+            "model_version": current_version,
+            "threshold_used": cutoff,
+            "records_count": len(results),
+            "alertas_activadas": alertas_count,
+            "avg_probability": avg_prob,
+            "inference_time_sec": infer_duration
+        }))
+
         return {
             "stage": STAGE,
             "model_version": current_version,
@@ -269,8 +390,17 @@ def predict(
         }
 
     except Exception as e:
-        # MLflow genera errores descriptivos si falta alguna columna o el tipo de dato es erróneo
+        telemetry_logger.error(json.dumps({
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "type": "inference_error",
+            "stage": STAGE,
+            "user_email": user_email,
+            "model_name": MODEL_NAME,
+            "model_version": current_version,
+            "error_detail": str(e),
+            "traceback": traceback.format_exc()
+        }))
         raise HTTPException(
             status_code=422,
-            detail=f"Error de validación del esquema para el modelo {STAGE} v{current_version}: {str(e)}"
+            detail=f"Error de validacion del esquema para el modelo {STAGE} v{current_version}: {str(e)}"
         )

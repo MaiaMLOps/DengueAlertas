@@ -219,20 +219,14 @@ def fetch_and_load_model():
         }))
         return False
 
-# Hilo en segundo plano para verificar cambios de version cada 5 minutos (300 segundos)
-def auto_sync_worker():
-    while True:
-        time.sleep(300)
-        try:
-            fetch_and_load_model()
-        except Exception:
-            pass
-
+# ---------------------------------------------------------------------------
+# Ciclo de Vida: Inicializacion (Event-Driven: Sincronizacion por Webhooks)
+# ---------------------------------------------------------------------------
 @app.on_event("startup")
 def startup():
     print(f"[START] Iniciando API para entorno [{STAGE}]...")
     fetch_and_load_model()
-    threading.Thread(target=auto_sync_worker, daemon=True).start()
+
 
 # ---------------------------------------------------------------------------
 # Endpoints de la API

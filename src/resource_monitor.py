@@ -12,6 +12,7 @@ SERVICES = [
     ("mlflow", "mlflow.service"),
     ("api_prod", "dengue-api-prod.service"),
     ("api_staging", "dengue-api-staging.service"),
+    ("webhook", "dengue-webhook.service"),
 ]
 
 def get_service_pids(service_unit):

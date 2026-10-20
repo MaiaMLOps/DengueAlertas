@@ -1,9 +1,11 @@
 import os
 import threading
 import time
+import datetime
 import json
 import logging
 import traceback
+import numpy as np
 from logging.handlers import RotatingFileHandler
 from typing import Any, Dict, List, Optional, Union
 import pandas as pd
@@ -138,7 +140,7 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------------------
-# Estado global del Modelo (Hot-Reloading en memoria)
+# Estado global de Modelos (Base y 5 Modelos Municipales)
 # ---------------------------------------------------------------------------
 loaded_model = None
 current_version = "None"
@@ -146,81 +148,159 @@ current_mlflow_version = "None"
 current_schema = []
 model_lock = threading.Lock()
 
+# Diccionarios para enrutador multi-modelo por municipio
+loaded_municipal_models: Dict[str, Any] = {}
+municipal_models_metadata: Dict[str, Dict[str, Any]] = {}
+
+MUNICIPALITY_MODELS_MAP = {
+    # Cali (Valle del Cauca)
+    "76001": "DengueAlertas_Cali",
+    "cali": "DengueAlertas_Cali",
+    "valle del cauca": "DengueAlertas_Cali",
+    "covac": "DengueAlertas_Cali",
+
+    # Bucaramanga (Santander)
+    "68001": "DengueAlertas_Bucaramanga",
+    "bucaramanga": "DengueAlertas_Bucaramanga",
+    "santander": "DengueAlertas_Bucaramanga",
+    "cosan": "DengueAlertas_Bucaramanga",
+
+    # Cartagena (Bolívar)
+    "13001": "DengueAlertas_Cartagena",
+    "cartagena": "DengueAlertas_Cartagena",
+    "bolivar": "DengueAlertas_Cartagena",
+    "cobol": "DengueAlertas_Cartagena",
+
+    # Ibagué (Tolima)
+    "73001": "DengueAlertas_Ibague",
+    "ibague": "DengueAlertas_Ibague",
+    "tolima": "DengueAlertas_Ibague",
+    "cotol": "DengueAlertas_Ibague",
+
+    # Villavicencio (Meta)
+    "50001": "DengueAlertas_Villavicencio",
+    "villavicencio": "DengueAlertas_Villavicencio",
+    "meta": "DengueAlertas_Villavicencio",
+    "comet": "DengueAlertas_Villavicencio"
+}
+
+def load_single_model(client: MlflowClient, model_name: str):
+    """
+    Intenta cargar un modelo por alias (MLflow 3.x ej @staging) o por Stage clasico (Staging/Production).
+    """
+    model_obj = None
+    target_version = "None"
+    tag_version = "None"
+
+    # 1. Probar por Alias (MLflow 3.x: @staging o @production)
+    try:
+        alias_name = STAGE.lower()
+        mv = client.get_model_version_by_alias(model_name, alias_name)
+        if mv:
+            target_version = mv.version
+            tags = mv.tags or {}
+            tag_version = tags.get("current_version") or tags.get("version") or f"v{target_version}"
+            model_uri = f"models:/{model_name}@{alias_name}"
+            model_obj = mlflow.pyfunc.load_model(model_uri)
+    except Exception:
+        pass
+
+    # 2. Probar por Stage clasico (MLflow 2.x)
+    if model_obj is None:
+        try:
+            latest_versions = client.get_latest_versions(model_name, stages=[STAGE])
+            if latest_versions:
+                mv = latest_versions[0]
+                target_version = mv.version
+                tags = mv.tags or {}
+                tag_version = tags.get("current_version") or tags.get("version") or f"v{target_version}"
+                model_uri = f"models:/{model_name}/{STAGE}"
+                model_obj = mlflow.pyfunc.load_model(model_uri)
+        except Exception:
+            pass
+
+    # 3. Ultimo recurso: version mas reciente sin stage
+    if model_obj is None:
+        try:
+            latest_versions = client.get_latest_versions(model_name)
+            if latest_versions:
+                mv = latest_versions[0]
+                target_version = mv.version
+                tags = mv.tags or {}
+                tag_version = tags.get("current_version") or tags.get("version") or f"v{target_version}"
+                model_uri = f"models:/{model_name}/{target_version}"
+                model_obj = mlflow.pyfunc.load_model(model_uri)
+        except Exception:
+            pass
+
+    if model_obj is None:
+        return None, "None", "None", []
+
+    schema_info = []
+    try:
+        input_schema = model_obj.metadata.get_input_schema()
+        if input_schema:
+            for col in input_schema.inputs:
+                schema_info.append({
+                    "name": col.name,
+                    "type": str(col.type),
+                    "required": getattr(col, "required", True)
+                })
+    except Exception:
+        pass
+
+    return model_obj, target_version, tag_version, schema_info
+
 def fetch_and_load_model():
     """
-    Consulta MLflow para el STAGE configurado (Staging o Production),
-    obtiene la version activa mas reciente, extrae la version desde el TAG 'current_version',
-    y carga el modelo en caliente en memoria actualizando app.version.
+    Carga el modelo general por defecto (ModeloPrueba) para retrocompatibilidad total,
+    y precarga en paralelo los 5 modelos especializados por ciudad desde MLflow.
     """
     global loaded_model, current_version, current_mlflow_version, current_schema
+    global loaded_municipal_models, municipal_models_metadata
     try:
         client = MlflowClient()
-        latest_versions = client.get_latest_versions(MODEL_NAME, stages=[STAGE])
-        
-        if not latest_versions:
-            print(f"[WARN] [MLflow] No se encontro ninguna version en Stage '{STAGE}' para el modelo '{MODEL_NAME}'.")
-            return False
 
-        model_version_obj = latest_versions[0]
-        target_mlflow_version = model_version_obj.version
-        
-        tags = model_version_obj.tags or {}
-        tag_version = tags.get("current_version") or tags.get("version") or f"v{target_mlflow_version}"
+        # 1. Cargar modelo base por defecto (ModeloPrueba)
+        m_base, m_ver, t_ver, s_info = load_single_model(client, MODEL_NAME)
+        if m_base is not None:
+            with model_lock:
+                loaded_model = m_base
+                current_mlflow_version = m_ver
+                current_version = t_ver
+                current_schema = s_info
+                app.version = t_ver
+            print(f"[OK] [MLflow] Modelo base '{MODEL_NAME}' ({t_ver}) cargado con exito.")
+        else:
+            print(f"[WARN] [MLflow] No se encontro version para el modelo base '{MODEL_NAME}'.")
 
-        if loaded_model is not None and current_mlflow_version == target_mlflow_version and current_version == tag_version:
-            return True
+        # 2. Cargar los 5 modelos especializados por municipio
+        unique_muns = set(MUNICIPALITY_MODELS_MAP.values())
+        loaded_count = 0
+        for mun_model_name in unique_muns:
+            m_mun, m_mun_ver, t_mun_ver, s_mun_info = load_single_model(client, mun_model_name)
+            if m_mun is not None:
+                with model_lock:
+                    loaded_municipal_models[mun_model_name] = m_mun
+                    municipal_models_metadata[mun_model_name] = {
+                        "mlflow_version": m_mun_ver,
+                        "tag_version": t_mun_ver,
+                        "schema": s_mun_info
+                    }
+                loaded_count += 1
+                print(f"[OK] [Multi-Model] Modelo municipal '{mun_model_name}' ({t_mun_ver}) listo en memoria.")
+            else:
+                print(f"[WARN] [Multi-Model] Modelo municipal '{mun_model_name}' no cargado aun.")
 
-        print(f"[Hot-Reload] Cargando '{MODEL_NAME}' Version MLflow {target_mlflow_version} (Tag: {tag_version}, Stage: {STAGE})...")
-        model_uri = f"models:/{MODEL_NAME}/{STAGE}"
-        new_model = mlflow.pyfunc.load_model(model_uri)
-        
-        schema_info = []
-        try:
-            input_schema = new_model.metadata.get_input_schema()
-            if input_schema:
-                for col in input_schema.inputs:
-                    schema_info.append({
-                        "name": col.name,
-                        "type": str(col.type),
-                        "required": getattr(col, "required", True)
-                    })
-        except Exception as se:
-            print(f"Aviso al extraer schema: {se}")
-
-        with model_lock:
-            loaded_model = new_model
-            current_version = tag_version
-            current_mlflow_version = target_mlflow_version
-            current_schema = schema_info
-            app.version = tag_version
-
-        print(f"[OK] [Hot-Reload] Modelo {tag_version} (MLflow v{target_mlflow_version}) cargado con exito. Variables en schema: {len(schema_info)}")
-        
-        telemetry_logger.info(json.dumps({
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "type": "model_reloaded",
-            "stage": STAGE,
-            "model_name": MODEL_NAME,
-            "model_version": tag_version,
-            "mlflow_version": target_mlflow_version,
-            "variables_count": len(schema_info)
-        }))
+        print(f"[Hot-Reload] Estado: 1 Modelo Base + {loaded_count}/{len(unique_muns)} Modelos Municipales activos.")
         return True
 
     except Exception as e:
-        print(f"[Error] Fallo al cargar modelo desde MLflow: {e}")
-        telemetry_logger.error(json.dumps({
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "type": "model_load_error",
-            "stage": STAGE,
-            "model_name": MODEL_NAME,
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }))
+        print(f"[Error] Fallo general al sincronizar modelos desde MLflow: {e}")
         return False
 
 # ---------------------------------------------------------------------------
-# Ciclo de Vida: Inicializacion (Event-Driven: Sincronizacion por Webhooks)
+# Ciclo de Vida: Inicializacion
 # ---------------------------------------------------------------------------
 @app.on_event("startup")
 def startup():
@@ -241,20 +321,37 @@ def health():
         "model_loaded": loaded_model is not None,
         "version": current_version,
         "mlflow_version": current_mlflow_version,
-        "schema_fields_count": len(current_schema)
+        "schema_fields_count": len(current_schema),
+        "municipal_models_active": list(loaded_municipal_models.keys()),
+        "total_models_ready": (1 if loaded_model else 0) + len(loaded_municipal_models)
     }
 
 @app.get("/schema")
-def get_schema(response: Response):
+def get_schema(response: Response, municipio: Optional[str] = Query(default=None)):
     """
-    Devuelve dinamicamente las variables que espera el modelo activo actualmente.
-    Incluye Cache-Control para que el navegador almacene en cache 60s y reduzca llamadas.
+    Devuelve dinamicamente las variables que espera el modelo.
+    Soporta consultar el esquema especifico de un municipio o el general por defecto.
     """
-    if loaded_model is None:
-        raise HTTPException(status_code=503, detail="Modelo no disponible en este momento.")
-    
     response.headers["Cache-Control"] = "public, max-age=60"
-    
+
+    # Si se consulta esquema de un municipio especifico
+    if municipio:
+        mun_key = str(municipio).strip().lower()
+        mapped_name = MUNICIPALITY_MODELS_MAP.get(mun_key)
+        if mapped_name and mapped_name in municipal_models_metadata:
+            meta = municipal_models_metadata[mapped_name]
+            return {
+                "stage": STAGE,
+                "model_name": mapped_name,
+                "municipio": municipio,
+                "version": meta.get("tag_version", "v1.0"),
+                "input_schema": meta.get("schema", current_schema)
+            }
+
+    # Esquema por defecto (retrocompatible)
+    if loaded_model is None and not loaded_municipal_models:
+        raise HTTPException(status_code=503, detail="Modelos no disponibles en este momento.")
+
     return {
         "stage": STAGE,
         "model_name": MODEL_NAME,
@@ -271,10 +368,10 @@ def sync_model():
     if not success:
         raise HTTPException(status_code=500, detail="No se pudo actualizar el modelo desde MLflow.")
     return {
-        "message": "Modelo sincronizado en caliente",
+        "message": "Modelos sincronizados en caliente",
         "stage": STAGE,
-        "version": current_version,
-        "schema": current_schema
+        "default_model": MODEL_NAME,
+        "municipal_models_loaded": list(loaded_municipal_models.keys())
     }
 
 @app.post("/telemetry/event")
@@ -308,6 +405,88 @@ def record_ui_event(
     }))
     return {"status": "ok"}
 
+# ---------------------------------------------------------------------------
+# Capa de Retrocompatibilidad y Adaptacion Dinamica de Features
+# ---------------------------------------------------------------------------
+DANE_DENSITY_MAP = {
+    "76001": 3910.0, "cali": 3910.0,
+    "68001": 3655.0, "bucaramanga": 3655.0,
+    "13001": 1581.0, "cartagena": 1581.0,
+    "73001": 377.0,  "ibague": 377.0,
+    "50001": 395.0,  "villavicencio": 395.0
+}
+
+def adapt_features_for_model(df: pd.DataFrame, expected_schema: list) -> pd.DataFrame:
+    """
+    Capa de adaptacion y retrocompatibilidad inteligente:
+    Permite procesar indistintamente payloads con nombres en español (5 vars clasicas),
+    payloads MLOps modernos (15 features con lags), o payloads minimalistas con 'municipio' y 'week'.
+    """
+    df = df.copy()
+    expected_cols = [f["name"] for f in expected_schema] if expected_schema else []
+
+    # 1. Homologacion de alias (Español <-> Ingles)
+    alias_pairs = [
+        ("temperatura", "temperature_c"),
+        ("precipitacion", "precipitation_mm"),
+        ("humedad", "relative_humidity_pct"),
+        ("densidad_poblacional", "population_density_km2"),
+    ]
+    for es_col, en_col in alias_pairs:
+        if es_col in df.columns and en_col not in df.columns:
+            df[en_col] = df[es_col]
+        elif en_col in df.columns and es_col not in df.columns:
+            df[es_col] = df[en_col]
+
+    # 2. Densidad poblacional por municipio si no viene explicita
+    mun_col = next((c for c in ["municipio", "municipality_code", "codigo_dane", "codigo", "deptoId"] if c in df.columns), None)
+    if mun_col:
+        for idx, row in df.iterrows():
+            key = str(row[mun_col]).strip().lower()
+            if key in DANE_DENSITY_MAP:
+                val = DANE_DENSITY_MAP[key]
+                if "population_density_km2" not in df.columns or pd.isna(df.at[idx, "population_density_km2"]):
+                    df.at[idx, "population_density_km2"] = val
+                if "densidad_poblacional" not in df.columns or pd.isna(df.at[idx, "densidad_poblacional"]):
+                    df.at[idx, "densidad_poblacional"] = val
+
+    # 3. Semana del año y componentes ciclicos (sin_week, cos_week)
+    week_col = next((c for c in ["week", "semana", "semana_epidemiologica"] if c in df.columns), None)
+    current_week = datetime.date.today().isocalendar()[1]
+    
+    if "sin_week" not in df.columns or "cos_week" not in df.columns:
+        weeks = df[week_col].astype(float) if week_col else float(current_week)
+        df["sin_week"] = np.sin(2 * np.pi * weeks / 52.0).astype(float)
+        df["cos_week"] = np.cos(2 * np.pi * weeks / 52.0).astype(float)
+
+    # 4. Inercia epidemiologica (casos_previos <-> 5 lags)
+    if "casos_previos" in df.columns:
+        c_prev = df["casos_previos"].astype(float)
+        if "casos_lag_1" not in df.columns: df["casos_lag_1"] = c_prev
+        if "casos_lag_2" not in df.columns: df["casos_lag_2"] = c_prev * 0.90
+        if "casos_lag_3" not in df.columns: df["casos_lag_3"] = c_prev * 0.85
+        if "casos_lag_4" not in df.columns: df["casos_lag_4"] = c_prev * 0.80
+        if "casos_rolling_mean_4w" not in df.columns: df["casos_rolling_mean_4w"] = c_prev
+    elif "casos_lag_1" in df.columns and "casos_previos" not in df.columns:
+        df["casos_previos"] = df["casos_lag_1"]
+
+    # 5. Lags climaticos (si faltan en el payload, usar valores contemporaneos)
+    for base_col, lag_col in [("temperature_c", "temperatura_lag_2"),
+                             ("precipitation_mm", "precipitacion_lag_2"),
+                             ("precipitation_mm", "precipitacion_lag_4"),
+                             ("relative_humidity_pct", "humedad_lag_2")]:
+        if lag_col not in df.columns and base_col in df.columns:
+            df[lag_col] = df[base_col]
+
+    # 6. Proyectar y alinear estrictamente las columnas que el modelo activo espera
+    if expected_cols:
+        for col in expected_cols:
+            if col not in df.columns:
+                df[col] = 0.0
+        df = df[expected_cols]
+
+    return df
+
 @app.post("/predict")
 def predict(
     request: Request,
@@ -338,6 +517,9 @@ def predict(
 
     df = pd.DataFrame(records)
 
+    # Adaptador de retrocompatibilidad bidireccional
+    df = adapt_features_for_model(df, current_schema)
+
     # Adaptar tipos de datos automaticamente al esquema inferido por MLflow
     if current_schema:
         for field in current_schema:
@@ -354,21 +536,56 @@ def predict(
                 except Exception:
                     pass
 
+    # Seleccion del modelo objetivo (Enrutador municipal con fallback al modelo base)
+    target_model = loaded_model
+    target_model_name = MODEL_NAME
+    target_version = current_version
+    evaluated_mun = None
+
+    if records and isinstance(records[0], dict):
+        mun_val = (
+            records[0].get("municipio")
+            or records[0].get("municipality_code")
+            or records[0].get("codigo_dane")
+            or records[0].get("codigo")
+            or records[0].get("deptoId")
+        )
+        if mun_val:
+            mun_key = str(mun_val).strip().lower()
+            mapped_name = MUNICIPALITY_MODELS_MAP.get(mun_key)
+            if mapped_name and mapped_name in loaded_municipal_models:
+                target_model = loaded_municipal_models[mapped_name]
+                target_model_name = mapped_name
+                target_version = municipal_models_metadata.get(mapped_name, {}).get("tag_version", "v1.0")
+                evaluated_mun = str(mun_val)
+
+    if target_model is None:
+        raise HTTPException(status_code=503, detail="Ningun modelo disponible en memoria para inferencia.")
+
     try:
         infer_start = time.time()
         with model_lock:
             probs = None
             try:
-                raw_model = getattr(loaded_model, "_model_impl", None)
+                raw_model = getattr(target_model, "_model_impl", None)
                 if raw_model and hasattr(raw_model, "predict_proba"):
                     probs_matrix = raw_model.predict_proba(df)
                     probs = [float(p[1]) for p in probs_matrix]
             except Exception:
                 probs = None
 
-            raw_preds = loaded_model.predict(df)
+            raw_preds = target_model.predict(df)
             
-            if hasattr(raw_preds, "tolist"):
+            # Soporte polimorfico: LightGBM v5 devuelve DataFrame ('alert', 'p_alert', 'pred_count'),
+            # mientras que modelos sklearn devuelven ndarray o Series
+            if isinstance(raw_preds, pd.DataFrame):
+                alert_col = "alert" if "alert" in raw_preds.columns else raw_preds.columns[0]
+                preds_list = raw_preds[alert_col].tolist()
+                if "p_alert" in raw_preds.columns:
+                    probs = raw_preds["p_alert"].astype(float).tolist()
+            elif isinstance(raw_preds, pd.Series):
+                preds_list = raw_preds.tolist()
+            elif hasattr(raw_preds, "tolist"):
                 preds_list = raw_preds.tolist()
             else:
                 preds_list = list(raw_preds)
@@ -377,14 +594,25 @@ def predict(
 
         results = []
         for i, pred in enumerate(preds_list):
-            prob_val = probs[i] if probs is not None else (0.85 if pred == 1 else 0.15)
+            try:
+                pred_int = int(pred)
+            except (ValueError, TypeError):
+                pred_int = 1 if str(pred).lower() in ("1", "true", "alert") else 0
+
+            prob_val = probs[i] if probs is not None and i < len(probs) else (0.85 if pred_int == 1 else 0.15)
             is_alert = bool(prob_val >= cutoff)
-            results.append({
+            res_item = {
                 "index": i,
-                "prediction": int(pred),
+                "prediction": pred_int,
                 "probability": round(prob_val, 4),
                 "alerta_activa": is_alert
-            })
+            }
+            if isinstance(raw_preds, pd.DataFrame) and "pred_count" in raw_preds.columns:
+                try:
+                    res_item["pred_count"] = round(float(raw_preds["pred_count"].iloc[i]), 2)
+                except Exception:
+                    pass
+            results.append(res_item)
 
         alertas_count = sum(1 for r in results if r["alerta_activa"])
         avg_prob = round(sum(r["probability"] for r in results) / len(results), 4) if results else 0.0
@@ -396,8 +624,9 @@ def predict(
             "stage": STAGE,
             "request_id": req_id,
             "user_email": user_email,
-            "model_name": MODEL_NAME,
-            "model_version": current_version,
+            "model_name": target_model_name,
+            "model_version": target_version,
+            "municipio_evaluado": evaluated_mun or "Base / No especificado",
             "threshold_used": cutoff,
             "records_count": len(results),
             "alertas_activadas": alertas_count,
@@ -409,7 +638,9 @@ def predict(
 
         return {
             "stage": STAGE,
-            "model_version": current_version,
+            "model_name": target_model_name,
+            "model_version": target_version,
+            "municipio_evaluado": evaluated_mun or "Base / No especificado",
             "threshold_used": cutoff,
             "total_records": len(results),
             "results": results if len(results) > 1 else results[0]

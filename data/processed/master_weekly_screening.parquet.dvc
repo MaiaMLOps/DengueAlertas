@@ -1,0 +1,5 @@
+outs:
+- md5: d1b0826d7cdaba32fa60e778f7355273
+  size: 2285212
+  hash: md5
+  path: master_weekly_screening.parquet

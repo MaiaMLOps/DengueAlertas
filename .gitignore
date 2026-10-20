@@ -18,7 +18,8 @@ env/
 .venv/
 
 # Generated data and health microdata must remain local.
-/data/
+# Require a nonempty child name so DVC can inspect the directory itself.
+/data/?*
 *.parquet
 *.arrow
 *.feather
@@ -33,3 +34,8 @@ env/
 **/Datos_*_210.xlsx
 /reports/data_quality/*.json
 .pytest_cache/
+
+# Allow DVC tracking files directly in processed; keep datasets and subdirectories ignored.
+!/data/processed/
+/data/processed/?*
+!/data/processed/*.dvc

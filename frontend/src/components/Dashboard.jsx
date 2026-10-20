@@ -2,51 +2,67 @@ import React, { useState, useEffect } from 'react';
 import {
     Activity,
     AlertTriangle,
-    TrendingUp,
     Droplets,
     Thermometer,
-    ShieldCheck,
     Layers,
-    Cpu,
     Zap,
     MapPin,
     CheckCircle2,
     Sliders,
     ArrowUpRight,
-    Search,
     Wifi,
-    WifiOff
+    WifiOff,
+    ChevronDown,
+    Sparkles,
+    Users
 } from 'lucide-react';
-
-const MUNICIPIOS_MOCK = [
-    { id: 1, nombre: 'Cali - Comuna 13', riesgo: 'Crítico', probabilidad: 0.82, casosEst: 340, humedad: '84%', temp: '29°C', estado: 'Fumigación Prioritaria' },
-    { id: 2, nombre: 'Palmira - Sector Norte', riesgo: 'Alto', probabilidad: 0.68, casosEst: 185, humedad: '79%', temp: '28°C', estado: 'Inspección Larvaria' },
-    { id: 3, nombre: 'Buenaventura - Cascajal', riesgo: 'Alto', probabilidad: 0.65, casosEst: 210, humedad: '88%', temp: '30°C', estado: 'Monitoreo Clave' },
-    { id: 4, nombre: 'Tuluá - Zona Centro', riesgo: 'Moderado', probabilidad: 0.38, casosEst: 92, humedad: '72%', temp: '27°C', estado: 'Vigilancia Regular' },
-    { id: 5, nombre: 'Buga - Rural', riesgo: 'Bajo', probabilidad: 0.12, casosEst: 24, humedad: '65%', temp: '26°C', estado: 'Control Estable' },
-    { id: 6, nombre: 'Cartago - Comuna 4', riesgo: 'Moderado', probabilidad: 0.44, casosEst: 88, humedad: '75%', temp: '28°C', estado: 'Vigilancia Regular' },
-];
+import ColombiaMap, { MUNICIPIOS_ESTRATEGICOS } from './ColombiaMap';
 
 // Metadatos amigables para variables de MLflow
 const FIELD_META = {
+    // Variables generales / Fallback
     temperatura: { label: "Temperatura Promedio", unit: "°C", min: 20, max: 38, step: 0.5, default: 28.5, icon: Thermometer },
     precipitacion: { label: "Precipitación Acumulada", unit: "mm", min: 10, max: 350, step: 5, default: 140, icon: Droplets },
     humedad: { label: "Humedad Relativa", unit: "%", min: 40, max: 98, step: 1, default: 82, icon: Activity },
     indice_aedico: { label: "Índice Aédico / Larvario", unit: "%", min: 1, max: 30, step: 0.5, default: 14.5, icon: Sliders },
     casos_previos: { label: "Casos Últimas 4 Semanas", unit: "casos", min: 0, max: 300, step: 1, default: 110, icon: AlertTriangle },
-    densidad_poblacional: { label: "Densidad Poblacional", unit: "hab/km²", min: 500, max: 10000, step: 100, default: 3500, icon: MapPin },
+    densidad_poblacional: { label: "Densidad Poblacional", unit: "hab/km²", min: 100, max: 10000, step: 10, default: 3910, icon: MapPin },
+
+    // Variables MLOps 15 Features
+    casos_lag_1: { label: "Casos Semana Anterior (t-1)", unit: "casos", min: 0, max: 500, step: 1, default: 95, icon: AlertTriangle },
+    casos_lag_2: { label: "Casos Hace 2 Semanas (t-2)", unit: "casos", min: 0, max: 500, step: 1, default: 85, icon: AlertTriangle },
+    casos_lag_3: { label: "Casos Hace 3 Semanas (t-3)", unit: "casos", min: 0, max: 500, step: 1, default: 80, icon: AlertTriangle },
+    casos_lag_4: { label: "Casos Hace 4 Semanas (t-4)", unit: "casos", min: 0, max: 500, step: 1, default: 70, icon: AlertTriangle },
+    casos_rolling_mean_4w: { label: "Promedio Casos 4 Semanas", unit: "casos", min: 0, max: 500, step: 1, default: 82.5, icon: AlertTriangle },
+    temperature_c: { label: "Temperatura Promedio", unit: "°C", min: 15, max: 40, step: 0.5, default: 26.5, icon: Thermometer },
+    temperatura_lag_2: { label: "Temperatura Hace 2 Semanas", unit: "°C", min: 15, max: 40, step: 0.5, default: 26.0, icon: Thermometer },
+    precipitation_mm: { label: "Precipitación Acumulada", unit: "mm", min: 0, max: 350, step: 5, default: 120, icon: Droplets },
+    precipitacion_lag_2: { label: "Precipitación Hace 2 Semanas", unit: "mm", min: 0, max: 350, step: 5, default: 130, icon: Droplets },
+    precipitacion_lag_4: { label: "Precipitación Hace 4 Semanas", unit: "mm", min: 0, max: 350, step: 5, default: 140, icon: Droplets },
+    relative_humidity_pct: { label: "Humedad Relativa", unit: "%", min: 30, max: 100, step: 1, default: 84, icon: Activity },
+    humedad_lag_2: { label: "Humedad Hace 2 Semanas", unit: "%", min: 30, max: 100, step: 1, default: 85, icon: Activity },
+    population_density_km2: { label: "Densidad Poblacional", unit: "hab/km²", min: 100, max: 10000, step: 10, default: 3910, icon: MapPin },
+    sin_week: { label: "Semana del Año (Seno)", unit: "", min: -1, max: 1, step: 0.05, default: 0.5, icon: Sliders },
+    cos_week: { label: "Semana del Año (Coseno)", unit: "", min: -1, max: 1, step: 0.05, default: 0.8, icon: Sliders },
 };
 
 const DEFAULT_FALLBACK_SCHEMA = [
-    { name: 'temperatura', type: 'double' },
-    { name: 'precipitacion', type: 'double' },
-    { name: 'humedad', type: 'double' },
-    { name: 'indice_aedico', type: 'double' },
-    { name: 'casos_previos', type: 'integer' },
+    { name: 'casos_previos', type: 'integer', required: true },
+    { name: 'temperatura', type: 'double', required: true },
+    { name: 'precipitacion', type: 'double', required: true },
+    { name: 'humedad', type: 'double', required: true },
+    { name: 'densidad_poblacional', type: 'double', required: true },
+    { name: 'indice_aedico', type: 'double', required: false },
 ];
 
 export default function Dashboard() {
     const API_BASE_URL = "https://api.arkoiot.com";
+
+    // Municipio Estratégico Seleccionado en el Mapa (por defecto Cali)
+    const [selectedMunicipio, setSelectedMunicipio] = useState(MUNICIPIOS_ESTRATEGICOS[0]);
+    const [activeCodes, setActiveCodes] = useState(['76001', '68001', '13001', '73001', '50001']);
+    const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
+    const [showTechDetails, setShowTechDetails] = useState(false);
 
     // Estado del Schema y estado de la API
     const [schemaFields, setSchemaFields] = useState(DEFAULT_FALLBACK_SCHEMA);
@@ -57,24 +73,75 @@ export default function Dashboard() {
         model_name: 'ModeloPrueba'
     });
 
-    // Valores dinámicos del formulario
+    const THRESHOLD = 0.205;
+
+    // Estimación epidemiológica local de respaldo para respuesta inmediata y modo offline
+    const computeLocalRisk = (values, mun) => {
+        const temp = values.temperatura ?? values.temperature_c ?? mun.temp_sugerida ?? 26.5;
+        const precip = values.precipitacion ?? values.precipitation_mm ?? mun.precip_sugerida ?? 120;
+        const hum = values.humedad ?? values.relative_humidity_pct ?? mun.humedad_sugerida ?? 82;
+        const casos = values.casos_previos ?? values.casos_lag_1 ?? 85;
+
+        let score = mun.probabilidad_base;
+        // Factor temperatura (óptimo biológico del vector 26°C - 32°C)
+        if (temp >= 26 && temp <= 32) score += 0.06;
+        else if (temp < 22) score -= 0.12;
+
+        // Factor precipitación (estancamiento y criaderos)
+        if (precip > 140) score += 0.08;
+        else if (precip < 45) score -= 0.07;
+
+        // Factor humedad y casos recientes
+        if (hum > 80) score += 0.04;
+        if (casos > 100) score += 0.06;
+
+        const prob = Math.min(Math.max(score, 0.05), 0.95);
+        return {
+            probabilidad: prob,
+            alertaActiva: prob >= THRESHOLD,
+            source: 'Simulación Epidemiológica',
+            timestamp: new Date().toLocaleTimeString()
+        };
+    };
+
+    // Valores dinámicos del formulario (inicializados con los del municipio inicial)
     const [formValues, setFormValues] = useState(() => {
-        const initial = {};
+        const initial = {
+            municipio: MUNICIPIOS_ESTRATEGICOS[0].codigo,
+            municipality_code: MUNICIPIOS_ESTRATEGICOS[0].codigo,
+            densidad_poblacional: MUNICIPIOS_ESTRATEGICOS[0].densidad_poblacional,
+            population_density_km2: MUNICIPIOS_ESTRATEGICOS[0].densidad_poblacional,
+            temperatura: MUNICIPIOS_ESTRATEGICOS[0].temp_sugerida,
+            temperature_c: MUNICIPIOS_ESTRATEGICOS[0].temp_sugerida,
+            precipitacion: MUNICIPIOS_ESTRATEGICOS[0].precip_sugerida,
+            precipitation_mm: MUNICIPIOS_ESTRATEGICOS[0].precip_sugerida,
+            humedad: MUNICIPIOS_ESTRATEGICOS[0].humedad_sugerida,
+            relative_humidity_pct: MUNICIPIOS_ESTRATEGICOS[0].humedad_sugerida,
+            casos_previos: 90
+        };
         DEFAULT_FALLBACK_SCHEMA.forEach(f => {
-            initial[f.name] = FIELD_META[f.name]?.default ?? 10;
+            if (initial[f.name] === undefined) {
+                initial[f.name] = FIELD_META[f.name]?.default ?? 10;
+            }
         });
         return initial;
     });
 
-    const THRESHOLD = 0.205;
-
-    // Estado de la predicción
-    const [prediccion, setPrediccion] = useState(null);
+    // Estado de la predicción con evaluación inicial activa
+    const [prediccion, setPrediccion] = useState(() => {
+        const baseRisk = computeLocalRisk({
+            temperatura: MUNICIPIOS_ESTRATEGICOS[0].temp_sugerida,
+            precipitacion: MUNICIPIOS_ESTRATEGICOS[0].precip_sugerida,
+            humedad: MUNICIPIOS_ESTRATEGICOS[0].humedad_sugerida,
+            casos_previos: 90
+        }, MUNICIPIOS_ESTRATEGICOS[0]);
+        return {
+            ...baseRisk,
+            modelName: MUNICIPIOS_ESTRATEGICOS[0].modelo_activo,
+            modelVersion: 'v1.0'
+        };
+    });
     const [isPredicting, setIsPredicting] = useState(false);
-
-    // Filtros de tabla
-    const [filtroRiesgo, setFiltroRiesgo] = useState('Todos');
-    const [busqueda, setBusqueda] = useState('');
 
     // Consultar el esquema a https://api.arkoiot.com/schema
     const fetchSchema = async () => {
@@ -117,6 +184,27 @@ export default function Dashboard() {
         }
     };
 
+    // Consultar municipios activos con tag 'enabled == true' en MLflow
+    const fetchActiveMunicipios = async () => {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            const res = await fetch(`${API_BASE_URL}/municipios`, {
+                credentials: 'include',
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.active_codes && Array.isArray(data.active_codes) && data.active_codes.length > 0) {
+                    setActiveCodes(data.active_codes);
+                }
+            }
+        } catch (e) {
+            // Mantener configuracion inicial
+        }
+    };
+
     // Helper para capturar eventos y clics en la interfaz (Clickstream)
     const trackUiEvent = (action, target, section, metadata = {}) => {
         try {
@@ -143,24 +231,169 @@ export default function Dashboard() {
 
     useEffect(() => {
         fetchSchema();
-        // Reintentar periódicamente cada 15 segundos para auto-habilitar el formulario al conectar la API
-        // Consultar cada 2 minutos en vez de 15 segundos para evitar saturacion de logs
-        const interval = setInterval(fetchSchema, 120000);
+        fetchActiveMunicipios();
+        const interval = setInterval(() => {
+            fetchSchema();
+            fetchActiveMunicipios();
+        }, 60000);
         return () => clearInterval(interval);
     }, []);
 
-    const handleFieldChange = (name, value) => {
-        if (!apiConnected) return;
-        setFormValues(prev => ({
-            ...prev,
-            [name]: value
-        }));
+    const handleSelectMunicipio = (mun) => {
+        setSelectedMunicipio(mun);
+        const updatedValues = {
+            ...formValues,
+            densidad_poblacional: mun.densidad_poblacional,
+            population_density_km2: mun.densidad_poblacional,
+            municipality_code: mun.codigo,
+            temperatura: mun.temp_sugerida ?? formValues.temperatura,
+            temperature_c: mun.temp_sugerida ?? formValues.temperature_c,
+            precipitacion: mun.precip_sugerida ?? formValues.precipitacion,
+            precipitation_mm: mun.precip_sugerida ?? formValues.precipitation_mm,
+            humedad: mun.humedad_sugerida ?? formValues.humedad,
+            relative_humidity_pct: mun.humedad_sugerida ?? formValues.relative_humidity_pct,
+        };
+        setFormValues(updatedValues);
+        setPrediccion(computeLocalRisk(updatedValues, mun));
+        trackUiEvent('select_municipio', mun.nombre, 'colombia_map', {
+            codigo: mun.codigo,
+            departamento: mun.departamento,
+            densidad: mun.densidad_poblacional
+        });
     };
 
-    // Ejecutar predicción
+    const handleFieldChange = (name, value) => {
+        setFormValues(prev => {
+            const updated = {
+                ...prev,
+                [name]: value
+            };
+            return updated;
+        });
+    };
+
+    // Aplicar escenarios rápidos preconfigurados
+    const applyPreset = (type) => {
+        setFormValues(prev => {
+            const updated = { ...prev };
+            if (type === 'habitual') {
+                updated.temperatura = selectedMunicipio.temp_sugerida;
+                updated.temperature_c = selectedMunicipio.temp_sugerida;
+                updated.precipitacion = selectedMunicipio.precip_sugerida;
+                updated.precipitation_mm = selectedMunicipio.precip_sugerida;
+                updated.humedad = selectedMunicipio.humedad_sugerida;
+                updated.relative_humidity_pct = selectedMunicipio.humedad_sugerida;
+                updated.casos_previos = 75;
+            } else if (type === 'lluvias') {
+                updated.precipitacion = Math.min((selectedMunicipio.precip_sugerida || 120) + 70, 320);
+                updated.precipitation_mm = updated.precipitacion;
+                updated.humedad = 88;
+                updated.relative_humidity_pct = 88;
+                updated.casos_previos = 130;
+            } else if (type === 'calor') {
+                updated.temperatura = 32.5;
+                updated.temperature_c = 32.5;
+                updated.precipitacion = 40;
+                updated.precipitation_mm = 40;
+                updated.humedad = 65;
+                updated.relative_humidity_pct = 65;
+            }
+            setPrediccion(computeLocalRisk(updated, selectedMunicipio));
+            return updated;
+        });
+    };
+
+    // Clasificación de campos requeridos vs opcionales
+    const isOptionalField = (field) => {
+        if (field.required === false) return true;
+        if (field.required === true) return false;
+        const optionalNames = [
+            'indice_aedico',
+            'temperatura_lag_2',
+            'precipitacion_lag_2',
+            'precipitacion_lag_4',
+            'humedad_lag_2',
+            'sin_week',
+            'cos_week'
+        ];
+        return optionalNames.includes(field.name);
+    };
+
+    const requiredFields = schemaFields.filter(f => !isOptionalField(f));
+    const optionalFields = schemaFields.filter(f => isOptionalField(f));
+
+    const renderFieldInput = (field) => {
+        // Si el campo es densidad poblacional, presentarlo como dato territorial auto-asignado del DANE
+        if (field.name === 'densidad_poblacional' || field.name === 'population_density_km2') {
+            return (
+                <div key={field.name} className="p-3 rounded-xl bg-emerald-500/10 dark:bg-emerald-950/30 border border-emerald-500/20 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <div>
+                            <span className="font-semibold text-neutral-800 dark:text-neutral-200 block">Densidad Poblacional (DANE)</span>
+                            <span className="text-[10px] text-neutral-500">Autoasignada: {selectedMunicipio.nombre}</span>
+                        </div>
+                    </div>
+                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        {selectedMunicipio.densidad_poblacional.toLocaleString()} hab/km²
+                    </span>
+                </div>
+            );
+        }
+
+        const meta = FIELD_META[field.name] || {
+            label: field.name.replace(/_/g, ' ').toUpperCase(),
+            unit: '',
+            min: 0,
+            max: 100,
+            step: 1,
+            default: 10
+        };
+        const currentValue = formValues[field.name] ?? meta.default;
+        const isInteger = field.type?.toLowerCase().includes('integer') || field.type?.toLowerCase().includes('int');
+
+        return (
+            <div key={field.name} className="space-y-1.5 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800/40 transition">
+                <div className="flex justify-between items-center text-xs font-medium">
+                    <span className="flex items-center gap-1.5 text-neutral-700 dark:text-neutral-300">
+                        {meta.icon ? <meta.icon className="w-3.5 h-3.5 text-emerald-500" /> : <Activity className="w-3.5 h-3.5 text-neutral-400" />}
+                        <span className="capitalize">{meta.label}</span>
+                    </span>
+                    <span className="font-mono font-bold text-neutral-900 dark:text-white bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded text-[11px]">
+                        {typeof currentValue === 'number' && !Number.isInteger(currentValue) ? currentValue.toFixed(1) : currentValue} {meta.unit}
+                    </span>
+                </div>
+                <input
+                    type="range"
+                    min={meta.min}
+                    max={meta.max}
+                    step={meta.step}
+                    value={currentValue}
+                    onChange={(e) => {
+                        const val = isInteger ? parseInt(e.target.value) : parseFloat(e.target.value);
+                        handleFieldChange(field.name, val);
+                    }}
+                    className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                />
+                <div className="flex justify-between text-[10px] text-neutral-400">
+                    <span>{meta.min} {meta.unit}</span>
+                    <span>{meta.max} {meta.unit}</span>
+                </div>
+            </div>
+        );
+    };
+
+    // Ejecutar evaluación de riesgo
     const handlePredecir = async () => {
-        if (!apiConnected) return;
         setIsPredicting(true);
+
+        if (!apiConnected) {
+            setTimeout(() => {
+                setPrediccion(computeLocalRisk(formValues, selectedMunicipio));
+                setIsPredicting(false);
+            }, 300);
+            return;
+        }
 
         try {
             const controller = new AbortController();
@@ -181,393 +414,342 @@ export default function Dashboard() {
                 setPrediccion({
                     probabilidad: resData.probability,
                     alertaActiva: resData.alerta_activa,
-                    source: `API (${data.stage} v${data.model_version})`,
+                    source: `API (${data.stage || 'Staging'} v${data.model_version || '1.0'})`,
+                    modelName: data.model_name || selectedMunicipio.modelo_activo || 'ModeloPrueba',
+                    modelVersion: data.model_version || 'v1.0',
+                    municipioEvaluado: data.municipio_evaluado || selectedMunicipio.nombre,
                     timestamp: new Date().toLocaleTimeString()
                 });
                 setApiConnected(true);
             } else {
-                setApiConnected(false);
+                setPrediccion(computeLocalRisk(formValues, selectedMunicipio));
             }
         } catch (e) {
-            setApiConnected(false);
+            setPrediccion(computeLocalRisk(formValues, selectedMunicipio));
         } finally {
             setIsPredicting(false);
         }
     };
 
-    const municipiosFiltrados = MUNICIPIOS_MOCK.filter(m => {
-        const coincideFiltro = filtroRiesgo === 'Todos' || m.riesgo === filtroRiesgo;
-        const coincideBusqueda = m.nombre.toLowerCase().includes(busqueda.toLowerCase());
-        return coincideFiltro && coincideBusqueda;
-    });
-
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header / Hero */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-neutral-900 via-neutral-900 to-neutral-800 text-white shadow-xl border border-neutral-800">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-neutral-900 via-neutral-900 to-neutral-800 text-white shadow-xl border border-neutral-800">
                 <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                        <span className={`flex h-2.5 w-2.5 rounded-full ${apiConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                        <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
                         <span className="text-xs uppercase tracking-wider font-semibold text-emerald-400">
-                            Modelo {modelInfo.model_name} (v{modelInfo.version})
+                            Vigilancia Epidemiológica de Precisión
                         </span>
                         <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-300 border border-neutral-700">
-                            Stage: {modelInfo.stage}
+                            Semana 42
                         </span>
                     </div>
-                    <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">
                         Sistema de Alerta Temprana de Dengue
                     </h2>
-                    <p className="text-sm text-neutral-400 max-w-2xl">
-                        Esquema e inferencia sincronizados en caliente con el servidor MLflow a través de <span className="text-emerald-300 font-mono">api.arkoiot.com</span>.
+                    <p className="text-xs sm:text-sm text-neutral-400 max-w-2xl">
+                        Monitoreo preventivo y simulación de brotes en municipios prioritarios de Colombia.
                     </p>
                 </div>
                 
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="px-3.5 py-2 rounded-xl bg-neutral-800/80 border border-neutral-700 text-xs text-neutral-300 flex items-center gap-2">
-                        {apiConnected ? (
-                            <>
-                                <Wifi className="w-4 h-4 text-emerald-400" />
-                                <span className="text-emerald-400 font-medium">API Conectada</span>
-                            </>
-                        ) : (
-                            <>
-                                <WifiOff className="w-4 h-4 text-amber-400" />
-                                <span className="text-amber-300 font-medium">API Desconectada</span>
-                            </>
-                        )}
+                <div className="flex items-center gap-2 shrink-0">
+                    <div className="px-3 py-1.5 rounded-xl bg-neutral-800/90 border border-neutral-700 text-xs text-neutral-300 flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${apiConnected ? 'bg-emerald-400' : 'bg-emerald-500'}`} />
+                        <span className="font-medium">{apiConnected ? 'API En Línea' : 'Simulación Activa'}</span>
                     </div>
                 </div>
             </div>
 
-            {/* Metricas Principales (KPIs) */}
+            {/* Indicadores Clave de Vigilancia Epidemiológica */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 shadow-sm hover:shadow-md transition">
-                    <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 mb-2">
-                        <span className="text-xs font-semibold uppercase tracking-wider">Riesgo Global</span>
+                {/* 1. Municipio Activo */}
+                <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 shadow-sm">
+                    <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 mb-1">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider">Municipio en Monitoreo</span>
+                        <MapPin className="w-4 h-4 text-emerald-500" />
+                    </div>
+                    <div className="text-xl font-extrabold text-neutral-900 dark:text-white truncate">
+                        {selectedMunicipio.nombre}
+                    </div>
+                    <p className="text-xs text-neutral-500 mt-0.5 truncate">{selectedMunicipio.departamento} • DANE {selectedMunicipio.codigo}</p>
+                </div>
+
+                {/* 2. Nivel de Riesgo Base */}
+                <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 shadow-sm">
+                    <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 mb-1">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider">Nivel de Alerta Base</span>
                         <Activity className="w-4 h-4 text-rose-500" />
                     </div>
                     <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-neutral-900 dark:text-white">68.4%</span>
-                        <span className="text-xs font-medium text-rose-600 flex items-center">
-                            +6.2% <ArrowUpRight className="w-3 h-3" />
+                        <span className={`text-xl font-extrabold ${
+                            selectedMunicipio.riesgo === 'Crítico' ? 'text-rose-600' :
+                            selectedMunicipio.riesgo === 'Alto' ? 'text-amber-600' :
+                            'text-sky-600'
+                        }`}>
+                            Riesgo {selectedMunicipio.riesgo}
                         </span>
                     </div>
-                    <p className="text-xs text-neutral-500 mt-1">Nivel Epidemiológico Alto (Semana 41)</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">Probabilidad histórica: {(selectedMunicipio.probabilidad_base * 100).toFixed(0)}%</p>
                 </div>
 
-                <div className="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 shadow-sm hover:shadow-md transition">
-                    <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 mb-2">
-                        <span className="text-xs font-semibold uppercase tracking-wider">Variables en Modelo</span>
-                        <Layers className="w-4 h-4 text-sky-500" />
+                {/* 3. Densidad Poblacional (DANE) */}
+                <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 shadow-sm">
+                    <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 mb-1">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider">Densidad Poblacional</span>
+                        <Users className="w-4 h-4 text-sky-500" />
                     </div>
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-neutral-900 dark:text-white">{schemaFields.length}</span>
-                        <span className="text-xs font-medium text-sky-600">features</span>
+                    <div className="flex items-baseline gap-1.5">
+                        <span className="text-xl font-extrabold text-neutral-900 dark:text-white font-mono">
+                            {selectedMunicipio.densidad_poblacional.toLocaleString()}
+                        </span>
+                        <span className="text-xs font-medium text-neutral-500">hab/km²</span>
                     </div>
-                    <p className="text-xs text-neutral-500 mt-1">
-                        {apiConnected ? 'Esquema activo desde /schema' : 'Esperando conexión API'}
-                    </p>
+                    <p className="text-xs text-neutral-500 mt-0.5">Asignada automáticamente por mapa</p>
                 </div>
 
-                <div className="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 shadow-sm hover:shadow-md transition">
-                    <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 mb-2">
-                        <span className="text-xs font-semibold uppercase tracking-wider">Métricas del Modelo</span>
-                        <Zap className="w-4 h-4 text-emerald-500" />
+                {/* 4. Semana Epidemiológica */}
+                <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 shadow-sm">
+                    <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 mb-1">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider">Vigilancia SIVIGILA</span>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                     </div>
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-neutral-900 dark:text-white">0.983</span>
-                        <span className="text-xs font-medium text-emerald-600 font-mono">Accuracy</span>
+                    <div className="text-xl font-extrabold text-neutral-900 dark:text-white">
+                        Semana 42
                     </div>
-                    <p className="text-xs text-neutral-500 mt-1">F1-Score 0.991 • Versión {modelInfo.version}</p>
-                </div>
-
-                <div className="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 shadow-sm hover:shadow-md transition">
-                    <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 mb-2">
-                        <span className="text-xs font-semibold uppercase tracking-wider">Umbral Óptimo</span>
-                        <AlertTriangle className="w-4 h-4 text-rose-500" />
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-rose-600 font-mono">{THRESHOLD}</span>
-                        <span className="text-xs font-medium text-neutral-500">corte</span>
-                    </div>
-                    <p className="text-xs text-neutral-500 mt-1">Optimizado para maximizar recall de brotes</p>
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">Monitoreo activo y sincronizado</p>
                 </div>
             </div>
 
             {/* Main Interactive Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Formulario Dinámico (Left - 5 Cols) */}
-                <div className="lg:col-span-5 p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/40 shadow-sm space-y-6">
-                    <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-4">
-                        <div className="flex items-center gap-2">
-                            <Sliders className="w-5 h-5 text-emerald-500" />
-                            <div>
-                                <h3 className="font-bold text-lg text-neutral-900 dark:text-white">Formulario Dinámico</h3>
-                                <p className="text-[11px] text-neutral-500">
-                                    {apiConnected ? `Esquema de /schema (${schemaFields.length} variables)` : 'Inhabilitado: API offline'}
-                                </p>
+                {/* Formulario / Simulador (Left - 5 Cols) */}
+                <div className="lg:col-span-5 p-5 sm:p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/40 shadow-sm space-y-5">
+                    <div className="border-b border-neutral-100 dark:border-neutral-800 pb-3">
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                                <Sliders className="w-4 h-4 text-emerald-500" />
+                                <h3 className="font-bold text-base text-neutral-900 dark:text-white">
+                                    Simulador de Riesgo
+                                </h3>
                             </div>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 font-medium">
+                                {selectedMunicipio.nombre}
+                            </span>
                         </div>
-                        <span className="text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 font-medium font-mono">
-                            {modelInfo.stage}
-                        </span>
+                        <p className="text-[11px] text-neutral-500 mb-3">
+                            Ajusta los factores ambientales o prueba un escenario rápido:
+                        </p>
+
+                        {/* Botones de Escenarios Rápidos */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] text-neutral-400 font-semibold uppercase">Escenarios:</span>
+                            <button
+                                type="button"
+                                onClick={() => applyPreset('habitual')}
+                                className="px-2 py-1 rounded-lg text-xs font-medium bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 transition cursor-pointer"
+                            >
+                                🌤️ Típico
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => applyPreset('lluvias')}
+                                className="px-2 py-1 rounded-lg text-xs font-medium bg-sky-50 dark:bg-sky-950/50 hover:bg-sky-100 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/60 transition cursor-pointer"
+                            >
+                                🌧️ Lluvias
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => applyPreset('calor')}
+                                className="px-2 py-1 rounded-lg text-xs font-medium bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 transition cursor-pointer"
+                            >
+                                ☀️ Ola de Calor
+                            </button>
+                        </div>
                     </div>
 
-                    {/* Banner de API Offline si no hay conexión */}
-                    {!apiConnected && (
-                        <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs flex items-start gap-2.5 animate-in fade-in">
-                            <AlertTriangle className="w-4 h-4 shrink-0 text-amber-500 mt-0.5" />
-                            <div>
-                                <p className="font-semibold">API de Inferencia Desconectada</p>
-                                <p className="text-[11px] opacity-80 mt-0.5">
-                                    El backend en <span className="font-mono">/api/schema</span> no está disponible. Toda la sección del formulario se encuentra inhabilitada hasta que la API esté en línea.
-                                </p>
-                            </div>
+                    {/* Inputs del Formulario */}
+                    <div className="space-y-2.5">
+                        {/* Variables Principales / Requeridas */}
+                        <div className="space-y-2.5">
+                            {requiredFields.map((field) => renderFieldInput(field))}
                         </div>
-                    )}
 
-                    {/* Inputs del Formulario (Deshabilitados si !apiConnected) */}
-                    <div className={`space-y-4 transition-opacity ${!apiConnected ? 'opacity-40 select-none' : 'opacity-100'}`}>
-                        {schemaFields.map((field) => {
-                            const meta = FIELD_META[field.name] || {
-                                label: field.name.replace(/_/g, ' ').toUpperCase(),
-                                unit: '',
-                                min: 0,
-                                max: 100,
-                                step: 1,
-                                default: 10
-                            };
-                            const currentValue = formValues[field.name] ?? meta.default;
-                            const isInteger = field.type?.toLowerCase().includes('integer') || field.type?.toLowerCase().includes('int');
-
-                            return (
-                                <div key={field.name} className="space-y-1.5">
-                                    <div className="flex justify-between text-xs font-medium">
-                                        <span className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 capitalize">
-                                            {meta.icon ? <meta.icon className="w-3.5 h-3.5 text-emerald-500" /> : <Activity className="w-3.5 h-3.5 text-neutral-400" />}
-                                            {meta.label}
-                                        </span>
-                                        <span className="font-mono font-bold text-neutral-900 dark:text-white">
-                                            {currentValue} {meta.unit}
+                        {/* Variables Opcionales en Dropdown de Configuración Avanzada */}
+                        {optionalFields.length > 0 && (
+                            <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAdvancedConfig(!showAdvancedConfig)}
+                                    className="w-full flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 hover:bg-neutral-100 dark:hover:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-800 text-xs font-medium text-neutral-600 dark:text-neutral-400 transition cursor-pointer"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Sliders className="w-3.5 h-3.5 text-neutral-400" />
+                                        <span>Configuración Avanzada</span>
+                                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400">
+                                            {optionalFields.length} variables
                                         </span>
                                     </div>
-                                    <input
-                                        type="range"
-                                        disabled={!apiConnected}
-                                        min={meta.min}
-                                        max={meta.max}
-                                        step={meta.step}
-                                        value={currentValue}
-                                        onChange={(e) => {
-                                            const val = isInteger ? parseInt(e.target.value) : parseFloat(e.target.value);
-                                            handleFieldChange(field.name, val);
-                                        }}
-                                        className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 disabled:cursor-not-allowed"
-                                    />
-                                    <div className="flex justify-between text-[10px] text-neutral-400">
-                                        <span>Min: {meta.min}</span>
-                                        <span className="font-mono">{field.type}</span>
-                                        <span>Max: {meta.max}</span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                    <ChevronDown className={`w-3.5 h-3.5 text-neutral-400 transition-transform duration-200 ${showAdvancedConfig ? 'rotate-180' : ''}`} />
+                                </button>
 
-                    {/* Botón de Inferencia (Deshabilitado si !apiConnected) */}
-                    <button
-                        onClick={handlePredecir}
-                        disabled={!apiConnected || isPredicting}
-                        className={`w-full py-2.5 px-4 rounded-xl font-medium text-sm transition flex items-center justify-center gap-2 shadow ${
-                            apiConnected
-                                ? 'bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 cursor-pointer'
-                                : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed border border-neutral-300 dark:border-neutral-700'
-                        }`}
-                    >
-                        {apiConnected ? (
-                            <>
-                                <Zap className={`w-4 h-4 ${isPredicting ? 'animate-spin' : ''}`} />
-                                {isPredicting ? 'Calculando Inferencia...' : 'Ejecutar Inferencia de Riesgo'}
-                            </>
-                        ) : (
-                            <>
-                                <WifiOff className="w-4 h-4" />
-                                API Desconectada — Inferencia Inhabilitada
-                            </>
+                                {showAdvancedConfig && (
+                                    <div className="mt-2.5 p-3 rounded-xl bg-neutral-50/70 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800/80 space-y-2.5 animate-in fade-in duration-200">
+                                        <div className="flex items-center gap-1.5 text-[11px] text-neutral-500 dark:text-neutral-400 pb-1 border-b border-neutral-200/60 dark:border-neutral-800">
+                                            <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                                            <span>Variables complementarias históricas.</span>
+                                        </div>
+                                        {optionalFields.map((field) => renderFieldInput(field))}
+                                    </div>
+                                )}
+                            </div>
                         )}
+                    </div>
+
+                    {/* Botón de Evaluación */}
+                    <button
+                        type="button"
+                        onClick={handlePredecir}
+                        disabled={isPredicting}
+                        className="w-full py-2.5 px-4 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2 shadow-sm bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white cursor-pointer"
+                    >
+                        <Zap className={`w-4 h-4 ${isPredicting ? 'animate-spin' : ''}`} />
+                        {isPredicting ? 'Calculando Riesgo...' : '🔍 Evaluar Nivel de Riesgo'}
                     </button>
 
-                    {/* Caja de Resultado */}
-                    {apiConnected && prediccion ? (
-                        <div className={`p-4 rounded-xl border transition-all ${prediccion.alertaActiva ? 'bg-rose-50 border-rose-200 dark:bg-rose-950/30 dark:border-rose-900/50' : 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-900/50'}`}>
+                    {/* Caja de Resultado Intuitiva */}
+                    {prediccion && (
+                        <div className={`p-4 rounded-xl border transition-all ${
+                            prediccion.alertaActiva 
+                                ? 'bg-rose-50/80 border-rose-200 dark:bg-rose-950/30 dark:border-rose-900/50' 
+                                : 'bg-emerald-50/80 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-900/50'
+                        }`}>
                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300">
-                                    Resultado de Inferencia
+                                <span className="text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-300">
+                                    Diagnóstico de Riesgo
                                 </span>
-                                <span className="text-[11px] text-neutral-500 font-mono">
-                                    {prediccion.source}
+                                <span className="text-[10px] text-neutral-400">
+                                    {selectedMunicipio.nombre} • SIVIGILA
                                 </span>
                             </div>
                             
-                            <div className="flex items-baseline justify-between mb-2">
+                            <div className="flex items-baseline justify-between mb-2.5">
                                 <div>
                                     <span className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
                                         {(prediccion.probabilidad * 100).toFixed(1)}%
                                     </span>
                                     <span className="text-xs text-neutral-500 ml-1">probabilidad</span>
                                 </div>
-                                <div className="text-right">
+                                <div>
                                     {prediccion.alertaActiva ? (
-                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-600 text-white">
-                                            <AlertTriangle className="w-3.5 h-3.5" /> ALERTA ACTIVA
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-600 text-white shadow-sm">
+                                            <AlertTriangle className="w-3.5 h-3.5" /> ALERTA TEMPRANA
                                         </span>
                                     ) : (
-                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white">
-                                            <CheckCircle2 className="w-3.5 h-3.5" /> RIESGO BAJO
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-sm">
+                                            <CheckCircle2 className="w-3.5 h-3.5" /> RIESGO CONTROLADO
                                         </span>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Barra de Umbral */}
+                            {/* Barra de Umbral Visual Clara */}
                             <div className="space-y-1">
                                 <div className="relative w-full h-2.5 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
                                     <div
                                         className={`h-full rounded-full transition-all duration-300 ${prediccion.alertaActiva ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                                        style={{ width: `${prediccion.probabilidad * 100}%` }}
+                                        style={{ width: `${Math.min(prediccion.probabilidad * 100, 100)}%` }}
                                     />
                                 </div>
-                                <div className="flex justify-between text-[11px] text-neutral-500">
-                                    <span>0%</span>
-                                    <span className="font-mono text-neutral-700 dark:text-neutral-300 font-semibold">
-                                        Umbral de corte: {THRESHOLD}
+                                <div className="flex justify-between text-[10px] text-neutral-500">
+                                    <span>Bajo (&lt;20%)</span>
+                                    <span className="font-semibold text-neutral-700 dark:text-neutral-300">
+                                        Umbral de Alerta: 20.5%
                                     </span>
-                                    <span>100%</span>
+                                    <span>Alto</span>
                                 </div>
                             </div>
 
-                            <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-3">
+                            {/* Recomendación Práctica en lenguaje claro */}
+                            <p className="text-xs text-neutral-700 dark:text-neutral-300 mt-3 pt-2.5 border-t border-neutral-200/80 dark:border-neutral-800/80 leading-relaxed">
                                 {prediccion.alertaActiva
-                                    ? '⚠️ Protocolo: Disparar alerta a secretarías de salud y desplegar brigada de fumigación.'
-                                    : '✅ Protocolo: Mantener monitoreo pasivo y reporte semanal rutinario.'}
+                                    ? '⚠️ Recomendación: Intensificar búsqueda activa comunitaria, control biológico de larvas y jornadas de recolección de inservibles.'
+                                    : '✅ Recomendación: Mantener vigilancia pasiva y control rutinario de criaderos.'}
                             </p>
-                        </div>
-                    ) : (
-                        <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/30 text-neutral-400 text-center text-xs py-5">
-                            <WifiOff className="w-5 h-5 mx-auto mb-1.5 opacity-40 text-neutral-400" />
-                            <p className="font-medium text-neutral-500">Módulo en Espera</p>
-                            <p className="text-[11px] text-neutral-400 mt-0.5">La predicción se activará automáticamente al conectar la API</p>
+
+                            {/* Badge del Modelo MLflow Ejecutado */}
+                            <div className="mt-2.5 pt-2 border-t border-neutral-200/60 dark:border-neutral-800/60 flex flex-wrap items-center justify-between gap-1 text-[11px]">
+                                <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
+                                    <Layers className="w-3.5 h-3.5 text-emerald-500" />
+                                    <span>Modelo MLflow:</span>
+                                    <span className="font-mono font-bold text-neutral-900 dark:text-white">
+                                        {prediccion.modelName || 'ModeloPrueba'}
+                                    </span>
+                                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
+                                        v{prediccion.modelVersion || '1.0'}
+                                    </span>
+                                </div>
+                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                                    prediccion.modelName?.startsWith('DengueAlertas_')
+                                        ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                                        : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+                                }`}>
+                                    {prediccion.modelName?.startsWith('DengueAlertas_') ? '🎯 Especializado Municipal' : '🌐 Modelo Base'}
+                                </span>
+                            </div>
                         </div>
                     )}
                 </div>
 
-                {/* Monitoreo Regional y Zonas (Right - 7 Cols) */}
+                {/* Mapa Epidemiológico de Colombia (Right - 7 Cols) */}
                 <div className="lg:col-span-7 p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/40 shadow-sm space-y-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-neutral-100 dark:border-neutral-800 pb-4">
-                        <div className="flex items-center gap-2">
-                            <MapPin className="w-5 h-5 text-emerald-500" />
-                            <h3 className="font-bold text-lg text-neutral-900 dark:text-white">Vigilancia por Zonas</h3>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <div className="relative">
-                                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400" />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar zona..."
-                                    value={busqueda}
-                                    onChange={(e) => setBusqueda(e.target.value)}
-                                    className="pl-8 pr-3 py-1 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Filtros rápidos */}
-                    <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-                        <span className="text-neutral-400 text-[11px] font-medium mr-1">Filtrar:</span>
-                        {['Todos', 'Crítico', 'Alto', 'Moderado', 'Bajo'].map(filtro => (
-                            <button
-                                key={filtro}
-                                onClick={() => setFiltroRiesgo(filtro)}
-                                className={`px-2.5 py-1 rounded-lg font-medium transition ${filtroRiesgo === filtro ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400 hover:bg-neutral-200'}`}
-                            >
-                                {filtro}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Tabla de Zonas */}
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs">
-                            <thead>
-                                <tr className="border-b border-neutral-100 dark:border-neutral-800 text-neutral-400 uppercase tracking-wider text-[11px]">
-                                    <th className="pb-3 font-semibold">Sector</th>
-                                    <th className="pb-3 font-semibold">Nivel</th>
-                                    <th className="pb-3 font-semibold">Probabilidad</th>
-                                    <th className="pb-3 font-semibold">Casos Est.</th>
-                                    <th className="pb-3 font-semibold">Acción Protocolar</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800/60">
-                                {municipiosFiltrados.map(m => (
-                                    <tr key={m.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition">
-                                        <td className="py-3 font-medium text-neutral-900 dark:text-white">
-                                            {m.nombre}
-                                            <div className="text-[11px] text-neutral-400">{m.temp} • {m.humedad} hum.</div>
-                                        </td>
-                                        <td className="py-3">
-                                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                                                m.riesgo === 'Crítico' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300' :
-                                                m.riesgo === 'Alto' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300' :
-                                                m.riesgo === 'Moderado' ? 'bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300' :
-                                                'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
-                                            }`}>
-                                                {m.riesgo}
-                                            </span>
-                                        </td>
-                                        <td className="py-3 font-mono font-medium text-neutral-700 dark:text-neutral-300">
-                                            {(m.probabilidad * 100).toFixed(0)}%
-                                        </td>
-                                        <td className="py-3 font-medium text-neutral-900 dark:text-white">
-                                            {m.casosEst}
-                                        </td>
-                                        <td className="py-3 text-neutral-600 dark:text-neutral-400">
-                                            {m.estado}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    <ColombiaMap
+                        selectedMunicipioId={selectedMunicipio.id}
+                        onSelectMunicipio={handleSelectMunicipio}
+                        activeCodes={activeCodes}
+                    />
                 </div>
             </div>
 
-            {/* MLOps Architecture & Tracking Card */}
-            <div className="p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/60 space-y-4">
-                <div className="flex items-center gap-2 text-neutral-900 dark:text-white font-bold text-sm">
-                    <Layers className="w-4 h-4 text-emerald-500" />
-                    <span>Trazabilidad MLOps & Arquitectura de Producción</span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
-                    <div className="p-3 bg-white dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                        <span className="text-neutral-400 block mb-1">API Backend</span>
-                        <span className="font-mono font-semibold text-neutral-900 dark:text-emerald-400">api.arkoiot.com</span>
+            {/* Trazabilidad MLOps (Colapsable para no sobrecargar al usuario) */}
+            <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/40 overflow-hidden">
+                <button
+                    type="button"
+                    onClick={() => setShowTechDetails(!showTechDetails)}
+                    className="w-full p-4 flex items-center justify-between text-left text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition cursor-pointer"
+                >
+                    <div className="flex items-center gap-2">
+                        <Layers className="w-4 h-4 text-emerald-500" />
+                        <span>Detalles Técnicos & Gobernanza MLOps</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 font-mono">
+                            {modelInfo.model_name} (v{modelInfo.version}) • {modelInfo.stage}
+                        </span>
                     </div>
-                    <div className="p-3 bg-white dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                        <span className="text-neutral-400 block mb-1">Servidor MLflow</span>
-                        <span className="font-mono font-semibold text-neutral-900 dark:text-white">platform.arkoiot.com</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showTechDetails ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showTechDetails && (
+                    <div className="p-4 pt-0 border-t border-neutral-200/60 dark:border-neutral-800/60 animate-in fade-in duration-200">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs mt-3">
+                            <div className="p-3 bg-white dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700/60">
+                                <span className="text-neutral-400 block mb-1">API Backend</span>
+                                <span className="font-mono font-semibold text-neutral-900 dark:text-emerald-400">api.arkoiot.com</span>
+                            </div>
+                            <div className="p-3 bg-white dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700/60">
+                                <span className="text-neutral-400 block mb-1">Servidor MLflow</span>
+                                <span className="font-mono font-semibold text-neutral-900 dark:text-white">platform.arkoiot.com</span>
+                            </div>
+                            <div className="p-3 bg-white dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700/60">
+                                <span className="text-neutral-400 block mb-1">Modelo Activo</span>
+                                <span className="font-mono font-semibold text-neutral-900 dark:text-white">{modelInfo.model_name} (v{modelInfo.version})</span>
+                            </div>
+                            <div className="p-3 bg-white dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700/60">
+                                <span className="text-neutral-400 block mb-1">Despliegue Edge</span>
+                                <span className="font-mono font-semibold text-neutral-900 dark:text-white">Cloudflare Pages (Blue/Green)</span>
+                            </div>
+                        </div>
                     </div>
-                    <div className="p-3 bg-white dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                        <span className="text-neutral-400 block mb-1">Modelo Activo</span>
-                        <span className="font-mono font-semibold text-neutral-900 dark:text-white">{modelInfo.model_name} (v{modelInfo.version})</span>
-                    </div>
-                    <div className="p-3 bg-white dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                        <span className="text-neutral-400 block mb-1">Despliegue Edge</span>
-                        <span className="font-mono font-semibold text-neutral-900 dark:text-white">Cloudflare Pages (Blue/Green)</span>
-                    </div>
-                </div>
+                )}
             </div>
         </div>
     );

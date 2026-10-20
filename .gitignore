@@ -39,3 +39,7 @@ env/
 !/data/processed/
 /data/processed/?*
 !/data/processed/*.dvc
+
+# DVC local cache
+.dvc/cache/
+.dvc/tmp/

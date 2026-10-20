@@ -106,6 +106,8 @@ export default function Dashboard() {
     // Valores dinámicos del formulario (inicializados con los del municipio inicial)
     const [formValues, setFormValues] = useState(() => {
         const initial = {
+            municipio: MUNICIPIOS_ESTRATEGICOS[0].codigo,
+            municipality_code: MUNICIPIOS_ESTRATEGICOS[0].codigo,
             densidad_poblacional: MUNICIPIOS_ESTRATEGICOS[0].densidad_poblacional,
             population_density_km2: MUNICIPIOS_ESTRATEGICOS[0].densidad_poblacional,
             temperatura: MUNICIPIOS_ESTRATEGICOS[0].temp_sugerida,
@@ -126,12 +128,17 @@ export default function Dashboard() {
 
     // Estado de la predicción con evaluación inicial activa
     const [prediccion, setPrediccion] = useState(() => {
-        return computeLocalRisk({
+        const baseRisk = computeLocalRisk({
             temperatura: MUNICIPIOS_ESTRATEGICOS[0].temp_sugerida,
             precipitacion: MUNICIPIOS_ESTRATEGICOS[0].precip_sugerida,
             humedad: MUNICIPIOS_ESTRATEGICOS[0].humedad_sugerida,
             casos_previos: 90
         }, MUNICIPIOS_ESTRATEGICOS[0]);
+        return {
+            ...baseRisk,
+            modelName: MUNICIPIOS_ESTRATEGICOS[0].modelo_activo,
+            modelVersion: 'v1.0'
+        };
     });
     const [isPredicting, setIsPredicting] = useState(false);
 
@@ -381,7 +388,10 @@ export default function Dashboard() {
                 setPrediccion({
                     probabilidad: resData.probability,
                     alertaActiva: resData.alerta_activa,
-                    source: `API (${data.stage} v${data.model_version})`,
+                    source: `API (${data.stage || 'Staging'} v${data.model_version || '1.0'})`,
+                    modelName: data.model_name || selectedMunicipio.modelo_activo || 'ModeloPrueba',
+                    modelVersion: data.model_version || 'v1.0',
+                    municipioEvaluado: data.municipio_evaluado || selectedMunicipio.nombre,
                     timestamp: new Date().toLocaleTimeString()
                 });
                 setApiConnected(true);
@@ -640,6 +650,27 @@ export default function Dashboard() {
                                     ? '⚠️ Recomendación: Intensificar búsqueda activa comunitaria, control biológico de larvas y jornadas de recolección de inservibles.'
                                     : '✅ Recomendación: Mantener vigilancia pasiva y control rutinario de criaderos.'}
                             </p>
+
+                            {/* Badge del Modelo MLflow Ejecutado */}
+                            <div className="mt-2.5 pt-2 border-t border-neutral-200/60 dark:border-neutral-800/60 flex flex-wrap items-center justify-between gap-1 text-[11px]">
+                                <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
+                                    <Layers className="w-3.5 h-3.5 text-emerald-500" />
+                                    <span>Modelo MLflow:</span>
+                                    <span className="font-mono font-bold text-neutral-900 dark:text-white">
+                                        {prediccion.modelName || 'ModeloPrueba'}
+                                    </span>
+                                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
+                                        v{prediccion.modelVersion || '1.0'}
+                                    </span>
+                                </div>
+                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                                    prediccion.modelName?.startsWith('DengueAlertas_')
+                                        ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                                        : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+                                }`}>
+                                    {prediccion.modelName?.startsWith('DengueAlertas_') ? '🎯 Especializado Municipal' : '🌐 Modelo Base'}
+                                </span>
+                            </div>
                         </div>
                     )}
                 </div>

@@ -517,29 +517,11 @@ def predict(
 
     df = pd.DataFrame(records)
 
-    # Adaptador de retrocompatibilidad bidireccional
-    df = adapt_features_for_model(df, current_schema)
-
-    # Adaptar tipos de datos automaticamente al esquema inferido por MLflow
-    if current_schema:
-        for field in current_schema:
-            col_name = field["name"]
-            col_type = field["type"].lower()
-            if col_name in df.columns:
-                try:
-                    if "integer" in col_type or "int32" in col_type:
-                        df[col_name] = df[col_name].astype("int32")
-                    elif "long" in col_type or "int64" in col_type:
-                        df[col_name] = df[col_name].astype("int64")
-                    elif "double" in col_type or "float" in col_type:
-                        df[col_name] = df[col_name].astype("float64")
-                except Exception:
-                    pass
-
-    # Seleccion del modelo objetivo (Enrutador municipal con fallback al modelo base)
+    # 1. Seleccion del modelo objetivo (Enrutador municipal con fallback al modelo base)
     target_model = loaded_model
     target_model_name = MODEL_NAME
     target_version = current_version
+    target_schema = current_schema
     evaluated_mun = None
 
     if records and isinstance(records[0], dict):
@@ -556,11 +538,32 @@ def predict(
             if mapped_name and mapped_name in loaded_municipal_models:
                 target_model = loaded_municipal_models[mapped_name]
                 target_model_name = mapped_name
-                target_version = municipal_models_metadata.get(mapped_name, {}).get("tag_version", "v1.0")
+                meta = municipal_models_metadata.get(mapped_name, {})
+                target_version = meta.get("tag_version", "v1.0")
+                target_schema = meta.get("schema") or current_schema
                 evaluated_mun = str(mun_val)
 
     if target_model is None:
         raise HTTPException(status_code=503, detail="Ningun modelo disponible en memoria para inferencia.")
+
+    # 2. Adaptador de retrocompatibilidad proyectado al esquema exacto del modelo seleccionado
+    df = adapt_features_for_model(df, target_schema)
+
+    # 3. Adaptar tipos de datos automaticamente al esquema inferido por MLflow para target_model
+    if target_schema:
+        for field in target_schema:
+            col_name = field["name"]
+            col_type = field["type"].lower()
+            if col_name in df.columns:
+                try:
+                    if "integer" in col_type or "int32" in col_type:
+                        df[col_name] = df[col_name].astype("int32")
+                    elif "long" in col_type or "int64" in col_type:
+                        df[col_name] = df[col_name].astype("int64")
+                    elif "double" in col_type or "float" in col_type:
+                        df[col_name] = df[col_name].astype("float64")
+                except Exception:
+                    pass
 
     try:
         infer_start = time.time()

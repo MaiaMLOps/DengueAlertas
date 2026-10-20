@@ -152,36 +152,56 @@ model_lock = threading.Lock()
 loaded_municipal_models: Dict[str, Any] = {}
 municipal_models_metadata: Dict[str, Dict[str, Any]] = {}
 
-MUNICIPALITY_MODELS_MAP = {
-    # Cali (Valle del Cauca)
-    "76001": "DengueAlertas_Cali",
-    "cali": "DengueAlertas_Cali",
-    "valle del cauca": "DengueAlertas_Cali",
-    "covac": "DengueAlertas_Cali",
+# Mapeo maestro de municipios conocidos a metadatos DANE
+MUNICIPALITY_GEO_REGISTRY = {
+    "cali": {
+        "codigo": "76001",
+        "deptoId": "COVAC",
+        "nombre": "Cali",
+        "departamento": "Valle del Cauca",
+        "aliases": ["76001", "cali", "valle del cauca", "covac"],
+        "densidad": 3910.0
+    },
+    "bucaramanga": {
+        "codigo": "68001",
+        "deptoId": "COSAN",
+        "nombre": "Bucaramanga",
+        "departamento": "Santander",
+        "aliases": ["68001", "bucaramanga", "santander", "cosan"],
+        "densidad": 3655.0
+    },
+    "cartagena": {
+        "codigo": "13001",
+        "deptoId": "COBOL",
+        "nombre": "Cartagena",
+        "departamento": "Bolívar",
+        "aliases": ["13001", "cartagena", "bolivar", "cobol"],
+        "densidad": 1581.0
+    },
+    "ibague": {
+        "codigo": "73001",
+        "deptoId": "COTOL",
+        "nombre": "Ibagué",
+        "departamento": "Tolima",
+        "aliases": ["73001", "ibague", "tolima", "cotol"],
+        "densidad": 377.0
+    },
+    "villavicencio": {
+        "codigo": "50001",
+        "deptoId": "COMET",
+        "nombre": "Villavicencio",
+        "departamento": "Meta",
+        "aliases": ["50001", "villavicencio", "meta", "comet"],
+        "densidad": 395.0
+    }
+}
 
-    # Bucaramanga (Santander)
-    "68001": "DengueAlertas_Bucaramanga",
-    "bucaramanga": "DengueAlertas_Bucaramanga",
-    "santander": "DengueAlertas_Bucaramanga",
-    "cosan": "DengueAlertas_Bucaramanga",
-
-    # Cartagena (Bolívar)
-    "13001": "DengueAlertas_Cartagena",
-    "cartagena": "DengueAlertas_Cartagena",
-    "bolivar": "DengueAlertas_Cartagena",
-    "cobol": "DengueAlertas_Cartagena",
-
-    # Ibagué (Tolima)
-    "73001": "DengueAlertas_Ibague",
-    "ibague": "DengueAlertas_Ibague",
-    "tolima": "DengueAlertas_Ibague",
-    "cotol": "DengueAlertas_Ibague",
-
-    # Villavicencio (Meta)
-    "50001": "DengueAlertas_Villavicencio",
-    "villavicencio": "DengueAlertas_Villavicencio",
-    "meta": "DengueAlertas_Villavicencio",
-    "comet": "DengueAlertas_Villavicencio"
+MUNICIPALITY_MODELS_MAP: Dict[str, str] = {
+    "76001": "DengueAlertas_Cali", "cali": "DengueAlertas_Cali", "covac": "DengueAlertas_Cali",
+    "68001": "DengueAlertas_Bucaramanga", "bucaramanga": "DengueAlertas_Bucaramanga", "cosan": "DengueAlertas_Bucaramanga",
+    "13001": "DengueAlertas_Cartagena", "cartagena": "DengueAlertas_Cartagena", "cobol": "DengueAlertas_Cartagena",
+    "73001": "DengueAlertas_Ibague", "ibague": "DengueAlertas_Ibague", "cotol": "DengueAlertas_Ibague",
+    "50001": "DengueAlertas_Villavicencio", "villavicencio": "DengueAlertas_Villavicencio", "comet": "DengueAlertas_Villavicencio"
 }
 
 def load_single_model(client: MlflowClient, model_name: str):
@@ -274,25 +294,79 @@ def fetch_and_load_model():
         else:
             print(f"[WARN] [MLflow] No se encontro version para el modelo base '{MODEL_NAME}'.")
 
-        # 2. Cargar los 5 modelos especializados por municipio
-        unique_muns = set(MUNICIPALITY_MODELS_MAP.values())
+        # 2. Descubrimiento dinamico de modelos DengueAlertas_* con tag 'enabled == true'
+        discovered_models = []
+        try:
+            registered = client.search_registered_models()
+            for rm in registered:
+                name = rm.name
+                tags = rm.tags or {}
+                if name.startswith("DengueAlertas_") and name != MODEL_NAME:
+                    enabled_val = str(tags.get("enabled", "")).strip().lower()
+                    if enabled_val in ("true", "1", "yes"):
+                        discovered_models.append((name, tags))
+                    else:
+                        print(f"[Multi-Model] Modelo '{name}' omitido (tag 'enabled' es '{tags.get('enabled')}')")
+        except Exception as e:
+            print(f"[WARN] Error buscando modelos registrados en MLflow: {e}")
+            discovered_models = [
+                ("DengueAlertas_Cali", {"enabled": "true"}),
+                ("DengueAlertas_Bucaramanga", {"enabled": "true"}),
+                ("DengueAlertas_Cartagena", {"enabled": "true"}),
+                ("DengueAlertas_Ibague", {"enabled": "true"}),
+                ("DengueAlertas_Villavicencio", {"enabled": "true"})
+            ]
+
+        new_loaded_muns = {}
+        new_metadata_muns = {}
+        new_routing_map = {}
         loaded_count = 0
-        for mun_model_name in unique_muns:
+
+        for mun_model_name, mun_tags in discovered_models:
             m_mun, m_mun_ver, t_mun_ver, s_mun_info = load_single_model(client, mun_model_name)
             if m_mun is not None:
-                with model_lock:
-                    loaded_municipal_models[mun_model_name] = m_mun
-                    municipal_models_metadata[mun_model_name] = {
-                        "mlflow_version": m_mun_ver,
-                        "tag_version": t_mun_ver,
-                        "schema": s_mun_info
-                    }
-                loaded_count += 1
-                print(f"[OK] [Multi-Model] Modelo municipal '{mun_model_name}' ({t_mun_ver}) listo en memoria.")
-            else:
-                print(f"[WARN] [Multi-Model] Modelo municipal '{mun_model_name}' no cargado aun.")
+                new_loaded_muns[mun_model_name] = m_mun
 
-        print(f"[Hot-Reload] Estado: 1 Modelo Base + {loaded_count}/{len(unique_muns)} Modelos Municipales activos.")
+                # Extraer clave de la ciudad (ej: DengueAlertas_Cali -> cali)
+                raw_city = mun_model_name.replace("DengueAlertas_", "").strip().lower()
+                geo = MUNICIPALITY_GEO_REGISTRY.get(raw_city, {
+                    "codigo": mun_tags.get("municipality_code", raw_city),
+                    "nombre": mun_model_name.replace("DengueAlertas_", "").strip(),
+                    "departamento": mun_tags.get("department", "Colombia"),
+                    "deptoId": mun_tags.get("depto_id", ""),
+                    "aliases": [raw_city]
+                })
+
+                new_metadata_muns[mun_model_name] = {
+                    "mlflow_version": m_mun_ver,
+                    "tag_version": t_mun_ver,
+                    "schema": s_mun_info,
+                    "tags": mun_tags,
+                    "city_key": raw_city,
+                    "codigo": geo.get("codigo", raw_city),
+                    "nombre": geo.get("nombre", raw_city.capitalize()),
+                    "departamento": geo.get("departamento", ""),
+                    "deptoId": geo.get("deptoId", "")
+                }
+
+                aliases = geo.get("aliases", [raw_city, geo.get("codigo", raw_city)])
+                for alias in aliases:
+                    new_routing_map[str(alias).strip().lower()] = mun_model_name
+
+                loaded_count += 1
+                print(f"[OK] [Multi-Model] Modelo municipal '{mun_model_name}' ({t_mun_ver}) [ENABLED: TRUE] listo en memoria.")
+            else:
+                print(f"[WARN] [Multi-Model] Modelo municipal '{mun_model_name}' no pudo ser cargado.")
+
+        with model_lock:
+            loaded_municipal_models.clear()
+            loaded_municipal_models.update(new_loaded_muns)
+            municipal_models_metadata.clear()
+            municipal_models_metadata.update(new_metadata_muns)
+            MUNICIPALITY_MODELS_MAP.clear()
+            MUNICIPALITY_MODELS_MAP.update(new_routing_map)
+
+        print(f"[Hot-Reload] Estado: 1 Modelo Base + {loaded_count}/{len(discovered_models)} Modelos Municipales habilitados.")
         return True
 
     except Exception as e:
@@ -323,7 +397,35 @@ def health():
         "mlflow_version": current_mlflow_version,
         "schema_fields_count": len(current_schema),
         "municipal_models_active": list(loaded_municipal_models.keys()),
+        "active_codes": [m.get("codigo") for m in municipal_models_metadata.values() if m.get("codigo")],
         "total_models_ready": (1 if loaded_model else 0) + len(loaded_municipal_models)
+    }
+
+@app.get("/municipios")
+def get_active_municipios():
+    """
+    Devuelve los municipios que tienen modelos DengueAlertas_* con tag 'enabled == true' en MLflow.
+    Permite que la UI autoconfigure el mapa dinamicamente en tiempo real.
+    """
+    items = []
+    for model_name, meta in municipal_models_metadata.items():
+        items.append({
+            "model_name": model_name,
+            "city_key": meta.get("city_key"),
+            "nombre": meta.get("nombre"),
+            "codigo": meta.get("codigo"),
+            "departamento": meta.get("departamento"),
+            "deptoId": meta.get("deptoId"),
+            "version": meta.get("tag_version", "v1.0"),
+            "mlflow_version": meta.get("mlflow_version"),
+            "enabled": True
+        })
+    return {
+        "stage": STAGE,
+        "total_activos": len(items),
+        "active_codes": [m["codigo"] for m in items if m.get("codigo")],
+        "active_models": [m["model_name"] for m in items],
+        "municipios": items
     }
 
 @app.get("/schema")
@@ -517,29 +619,11 @@ def predict(
 
     df = pd.DataFrame(records)
 
-    # Adaptador de retrocompatibilidad bidireccional
-    df = adapt_features_for_model(df, current_schema)
-
-    # Adaptar tipos de datos automaticamente al esquema inferido por MLflow
-    if current_schema:
-        for field in current_schema:
-            col_name = field["name"]
-            col_type = field["type"].lower()
-            if col_name in df.columns:
-                try:
-                    if "integer" in col_type or "int32" in col_type:
-                        df[col_name] = df[col_name].astype("int32")
-                    elif "long" in col_type or "int64" in col_type:
-                        df[col_name] = df[col_name].astype("int64")
-                    elif "double" in col_type or "float" in col_type:
-                        df[col_name] = df[col_name].astype("float64")
-                except Exception:
-                    pass
-
-    # Seleccion del modelo objetivo (Enrutador municipal con fallback al modelo base)
+    # 1. Seleccion del modelo objetivo (Enrutador municipal con fallback al modelo base)
     target_model = loaded_model
     target_model_name = MODEL_NAME
     target_version = current_version
+    target_schema = current_schema
     evaluated_mun = None
 
     if records and isinstance(records[0], dict):
@@ -556,11 +640,32 @@ def predict(
             if mapped_name and mapped_name in loaded_municipal_models:
                 target_model = loaded_municipal_models[mapped_name]
                 target_model_name = mapped_name
-                target_version = municipal_models_metadata.get(mapped_name, {}).get("tag_version", "v1.0")
+                meta = municipal_models_metadata.get(mapped_name, {})
+                target_version = meta.get("tag_version", "v1.0")
+                target_schema = meta.get("schema") or current_schema
                 evaluated_mun = str(mun_val)
 
     if target_model is None:
         raise HTTPException(status_code=503, detail="Ningun modelo disponible en memoria para inferencia.")
+
+    # 2. Adaptador de retrocompatibilidad proyectado al esquema exacto del modelo seleccionado
+    df = adapt_features_for_model(df, target_schema)
+
+    # 3. Adaptar tipos de datos automaticamente al esquema inferido por MLflow para target_model
+    if target_schema:
+        for field in target_schema:
+            col_name = field["name"]
+            col_type = field["type"].lower()
+            if col_name in df.columns:
+                try:
+                    if "integer" in col_type or "int32" in col_type:
+                        df[col_name] = df[col_name].astype("int32")
+                    elif "long" in col_type or "int64" in col_type:
+                        df[col_name] = df[col_name].astype("int64")
+                    elif "double" in col_type or "float" in col_type:
+                        df[col_name] = df[col_name].astype("float64")
+                except Exception:
+                    pass
 
     try:
         infer_start = time.time()

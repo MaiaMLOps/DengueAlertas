@@ -7,6 +7,25 @@ import psutil
 LOG_DIR = "/opt/dengue-api/logs"
 LOG_FILE = os.path.join(LOG_DIR, "system_resources.jsonl")
 INTERVAL_SECONDS = 10
+DVC_STORAGE_DIR = "/opt/dvc-storage"
+MLFLOW_STORAGE_DIR = "/opt/mlflow"
+
+def get_dir_size_mb(path):
+    """Calcula el tamano en MB de un directorio recursivamente de forma segura."""
+    if not os.path.exists(path):
+        return 0.0
+    total_bytes = 0
+    try:
+        for root, _, files in os.walk(path):
+            for f in files:
+                fp = os.path.join(root, f)
+                try:
+                    total_bytes += os.path.getsize(fp)
+                except OSError:
+                    pass
+    except Exception:
+        pass
+    return round(total_bytes / (1024 * 1024), 2)
 
 SERVICES = [
     ("mlflow", "mlflow.service"),
@@ -44,6 +63,11 @@ def main():
 
     time.sleep(1)
 
+    # Estado y cache para medicion de almacenamiento (cada 60s)
+    last_storage_check = 0.0
+    cached_dvc_mb = 0.0
+    cached_mlflow_mb = 0.0
+
     while True:
         try:
             start_tick = time.time()
@@ -69,7 +93,23 @@ def main():
             prev_net = curr_net
             prev_time = now_time
 
-            # 3. Metricas Granulares por Servicio
+            # 3. Metricas de Almacenamiento y Capacidad (DVC, MLflow, Disco)
+            if now_time - last_storage_check >= 60:
+                cached_dvc_mb = get_dir_size_mb(DVC_STORAGE_DIR)
+                cached_mlflow_mb = get_dir_size_mb(MLFLOW_STORAGE_DIR)
+                last_storage_check = now_time
+
+            disk_usage = psutil.disk_usage("/")
+            storage_data = {
+                "disk_total_gb": round(disk_usage.total / (1024**3), 2),
+                "disk_used_gb": round(disk_usage.used / (1024**3), 2),
+                "disk_free_gb": round(disk_usage.free / (1024**3), 2),
+                "disk_percent": round(disk_usage.percent, 2),
+                "dvc_storage_mb": cached_dvc_mb,
+                "mlflow_storage_mb": cached_mlflow_mb
+            }
+
+            # 4. Metricas Granulares por Servicio
             services_data = {}
             for key, unit in SERVICES:
                 procs = get_service_pids(unit)
@@ -99,7 +139,7 @@ def main():
                     "num_processes": len(procs)
                 }
 
-            # 4. Ensamblar registro JSON
+            # 5. Ensamblar registro JSON
             record = {
                 "timestamp": now_iso,
                 "system": {
@@ -109,6 +149,7 @@ def main():
                     "ram_total_mb": round(mem_sys.total / (1024 * 1024), 2),
                     "ram_percent": round(mem_sys.percent, 2)
                 },
+                "storage": storage_data,
                 "io": {
                     "disk_read_kb_s": disk_read_kb_s,
                     "disk_write_kb_s": disk_write_kb_s,
@@ -118,7 +159,7 @@ def main():
                 "services": services_data
             }
 
-            # 5. Escribir en archivo JSONL
+            # 6. Escribir en archivo JSONL
             with open(LOG_FILE, "a", encoding="utf-8") as f:
                 f.write(json.dumps(record) + "\n")
 

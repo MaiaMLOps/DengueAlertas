@@ -16,3 +16,9 @@ mlartifacts/
 venv/
 env/
 .venv/
+
+# DVC local data and cache
+/data/
+.dvc/cache/
+.dvc/tmp/
+

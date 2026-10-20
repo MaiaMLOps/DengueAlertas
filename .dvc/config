@@ -1,0 +1,4 @@
+[core]
+    remote = vps-storage
+['remote "vps-storage"']
+    url = webdavs://api.arkoiot.com/dvc

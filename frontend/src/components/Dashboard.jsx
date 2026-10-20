@@ -60,6 +60,7 @@ export default function Dashboard() {
 
     // Municipio Estratégico Seleccionado en el Mapa (por defecto Cali)
     const [selectedMunicipio, setSelectedMunicipio] = useState(MUNICIPIOS_ESTRATEGICOS[0]);
+    const [activeCodes, setActiveCodes] = useState(['76001', '68001', '13001', '73001', '50001']);
     const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
     const [showTechDetails, setShowTechDetails] = useState(false);
 
@@ -183,6 +184,27 @@ export default function Dashboard() {
         }
     };
 
+    // Consultar municipios activos con tag 'enabled == true' en MLflow
+    const fetchActiveMunicipios = async () => {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            const res = await fetch(`${API_BASE_URL}/municipios`, {
+                credentials: 'include',
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.active_codes && Array.isArray(data.active_codes) && data.active_codes.length > 0) {
+                    setActiveCodes(data.active_codes);
+                }
+            }
+        } catch (e) {
+            // Mantener configuracion inicial
+        }
+    };
+
     // Helper para capturar eventos y clics en la interfaz (Clickstream)
     const trackUiEvent = (action, target, section, metadata = {}) => {
         try {
@@ -209,7 +231,11 @@ export default function Dashboard() {
 
     useEffect(() => {
         fetchSchema();
-        const interval = setInterval(fetchSchema, 120000);
+        fetchActiveMunicipios();
+        const interval = setInterval(() => {
+            fetchSchema();
+            fetchActiveMunicipios();
+        }, 60000);
         return () => clearInterval(interval);
     }, []);
 
@@ -680,6 +706,7 @@ export default function Dashboard() {
                     <ColombiaMap
                         selectedMunicipioId={selectedMunicipio.id}
                         onSelectMunicipio={handleSelectMunicipio}
+                        activeCodes={activeCodes}
                     />
                 </div>
             </div>

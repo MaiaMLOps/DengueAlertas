@@ -99,11 +99,13 @@ export const MUNICIPIOS_ESTRATEGICOS = [
     }
 ];
 
-export default function ColombiaMap({ selectedMunicipioId, onSelectMunicipio }) {
+export default function ColombiaMap({ selectedMunicipioId, onSelectMunicipio, activeCodes = ['76001', '68001', '13001', '73001', '50001'] }) {
     const [hoveredItem, setHoveredItem] = useState(null);
     const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
-    const selectedMunicipio = MUNICIPIOS_ESTRATEGICOS.find(m => m.id === selectedMunicipioId) || MUNICIPIOS_ESTRATEGICOS[0];
+    const isMunActive = (mun) => mun && activeCodes.includes(mun.codigo);
+    const enabledMunicipios = MUNICIPIOS_ESTRATEGICOS.filter(isMunActive);
+    const selectedMunicipio = MUNICIPIOS_ESTRATEGICOS.find(m => m.id === selectedMunicipioId) || enabledMunicipios[0] || MUNICIPIOS_ESTRATEGICOS[0];
 
     const handleMouseMove = (e) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -125,11 +127,11 @@ export default function ColombiaMap({ selectedMunicipioId, onSelectMunicipio }) 
                         <h3 className="font-bold text-base text-neutral-900 dark:text-white flex items-center gap-2">
                             Mapa de Monitoreo Territorial
                             <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-                                5 Municipios Activos
+                                {enabledMunicipios.length} {enabledMunicipios.length === 1 ? 'Municipio Activo' : 'Municipios Activos'} (MLflow)
                             </span>
                         </h3>
                         <p className="text-[11px] text-neutral-500">
-                            Haz clic en el mapa o en un municipio para seleccionarlo.
+                            Municipios con modelo <code className="text-emerald-600 dark:text-emerald-400 font-mono">DengueAlertas_*</code> y tag <code className="text-emerald-600 dark:text-emerald-400 font-mono">enabled: true</code> en MLflow.
                         </p>
                     </div>
                 </div>
@@ -138,21 +140,28 @@ export default function ColombiaMap({ selectedMunicipioId, onSelectMunicipio }) 
                 <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-neutral-100 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700/60">
                     {MUNICIPIOS_ESTRATEGICOS.map(mun => {
                         const isSelected = mun.id === selectedMunicipio.id;
+                        const isEnabled = isMunActive(mun);
                         return (
                             <button
                                 key={mun.id}
-                                onClick={() => onSelectMunicipio(mun)}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
-                                    isSelected
-                                        ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white font-bold shadow-sm ring-1 ring-neutral-300 dark:ring-neutral-700'
-                                        : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-800'
+                                disabled={!isEnabled}
+                                onClick={() => isEnabled && onSelectMunicipio(mun)}
+                                title={isEnabled ? `Modelo MLflow habilitado (${mun.nombre})` : `Modelo deshabilitado en MLflow platform`}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                                    !isEnabled
+                                        ? 'opacity-35 cursor-not-allowed bg-neutral-200/50 dark:bg-neutral-800/40 text-neutral-400'
+                                        : isSelected
+                                            ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white font-bold shadow-sm ring-1 ring-neutral-300 dark:ring-neutral-700 cursor-pointer'
+                                            : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-neutral-800 cursor-pointer'
                                 }`}
                             >
                                 <span className={`w-1.5 h-1.5 rounded-full ${
+                                    !isEnabled ? 'bg-neutral-400' :
                                     mun.riesgo === 'Crítico' ? 'bg-rose-500' :
                                     mun.riesgo === 'Alto' ? 'bg-amber-500' : 'bg-sky-500'
                                 }`} />
                                 <span>{mun.nombre}</span>
+                                {!isEnabled && <Lock className="w-2.5 h-2.5 text-neutral-400" />}
                             </button>
                         );
                     })}
@@ -160,7 +169,7 @@ export default function ColombiaMap({ selectedMunicipioId, onSelectMunicipio }) 
             </div>
 
             {/* Contenedor del Mapa SVG con los 33 Departamentos Oficiales */}
-            <div 
+            <div
                 className="relative rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-900/5 dark:bg-neutral-950 p-3 sm:p-5 overflow-hidden shadow-inner"
                 onMouseMove={handleMouseMove}
             >
@@ -211,9 +220,12 @@ export default function ColombiaMap({ selectedMunicipioId, onSelectMunicipio }) 
                         </filter>
                     </defs>
 
-                    {/* 1. Capa de los 28 Departamentos NO DISPONIBLES (Con Máscara) */}
+                    {/* 1. Capa de Departamentos NO DISPONIBLES / DESHABILITADOS */}
                     <g id="deptos-no-disponibles">
-                        {departmentsData.filter(d => !d.isAvailable).map(depto => (
+                        {departmentsData.filter(d => {
+                            const mun = MUNICIPIOS_ESTRATEGICOS.find(m => m.deptoId === d.id);
+                            return !isMunActive(mun);
+                        }).map(depto => (
                             <path
                                 key={depto.id}
                                 id={depto.id}
@@ -222,7 +234,7 @@ export default function ColombiaMap({ selectedMunicipioId, onSelectMunicipio }) 
                                 stroke="currentColor"
                                 strokeWidth="0.8"
                                 strokeDasharray="3 2"
-                                className="text-neutral-300 dark:text-neutral-800 transition-colors duration-200 hover:text-rose-400/50 dark:hover:text-rose-900/60 cursor-not-allowed"
+                                className="text-neutral-300 dark:text-neutral-800 transition-colors duration-200 hover:text-neutral-400 dark:hover:text-neutral-700 cursor-not-allowed"
                                 onMouseEnter={() => setHoveredItem({
                                     id: depto.id,
                                     name: depto.name,
@@ -233,9 +245,12 @@ export default function ColombiaMap({ selectedMunicipioId, onSelectMunicipio }) 
                         ))}
                     </g>
 
-                    {/* 2. Capa de los 5 Departamentos DISPONIBLES */}
+                    {/* 2. Capa de Departamentos DISPONIBLES (con modelo MLflow enabled) */}
                     <g id="deptos-disponibles">
-                        {departmentsData.filter(d => d.isAvailable).map(depto => {
+                        {departmentsData.filter(d => {
+                            const mun = MUNICIPIOS_ESTRATEGICOS.find(m => m.deptoId === d.id);
+                            return isMunActive(mun);
+                        }).map(depto => {
                             const mun = MUNICIPIOS_ESTRATEGICOS.find(m => m.deptoId === depto.id);
                             const isSelected = mun && mun.id === selectedMunicipio.id;
 
@@ -247,11 +262,10 @@ export default function ColombiaMap({ selectedMunicipioId, onSelectMunicipio }) 
                                     stroke="currentColor"
                                     strokeWidth={isSelected ? "2.6" : "1.6"}
                                     filter={isSelected ? "url(#glow-filter)" : undefined}
-                                    className={`cursor-pointer transition-all duration-300 ${
-                                        isSelected
+                                    className={`cursor-pointer transition-all duration-300 ${isSelected
                                             ? 'fill-emerald-500/40 text-emerald-500 dark:fill-emerald-500/50 dark:text-emerald-400'
                                             : 'fill-emerald-500/15 text-emerald-600/70 hover:fill-emerald-500/30 hover:text-emerald-500 dark:fill-emerald-500/25 dark:text-emerald-500/70'
-                                    }`}
+                                        }`}
                                     onClick={() => mun && onSelectMunicipio(mun)}
                                     onMouseEnter={() => setHoveredItem({
                                         id: depto.id,
@@ -265,8 +279,8 @@ export default function ColombiaMap({ selectedMunicipioId, onSelectMunicipio }) 
                         })}
                     </g>
 
-                    {/* 3. Pines y Marcadores Interactivos de los 5 Municipios */}
-                    {MUNICIPIOS_ESTRATEGICOS.map(mun => {
+                    {/* 3. Pines y Marcadores Interactivos de los Municipios ACTIVOS */}
+                    {enabledMunicipios.map(mun => {
                         const isSelected = mun.id === selectedMunicipio.id;
                         return (
                             <g
@@ -293,11 +307,10 @@ export default function ColombiaMap({ selectedMunicipioId, onSelectMunicipio }) 
                                 {/* Anillo exterior del pin */}
                                 <circle
                                     r={isSelected ? "9" : "6.5"}
-                                    className={`transition-all duration-300 ${
-                                        isSelected
+                                    className={`transition-all duration-300 ${isSelected
                                             ? 'fill-emerald-500 stroke-white dark:stroke-neutral-900 stroke-2'
                                             : 'fill-emerald-600 hover:fill-emerald-400 stroke-white dark:stroke-neutral-800 stroke-1.5'
-                                    }`}
+                                        }`}
                                 />
 
                                 {/* Centro blanco */}
@@ -314,11 +327,10 @@ export default function ColombiaMap({ selectedMunicipioId, onSelectMunicipio }) 
                                         width={mun.nombre.length * 8 + 14}
                                         height="17"
                                         rx="4"
-                                        className={`transition-all ${
-                                            isSelected
+                                        className={`transition-all ${isSelected
                                                 ? 'fill-emerald-600 text-white shadow-md'
                                                 : 'fill-white/95 dark:fill-neutral-900/95 text-neutral-800 dark:text-neutral-200 stroke border border-neutral-200 dark:border-neutral-700'
-                                        }`}
+                                            }`}
                                     />
                                     <text
                                         x="5"
@@ -370,7 +382,7 @@ export default function ColombiaMap({ selectedMunicipioId, onSelectMunicipio }) 
                             </p>
                         ) : (
                             <p className="text-[10px] text-neutral-400 mt-1">
-                                Departamento con máscara. No disponible para inferencia en esta fase.
+                                No disponible para inferencia en esta fase.
                             </p>
                         )}
                     </div>
@@ -387,11 +399,10 @@ export default function ColombiaMap({ selectedMunicipioId, onSelectMunicipio }) 
                         <span className="text-neutral-500">
                             ({selectedMunicipio.departamento})
                         </span>
-                        <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
-                            selectedMunicipio.riesgo === 'Crítico' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' :
-                            selectedMunicipio.riesgo === 'Alto' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' :
-                            'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300'
-                        }`}>
+                        <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${selectedMunicipio.riesgo === 'Crítico' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' :
+                                selectedMunicipio.riesgo === 'Alto' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' :
+                                    'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300'
+                            }`}>
                             Riesgo {selectedMunicipio.riesgo}
                         </span>
                     </div>

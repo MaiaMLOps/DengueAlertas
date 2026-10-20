@@ -16,3 +16,20 @@ mlartifacts/
 venv/
 env/
 .venv/
+
+# Generated data and health microdata must remain local.
+/data/
+*.parquet
+*.arrow
+*.feather
+*.csv
+*.tsv
+*.xlsx
+*.xls
+**/Datos SIVIGILA/
+**/Covariables/
+**/sivigila_*/
+**/sivigila_*
+**/Datos_*_210.xlsx
+/reports/data_quality/*.json
+.pytest_cache/

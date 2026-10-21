@@ -1,0 +1,5 @@
+outs:
+- md5: 82c092dd57f8a316c6992732664d75ce
+  size: 201592
+  hash: md5
+  path: pilot_municipalities_weekly.parquet

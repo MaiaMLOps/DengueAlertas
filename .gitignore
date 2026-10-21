@@ -43,3 +43,7 @@ env/
 # DVC local cache
 .dvc/cache/
 .dvc/tmp/
+
+# Temporary descriptive runs remain local. Explicit aggregate review evidence is eligible for Git.
+/reports/pilot_selection/runs/
+!/reports/pilot_selection/evidence/selection_20261020/*.csv

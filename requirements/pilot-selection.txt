@@ -1,0 +1,4 @@
+# Descriptive analysis only, separate from serving and modelling dependencies.
+-r data.txt
+matplotlib==3.9.2
+Pillow==9.4.0

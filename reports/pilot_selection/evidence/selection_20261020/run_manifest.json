@@ -1,0 +1,1161 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "created_at_utc": "2026-10-21T00:18:08.650267+00:00",
+  "purpose": "descriptive evidence; team-adopted selection, no automatic selection",
+  "input": {
+    "path": "data/processed/master_weekly_screening.parquet",
+    "sha256": "ccc0ab5360e29cabb8b1f5d3a0feb7fe0f00dffba195c7f55ffe83c9d0a73c5e",
+    "arrow_schema": {
+      "municipality_code": "string",
+      "municipality": "string",
+      "week_start": "date32[day]",
+      "population": "int64",
+      "area_km2": "double",
+      "population_density_km2": "double",
+      "temperature_c": "double",
+      "precipitation_mm": "double",
+      "relative_humidity_pct": "double",
+      "confirmed_records_screening": "int64",
+      "no_eligible_records_observed": "bool",
+      "week_end_nominal": "date32[day]",
+      "week_end_effective": "date32[day]",
+      "n_days": "uint8",
+      "partial_week": "bool"
+    }
+  },
+  "output_dir": "reports/pilot_selection/evidence/selection_20261020",
+  "git": {
+    "commit": "c86cf7d30398f7de430aa8224f1afe3e72c77676",
+    "branch": "feature/pilot-selection",
+    "dirty": true
+  },
+  "code_sha256": {
+    "src/pilot_selection/__init__.py": "a3b754ff3f51db8d1f4e9d6c03377f1ce975e9ea4245a806c7fa4a4351a0a5f6",
+    "src/pilot_selection/__main__.py": "ac7edf281be529760b66ffa9cc83a8adfe4249a82225503b71c8e7a2e0549ed1",
+    "src/pilot_selection/analysis.py": "65a59cb15f01e16749ce0d22453e759797c0be6b17984241aa5f3468a21e636b",
+    "src/pilot_selection/config.py": "5120444bf1d65ae444e24cc6b4b1e2103f40a1538cce8504b13ce3ff111b705c",
+    "src/pilot_selection/plots.py": "9c8a61217dab955c1f00dca7b0c05df0038c0e5a991226b4326529ad7e2f5926",
+    "src/pilot_selection/reporting.py": "9303cd4c2739c5409b1329dbfa080d555f3ec93591a1338c7215b56f995d9a16"
+  },
+  "dependency_sha256": {
+    "requirements/data.txt": "b03fde253958c21b830461546cfd9ae9010d73b2d91a2f22c6b9a2baa1b938c6",
+    "requirements/data-test.txt": "0dcdeab69b8d47f1c524648b67867d473af20b7c525745489619d07ed7d13ac4",
+    "requirements/pilot-selection.txt": "f79b64587b18c333498ff95c325c0d939c6b7d923441ee98788038266d7727ce"
+  },
+  "supporting_sha256": {
+    "tests/pilot_selection/conftest.py": "51a36de317480fba5492472d98c84ea9d8b6f0356f502a668c4a194df4095179",
+    "tests/pilot_selection/test_analysis.py": "47ac066909cac55e05a3f7425542dd89f85cb24d761e688c4eb3357d9c0a29c0",
+    "tests/pilot_selection/test_cli.py": "44446dcd9885e4206f1565ea9dd35a8d8e08cc1d56c6a6c59364740778f1ad0b",
+    "tests/pilot_selection/test_local_regression.py": "497f14c713a10a0b8d2c1f5f74749201ac48b6efa6bcbd83efcbf5333899473b",
+    "tests/pilot_selection/test_plots.py": "352322eccb4e7e11c1ed3b3cfcb5d066a45c416ab58ac4e0a1145ee329dd48ec",
+    "docs/pilot_selection.md": "be6cc479738c2964dde8f8fe1961d92b8b27be0e93de094a0d02d26a09f75cd9",
+    ".gitignore": "ad736af1f1a2c799b4ffb83c6c564e30fc825c8a24b7b8eb73589915970b1aa2"
+  },
+  "environment": {
+    "python": "3.11.0",
+    "pandas": "2.3.1",
+    "numpy": "1.26.4",
+    "pyarrow": "21.0.0",
+    "matplotlib": "3.9.2",
+    "Pillow": "9.4.0"
+  },
+  "configuration": {
+    "periods_by_week_start_year": {
+      "full": [
+        2007,
+        2025
+      ],
+      "historical": [
+        2007,
+        2022
+      ]
+    },
+    "figures": true,
+    "pilots": [
+      {
+        "code": "54001",
+        "name": "Cúcuta",
+        "color": "#18657A"
+      },
+      {
+        "code": "08001",
+        "name": "Barranquilla",
+        "color": "#9A512F"
+      },
+      {
+        "code": "41001",
+        "name": "Neiva",
+        "color": "#3E5E9B"
+      },
+      {
+        "code": "50001",
+        "name": "Villavicencio",
+        "color": "#657943"
+      },
+      {
+        "code": "76001",
+        "name": "Cali",
+        "color": "#77558D"
+      },
+      {
+        "code": "08758",
+        "name": "Soledad",
+        "color": "#9C4F64"
+      }
+    ],
+    "selection_authority": "team decision communicated by user",
+    "selection_date": "2026-10-20"
+  },
+  "rules": {
+    "partial_weeks": "excluded",
+    "annual_group": "year of week_start",
+    "active_week": "confirmed_records_screening > 0",
+    "weekly_median": "includes zeros",
+    "zero_run": "consecutive observed complete weeks, crosses years, clipped to period",
+    "quantiles": "linear interpolation",
+    "annual_ties": "earliest; all tied years retained",
+    "zero_total_concentration": "undefined (empty CSV field)",
+    "comparison_15": "5 highest; 5 nearest median; 5 lowest; DIVIPOLA ascending breaks ties"
+  },
+  "warnings": [
+    "Retrospective eligible records, not certified unique people or episodes; event 210 only.",
+    "Zero records do not establish absence of infection or verified negative notification.",
+    "Persistence does not certify surveillance quality or prospective information availability.",
+    "Historical subset uses week_start: 2022-12-26 includes the calendar day 2023-01-01.",
+    "Both the initial candidates and the team selection use retrospective information.",
+    "No endemic channel, epidemiological label, supervised data or model is generated.",
+    "The documented 2013 notification/symptom anomaly is not corrected by this analysis."
+  ],
+  "controls": {
+    "source": {
+      "rows": 77376,
+      "columns": 15,
+      "types": {
+        "municipality_code": "string",
+        "municipality": "object",
+        "week_start": "datetime64[ns]",
+        "population": "int64",
+        "area_km2": "float64",
+        "population_density_km2": "float64",
+        "temperature_c": "float64",
+        "precipitation_mm": "float64",
+        "relative_humidity_pct": "float64",
+        "confirmed_records_screening": "int64",
+        "no_eligible_records_observed": "bool",
+        "week_end_nominal": "datetime64[ns]",
+        "week_end_effective": "datetime64[ns]",
+        "n_days": "uint8",
+        "partial_week": "bool"
+      },
+      "nulls": {
+        "municipality_code": 0,
+        "municipality": 0,
+        "week_start": 0,
+        "population": 0,
+        "area_km2": 0,
+        "population_density_km2": 0,
+        "temperature_c": 0,
+        "precipitation_mm": 0,
+        "relative_humidity_pct": 0,
+        "confirmed_records_screening": 0,
+        "no_eligible_records_observed": 0,
+        "week_end_nominal": 0,
+        "week_end_effective": 0,
+        "n_days": 0,
+        "partial_week": 0
+      },
+      "municipalities": 78,
+      "duplicate_keys": 0,
+      "week_start_min": "2007-01-01",
+      "week_start_max": "2025-12-29",
+      "total_records": 637271,
+      "active_positions": 52831,
+      "numeric_ranges": {
+        "population": [
+          7091.0,
+          2528343.0
+        ],
+        "area_km2": [
+          19.7207209006049,
+          20281.9630313731
+        ],
+        "population_density_km2": [
+          2.1821852219895,
+          15441.9811291309
+        ],
+        "temperature_c": [
+          12.9616036643296,
+          32.2929453532476
+        ],
+        "precipitation_mm": [
+          0.0,
+          378.827025861538
+        ],
+        "relative_humidity_pct": [
+          30.1874358133116,
+          96.8148613127093
+        ],
+        "confirmed_records_screening": [
+          0.0,
+          914.0
+        ],
+        "n_days": [
+          3.0,
+          7.0
+        ]
+      }
+    },
+    "complete": {
+      "rows": 77298,
+      "columns": 15,
+      "types": {
+        "municipality_code": "string",
+        "municipality": "object",
+        "week_start": "datetime64[ns]",
+        "population": "int64",
+        "area_km2": "float64",
+        "population_density_km2": "float64",
+        "temperature_c": "float64",
+        "precipitation_mm": "float64",
+        "relative_humidity_pct": "float64",
+        "confirmed_records_screening": "int64",
+        "no_eligible_records_observed": "bool",
+        "week_end_nominal": "datetime64[ns]",
+        "week_end_effective": "datetime64[ns]",
+        "n_days": "uint8",
+        "partial_week": "bool"
+      },
+      "nulls": {
+        "municipality_code": 0,
+        "municipality": 0,
+        "week_start": 0,
+        "population": 0,
+        "area_km2": 0,
+        "population_density_km2": 0,
+        "temperature_c": 0,
+        "precipitation_mm": 0,
+        "relative_humidity_pct": 0,
+        "confirmed_records_screening": 0,
+        "no_eligible_records_observed": 0,
+        "week_end_nominal": 0,
+        "week_end_effective": 0,
+        "n_days": 0,
+        "partial_week": 0
+      },
+      "municipalities": 78,
+      "duplicate_keys": 0,
+      "week_start_min": "2007-01-01",
+      "week_start_max": "2025-12-22",
+      "total_records": 636865,
+      "active_positions": 52784,
+      "numeric_ranges": {
+        "population": [
+          7091.0,
+          2528343.0
+        ],
+        "area_km2": [
+          19.7207209006049,
+          20281.9630313731
+        ],
+        "population_density_km2": [
+          2.1821852219895,
+          15441.9811291309
+        ],
+        "temperature_c": [
+          12.9616036643296,
+          32.2929453532476
+        ],
+        "precipitation_mm": [
+          0.0,
+          378.827025861538
+        ],
+        "relative_humidity_pct": [
+          30.1874358133116,
+          96.8148613127093
+        ],
+        "confirmed_records_screening": [
+          0.0,
+          914.0
+        ],
+        "n_days": [
+          7.0,
+          7.0
+        ]
+      }
+    },
+    "historical": {
+      "rows": 65130,
+      "columns": 15,
+      "types": {
+        "municipality_code": "string",
+        "municipality": "object",
+        "week_start": "datetime64[ns]",
+        "population": "int64",
+        "area_km2": "float64",
+        "population_density_km2": "float64",
+        "temperature_c": "float64",
+        "precipitation_mm": "float64",
+        "relative_humidity_pct": "float64",
+        "confirmed_records_screening": "int64",
+        "no_eligible_records_observed": "bool",
+        "week_end_nominal": "datetime64[ns]",
+        "week_end_effective": "datetime64[ns]",
+        "n_days": "uint8",
+        "partial_week": "bool"
+      },
+      "nulls": {
+        "municipality_code": 0,
+        "municipality": 0,
+        "week_start": 0,
+        "population": 0,
+        "area_km2": 0,
+        "population_density_km2": 0,
+        "temperature_c": 0,
+        "precipitation_mm": 0,
+        "relative_humidity_pct": 0,
+        "confirmed_records_screening": 0,
+        "no_eligible_records_observed": 0,
+        "week_end_nominal": 0,
+        "week_end_effective": 0,
+        "n_days": 0,
+        "partial_week": 0
+      },
+      "municipalities": 78,
+      "duplicate_keys": 0,
+      "week_start_min": "2007-01-01",
+      "week_start_max": "2022-12-26",
+      "total_records": 384008,
+      "active_positions": 42117,
+      "numeric_ranges": {
+        "population": [
+          7091.0,
+          2514709.0
+        ],
+        "area_km2": [
+          19.7207209006049,
+          20281.9630313731
+        ],
+        "population_density_km2": [
+          2.1821852219895,
+          15055.636226305
+        ],
+        "temperature_c": [
+          12.9616036643296,
+          32.1125962112079
+        ],
+        "precipitation_mm": [
+          0.0,
+          378.827025861538
+        ],
+        "relative_humidity_pct": [
+          30.1874358133116,
+          96.8148613127093
+        ],
+        "confirmed_records_screening": [
+          0.0,
+          554.0
+        ],
+        "n_days": [
+          7.0,
+          7.0
+        ]
+      }
+    },
+    "excluded_partial": {
+      "rows": 78,
+      "records": 406
+    },
+    "weeks_per_municipality": {
+      "full": [
+        991
+      ],
+      "historical": [
+        835
+      ]
+    },
+    "plots": [
+      {
+        "municipality_code": "54001",
+        "pilot_name": "Cúcuta",
+        "weeks": 991,
+        "source_total": 30489,
+        "plotted_total": 30489
+      },
+      {
+        "municipality_code": "08001",
+        "pilot_name": "Barranquilla",
+        "weeks": 991,
+        "source_total": 39758,
+        "plotted_total": 39758
+      },
+      {
+        "municipality_code": "41001",
+        "pilot_name": "Neiva",
+        "weeks": 991,
+        "source_total": 27717,
+        "plotted_total": 27717
+      },
+      {
+        "municipality_code": "50001",
+        "pilot_name": "Villavicencio",
+        "weeks": 991,
+        "source_total": 25684,
+        "plotted_total": 25684
+      },
+      {
+        "municipality_code": "76001",
+        "pilot_name": "Cali",
+        "weeks": 991,
+        "source_total": 93894,
+        "plotted_total": 93894
+      },
+      {
+        "municipality_code": "08758",
+        "pilot_name": "Soledad",
+        "weeks": 991,
+        "source_total": 13739,
+        "plotted_total": 13739
+      }
+    ],
+    "input_sha256_unchanged": true
+  },
+  "artifacts": {
+    "municipal_indicators.csv": {
+      "sha256": "ee71a03ffc744dcd67b22fcc7dd1ccbffaee86eeb8acb2c0d4f57774874b5f8d",
+      "bytes": 19652
+    },
+    "annual_profiles.csv": {
+      "sha256": "cd780c73c9cf72c5cf729c0ac48eba6c98a116cf263388447dd1c9d558c4bb98",
+      "bytes": 109907
+    },
+    "distribution_summary.csv": {
+      "sha256": "957260a1ad391139d112b267b8b3b2e4b243027be54b0d0b9cbb12f137721591",
+      "bytes": 1348
+    },
+    "comparison_15.csv": {
+      "sha256": "7c05468a12a68a5d5c5e6d0529d3e55179c7ee1bf3fed4c583f2607c04ef9dd7",
+      "bytes": 2126
+    },
+    "sensitivity_top10.csv": {
+      "sha256": "d326e26b575678118d1594ec975f936931181d246c0ef5126c87dc113c73f0e0",
+      "bytes": 1394
+    },
+    "sensitivity_comparison.csv": {
+      "sha256": "8850916f138b64c88f77d69ab18007fb3d2844d9618f30feff5631b55b36fe14",
+      "bytes": 24559
+    },
+    "peak_year_distribution.csv": {
+      "sha256": "3b26f9cb298b55d3afd7a3a8a5ed8a461d64c4149519fd4b11bfbcf483e0d803",
+      "bytes": 1208
+    },
+    "selected_pilots.csv": {
+      "sha256": "1dcb8a9dc362ee317545c151f4e141495112aa5cdd580264ea1dbb41eccc4fb3",
+      "bytes": 1908
+    },
+    "weekly_comparison_6.png": {
+      "sha256": "358ca9a4cfe402b8bfde79aeed56e4cadf55959d91be25418732a3c6c3611de8",
+      "bytes": 729960
+    },
+    "weekly_comparison_6.svg": {
+      "sha256": "6a290566ecbd14514886a3cdf8d7244b00f1a12bb89173185428364e61c66ca7",
+      "bytes": 251327
+    }
+  },
+  "table_profiles": {
+    "municipal_indicators.csv": {
+      "rows": 156,
+      "columns": 16,
+      "types": {
+        "municipality_code": "object",
+        "municipality": "object",
+        "n_weeks": "int64",
+        "total_records": "int64",
+        "active_weeks": "int64",
+        "active_pct": "float64",
+        "weekly_median": "float64",
+        "annual_active_median": "float64",
+        "annual_active_min": "int64",
+        "max_zero_run": "int64",
+        "peak_year": "Int64",
+        "peak_years": "object",
+        "min_year": "int64",
+        "min_years": "object",
+        "peak_concentration_pct": "float64",
+        "period": "object"
+      },
+      "nulls": {
+        "municipality_code": 0,
+        "municipality": 0,
+        "n_weeks": 0,
+        "total_records": 0,
+        "active_weeks": 0,
+        "active_pct": 0,
+        "weekly_median": 0,
+        "annual_active_median": 0,
+        "annual_active_min": 0,
+        "max_zero_run": 0,
+        "peak_year": 0,
+        "peak_years": 0,
+        "min_year": 0,
+        "min_years": 0,
+        "peak_concentration_pct": 0,
+        "period": 0
+      },
+      "municipalities": 78,
+      "numeric_ranges": {
+        "n_weeks": [
+          835.0,
+          991.0
+        ],
+        "total_records": [
+          603.0,
+          93894.0
+        ],
+        "active_weeks": [
+          335.0,
+          975.0
+        ],
+        "active_pct": [
+          40.119760479041915,
+          98.38546922300706
+        ],
+        "weekly_median": [
+          0.0,
+          44.0
+        ],
+        "annual_active_median": [
+          17.0,
+          52.0
+        ],
+        "annual_active_min": [
+          1.0,
+          44.0
+        ],
+        "max_zero_run": [
+          2.0,
+          52.0
+        ],
+        "peak_year": [
+          2007.0,
+          2025.0
+        ],
+        "min_year": [
+          2007.0,
+          2022.0
+        ],
+        "peak_concentration_pct": [
+          12.402636309167166,
+          62.604166666666664
+        ]
+      }
+    },
+    "annual_profiles.csv": {
+      "rows": 1482,
+      "columns": 8,
+      "types": {
+        "municipality_code": "string",
+        "municipality": "object",
+        "year": "int32",
+        "total_records": "int64",
+        "n_weeks": "int64",
+        "active_weeks": "int64",
+        "records_per_week": "float64",
+        "active_proportion": "float64"
+      },
+      "nulls": {
+        "municipality_code": 0,
+        "municipality": 0,
+        "year": 0,
+        "total_records": 0,
+        "n_weeks": 0,
+        "active_weeks": 0,
+        "records_per_week": 0,
+        "active_proportion": 0
+      },
+      "municipalities": 78,
+      "numeric_ranges": {
+        "year": [
+          2007.0,
+          2025.0
+        ],
+        "total_records": [
+          1.0,
+          25992.0
+        ],
+        "n_weeks": [
+          51.0,
+          53.0
+        ],
+        "active_weeks": [
+          1.0,
+          53.0
+        ],
+        "records_per_week": [
+          0.018867924528301886,
+          490.41509433962267
+        ],
+        "active_proportion": [
+          0.018867924528301886,
+          1.0
+        ]
+      }
+    },
+    "distribution_summary.csv": {
+      "rows": 16,
+      "columns": 8,
+      "types": {
+        "indicator": "object",
+        "min": "float64",
+        "p25": "float64",
+        "median": "float64",
+        "p75": "float64",
+        "max": "float64",
+        "valid_municipalities": "int64",
+        "period": "object"
+      },
+      "nulls": {
+        "indicator": 0,
+        "min": 0,
+        "p25": 0,
+        "median": 0,
+        "p75": 0,
+        "max": 0,
+        "valid_municipalities": 0,
+        "period": 0
+      },
+      "numeric_ranges": {
+        "min": [
+          0.0,
+          1035.0
+        ],
+        "p25": [
+          0.0,
+          2443.0
+        ],
+        "median": [
+          1.0,
+          3768.5
+        ],
+        "p75": [
+          2.0,
+          7269.5
+        ],
+        "max": [
+          39.0,
+          93894.0
+        ],
+        "valid_municipalities": [
+          78.0,
+          78.0
+        ]
+      }
+    },
+    "comparison_15.csv": {
+      "rows": 15,
+      "columns": 16,
+      "types": {
+        "municipality_code": "object",
+        "municipality": "object",
+        "n_weeks": "int64",
+        "total_records": "int64",
+        "active_weeks": "int64",
+        "active_pct": "float64",
+        "weekly_median": "float64",
+        "annual_active_median": "float64",
+        "annual_active_min": "int64",
+        "max_zero_run": "int64",
+        "peak_year": "Int64",
+        "peak_years": "object",
+        "min_year": "int64",
+        "min_years": "object",
+        "peak_concentration_pct": "float64",
+        "comparison_group": "object"
+      },
+      "nulls": {
+        "municipality_code": 0,
+        "municipality": 0,
+        "n_weeks": 0,
+        "total_records": 0,
+        "active_weeks": 0,
+        "active_pct": 0,
+        "weekly_median": 0,
+        "annual_active_median": 0,
+        "annual_active_min": 0,
+        "max_zero_run": 0,
+        "peak_year": 0,
+        "peak_years": 0,
+        "min_year": 0,
+        "min_years": 0,
+        "peak_concentration_pct": 0,
+        "comparison_group": 0
+      },
+      "municipalities": 15,
+      "numeric_ranges": {
+        "n_weeks": [
+          991.0,
+          991.0
+        ],
+        "total_records": [
+          1035.0,
+          93894.0
+        ],
+        "active_weeks": [
+          447.0,
+          975.0
+        ],
+        "active_pct": [
+          45.10595358224016,
+          98.38546922300706
+        ],
+        "weekly_median": [
+          0.0,
+          44.0
+        ],
+        "annual_active_median": [
+          18.0,
+          52.0
+        ],
+        "annual_active_min": [
+          1.0,
+          44.0
+        ],
+        "max_zero_run": [
+          2.0,
+          52.0
+        ],
+        "peak_year": [
+          2013.0,
+          2025.0
+        ],
+        "min_year": [
+          2007.0,
+          2022.0
+        ],
+        "peak_concentration_pct": [
+          12.479910787497131,
+          56.38025594149909
+        ]
+      }
+    },
+    "sensitivity_top10.csv": {
+      "rows": 10,
+      "columns": 15,
+      "types": {
+        "municipality_code": "object",
+        "municipality": "object",
+        "n_weeks": "int64",
+        "total_records": "int64",
+        "active_weeks": "int64",
+        "active_pct": "float64",
+        "weekly_median": "float64",
+        "annual_active_median": "float64",
+        "annual_active_min": "int64",
+        "max_zero_run": "int64",
+        "peak_year": "Int64",
+        "peak_years": "object",
+        "min_year": "int64",
+        "min_years": "object",
+        "peak_concentration_pct": "float64"
+      },
+      "nulls": {
+        "municipality_code": 0,
+        "municipality": 0,
+        "n_weeks": 0,
+        "total_records": 0,
+        "active_weeks": 0,
+        "active_pct": 0,
+        "weekly_median": 0,
+        "annual_active_median": 0,
+        "annual_active_min": 0,
+        "max_zero_run": 0,
+        "peak_year": 0,
+        "peak_years": 0,
+        "min_year": 0,
+        "min_years": 0,
+        "peak_concentration_pct": 0
+      },
+      "municipalities": 10,
+      "numeric_ranges": {
+        "n_weeks": [
+          835.0,
+          835.0
+        ],
+        "total_records": [
+          8732.0,
+          55635.0
+        ],
+        "active_weeks": [
+          735.0,
+          819.0
+        ],
+        "active_pct": [
+          88.02395209580838,
+          98.08383233532935
+        ],
+        "weekly_median": [
+          4.0,
+          39.0
+        ],
+        "annual_active_median": [
+          48.5,
+          52.0
+        ],
+        "annual_active_min": [
+          4.0,
+          44.0
+        ],
+        "max_zero_run": [
+          2.0,
+          24.0
+        ],
+        "peak_year": [
+          2010.0,
+          2022.0
+        ],
+        "min_year": [
+          2007.0,
+          2021.0
+        ],
+        "peak_concentration_pct": [
+          14.95058400718778,
+          44.332539827870356
+        ]
+      }
+    },
+    "sensitivity_comparison.csv": {
+      "rows": 78,
+      "columns": 38,
+      "types": {
+        "municipality_code": "object",
+        "municipality": "object",
+        "n_weeks_full": "int64",
+        "total_records_full": "int64",
+        "active_weeks_full": "int64",
+        "active_pct_full": "float64",
+        "weekly_median_full": "float64",
+        "annual_active_median_full": "float64",
+        "annual_active_min_full": "int64",
+        "max_zero_run_full": "int64",
+        "peak_year_full": "Int64",
+        "peak_years_full": "object",
+        "min_year_full": "int64",
+        "min_years_full": "object",
+        "peak_concentration_pct_full": "float64",
+        "n_weeks_historical": "int64",
+        "total_records_historical": "int64",
+        "active_weeks_historical": "int64",
+        "active_pct_historical": "float64",
+        "weekly_median_historical": "float64",
+        "annual_active_median_historical": "float64",
+        "annual_active_min_historical": "int64",
+        "max_zero_run_historical": "int64",
+        "peak_year_historical": "Int64",
+        "peak_years_historical": "object",
+        "min_year_historical": "int64",
+        "min_years_historical": "object",
+        "peak_concentration_pct_historical": "float64",
+        "total_records_historical_minus_full": "int64",
+        "active_weeks_historical_minus_full": "int64",
+        "active_pct_historical_minus_full": "float64",
+        "weekly_median_historical_minus_full": "float64",
+        "annual_active_median_historical_minus_full": "float64",
+        "annual_active_min_historical_minus_full": "int64",
+        "max_zero_run_historical_minus_full": "int64",
+        "peak_concentration_pct_historical_minus_full": "float64",
+        "recent_records": "int64",
+        "recent_share_pct": "float64"
+      },
+      "nulls": {
+        "municipality_code": 0,
+        "municipality": 0,
+        "n_weeks_full": 0,
+        "total_records_full": 0,
+        "active_weeks_full": 0,
+        "active_pct_full": 0,
+        "weekly_median_full": 0,
+        "annual_active_median_full": 0,
+        "annual_active_min_full": 0,
+        "max_zero_run_full": 0,
+        "peak_year_full": 0,
+        "peak_years_full": 0,
+        "min_year_full": 0,
+        "min_years_full": 0,
+        "peak_concentration_pct_full": 0,
+        "n_weeks_historical": 0,
+        "total_records_historical": 0,
+        "active_weeks_historical": 0,
+        "active_pct_historical": 0,
+        "weekly_median_historical": 0,
+        "annual_active_median_historical": 0,
+        "annual_active_min_historical": 0,
+        "max_zero_run_historical": 0,
+        "peak_year_historical": 0,
+        "peak_years_historical": 0,
+        "min_year_historical": 0,
+        "min_years_historical": 0,
+        "peak_concentration_pct_historical": 0,
+        "total_records_historical_minus_full": 0,
+        "active_weeks_historical_minus_full": 0,
+        "active_pct_historical_minus_full": 0,
+        "weekly_median_historical_minus_full": 0,
+        "annual_active_median_historical_minus_full": 0,
+        "annual_active_min_historical_minus_full": 0,
+        "max_zero_run_historical_minus_full": 0,
+        "peak_concentration_pct_historical_minus_full": 0,
+        "recent_records": 0,
+        "recent_share_pct": 0
+      },
+      "municipalities": 78,
+      "numeric_ranges": {
+        "n_weeks_full": [
+          991.0,
+          991.0
+        ],
+        "total_records_full": [
+          1035.0,
+          93894.0
+        ],
+        "active_weeks_full": [
+          447.0,
+          975.0
+        ],
+        "active_pct_full": [
+          45.10595358224016,
+          98.38546922300706
+        ],
+        "weekly_median_full": [
+          0.0,
+          44.0
+        ],
+        "annual_active_median_full": [
+          18.0,
+          52.0
+        ],
+        "annual_active_min_full": [
+          1.0,
+          44.0
+        ],
+        "max_zero_run_full": [
+          2.0,
+          52.0
+        ],
+        "peak_year_full": [
+          2010.0,
+          2025.0
+        ],
+        "min_year_full": [
+          2007.0,
+          2022.0
+        ],
+        "peak_concentration_pct_full": [
+          12.479910787497131,
+          59.12925170068027
+        ],
+        "n_weeks_historical": [
+          835.0,
+          835.0
+        ],
+        "total_records_historical": [
+          603.0,
+          55635.0
+        ],
+        "active_weeks_historical": [
+          335.0,
+          819.0
+        ],
+        "active_pct_historical": [
+          40.119760479041915,
+          98.08383233532935
+        ],
+        "weekly_median_historical": [
+          0.0,
+          39.0
+        ],
+        "annual_active_median_historical": [
+          17.0,
+          52.0
+        ],
+        "annual_active_min_historical": [
+          1.0,
+          44.0
+        ],
+        "max_zero_run_historical": [
+          2.0,
+          52.0
+        ],
+        "peak_year_historical": [
+          2007.0,
+          2022.0
+        ],
+        "min_year_historical": [
+          2007.0,
+          2022.0
+        ],
+        "peak_concentration_pct_historical": [
+          12.402636309167166,
+          62.604166666666664
+        ],
+        "total_records_historical_minus_full": [
+          -38259.0,
+          -141.0
+        ],
+        "active_weeks_historical_minus_full": [
+          -156.0,
+          -86.0
+        ],
+        "active_pct_historical_minus_full": [
+          -7.956881393620435,
+          0.5695571520933953
+        ],
+        "weekly_median_historical_minus_full": [
+          -5.0,
+          0.0
+        ],
+        "annual_active_median_historical_minus_full": [
+          -9.0,
+          2.0
+        ],
+        "annual_active_min_historical_minus_full": [
+          0.0,
+          0.0
+        ],
+        "max_zero_run_historical_minus_full": [
+          0.0,
+          0.0
+        ],
+        "peak_concentration_pct_historical_minus_full": [
+          -42.4625850340136,
+          12.928302561298736
+        ],
+        "recent_records": [
+          141.0,
+          38259.0
+        ],
+        "recent_share_pct": [
+          5.224157095220452,
+          72.6508226691042
+        ]
+      }
+    },
+    "peak_year_distribution.csv": {
+      "rows": 35,
+      "columns": 4,
+      "types": {
+        "year": "int64",
+        "municipalities": "int32",
+        "municipality_pct": "float64",
+        "period": "object"
+      },
+      "nulls": {
+        "year": 0,
+        "municipalities": 0,
+        "municipality_pct": 0,
+        "period": 0
+      },
+      "numeric_ranges": {
+        "year": [
+          2007.0,
+          2025.0
+        ],
+        "municipalities": [
+          0.0,
+          34.0
+        ],
+        "municipality_pct": [
+          0.0,
+          43.58974358974359
+        ]
+      }
+    },
+    "selected_pilots.csv": {
+      "rows": 12,
+      "columns": 17,
+      "types": {
+        "municipality_code": "object",
+        "municipality": "object",
+        "pilot_name": "object",
+        "n_weeks": "int64",
+        "total_records": "int64",
+        "active_weeks": "int64",
+        "active_pct": "float64",
+        "weekly_median": "float64",
+        "annual_active_median": "float64",
+        "annual_active_min": "int64",
+        "max_zero_run": "int64",
+        "peak_year": "Int64",
+        "peak_years": "object",
+        "min_year": "int64",
+        "min_years": "object",
+        "peak_concentration_pct": "float64",
+        "period": "object"
+      },
+      "nulls": {
+        "municipality_code": 0,
+        "municipality": 0,
+        "pilot_name": 0,
+        "n_weeks": 0,
+        "total_records": 0,
+        "active_weeks": 0,
+        "active_pct": 0,
+        "weekly_median": 0,
+        "annual_active_median": 0,
+        "annual_active_min": 0,
+        "max_zero_run": 0,
+        "peak_year": 0,
+        "peak_years": 0,
+        "min_year": 0,
+        "min_years": 0,
+        "peak_concentration_pct": 0,
+        "period": 0
+      },
+      "municipalities": 6,
+      "numeric_ranges": {
+        "n_weeks": [
+          835.0,
+          991.0
+        ],
+        "total_records": [
+          9309.0,
+          93894.0
+        ],
+        "active_weeks": [
+          780.0,
+          975.0
+        ],
+        "active_pct": [
+          93.41317365269461,
+          98.38546922300706
+        ],
+        "weekly_median": [
+          5.0,
+          44.0
+        ],
+        "annual_active_median": [
+          51.0,
+          52.0
+        ],
+        "annual_active_min": [
+          26.0,
+          44.0
+        ],
+        "max_zero_run": [
+          2.0,
+          9.0
+        ],
+        "peak_year": [
+          2010.0,
+          2025.0
+        ],
+        "min_year": [
+          2007.0,
+          2021.0
+        ],
+        "peak_concentration_pct": [
+          12.479910787497131,
+          27.682280017892516
+        ]
+      }
+    }
+  }
+}

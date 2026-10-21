@@ -40,10 +40,18 @@ env/
 /data/processed/?*
 !/data/processed/*.dvc
 
+# Final epidemiological Parquet remains ignored; permit only its future DVC descriptor and provenance.
+!/data/processed/epidemiology/
+/data/processed/epidemiology/?*
+!/data/processed/epidemiology/pilot_weekly_labels.parquet.dvc
+!/data/processed/epidemiology/run_manifest.json
+
 # DVC local cache
 .dvc/cache/
 .dvc/tmp/
 
 # Temporary descriptive runs remain local. Explicit aggregate review evidence is eligible for Git.
 /reports/pilot_selection/runs/
+/reports/epidemiology/runs/
 !/reports/pilot_selection/evidence/selection_20261020/*.csv
+!/reports/epidemiology/evidence/labels_20261021/*.csv

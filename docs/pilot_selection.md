@@ -1,5 +1,10 @@
 # Selección territorial y evidencia descriptiva reproducible — DengueAlertas
 
+**Nota de actualización, 2026-10-21:** este documento describe la etapa territorial
+cerrada. La construcción y caracterización epidemiológica posterior también se
+completó localmente; véase `epidemiology_labels.md`. El derivado territorial de
+15 columnas permanece intacto y separado del nuevo producto de 18 columnas.
+
 **Decisión del equipo:** 2026-10-20 (hora de Colombia).  
 **Estado:** selección de seis municipios piloto **terminada**; código, evidencia y dataset derivado incorporados a `main` mediante **PR #4**, fusionado el 2026-10-21 01:12 UTC (`5cae9f8a`).  
 **Referencia de cierre:** `Informe_final_seleccion_municipios_piloto_DengueAlertas.docx`. Consultar también `contexto_metodologico.md` y `data_dictionary.md`.

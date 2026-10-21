@@ -1,7 +1,8 @@
 # Selección territorial y evidencia descriptiva reproducible
 
-**Decisión comunicada por el equipo:** 2026-10-20. **Estado:** implementación y
-artefactos preparados para revisión; no implica un commit, publicación o despliegue.
+**Decisión comunicada por el equipo:** 2026-10-20. **Estado:** la etapa descriptiva
+se incorporó al commit local `10047de`; el procedimiento de derivación territorial
+descrito abajo se prepara para revisión independiente, sin nuevo versionamiento.
 
 ## Propósito y alcance
 
@@ -23,8 +24,9 @@ optimice la selección. El código no infiere ni recomienda la lista final.
 `data/processed/master_weekly_screening.parquet`. No importa ni ejecuta el pipeline
 `src/data/`, no reconstruye fuentes, no corrige registros y no genera canales
 endémicos, etiquetas, matrices supervisadas ni modelos. Los cálculos generales
-conservan los 78 municipios; `PILOTS` en `config.py` controla solamente la tabla
-específica y la figura final.
+conservan los 78 municipios; `PILOTS` en `config.py` controla la tabla específica,
+la figura final y el nuevo filtro territorial. Es la única lista de configuración
+de los seis municipios.
 
 ## Definiciones y calendario
 
@@ -34,7 +36,9 @@ texto de cinco dígitos, junto con `week_start`. Los nombres son descriptivos.
 el screening provisional del evento 210: no certifica personas o episodios únicos.
 La definición final de caso del estudio no se adopta en este componente.
 
-Se excluyen las filas `partial_week = True`. La semana del 2025-12-29, de tres
+En los **análisis descriptivos** se excluyen las filas `partial_week = True`.
+Esta exclusión no se aplica al dataset territorial descrito más adelante.
+La semana del 2025-12-29, de tres
 días, permanece intacta en el maestro pero no participa en los resultados.
 Quedan 991 semanas completas por municipio, con inicios entre 2007-01-01 y
 2025-12-22 y fin efectivo hasta 2025-12-28. Son intervalos lunes–domingo (W-SUN),
@@ -188,8 +192,8 @@ ni recuperación automática frente a una interrupción abrupta.
 
 ## Artefactos y trazabilidad
 
-Los enlaces siguientes apuntan a la carpeta de evidencia propuesta para revisión,
-no a artefactos ya incorporados a Git:
+Los enlaces siguientes apuntan a la evidencia descriptiva incorporada al commit
+local `10047de`; no incluyen el nuevo Parquet territorial:
 
 | Archivo | Filas / contenido |
 |---|---|
@@ -270,6 +274,103 @@ que publican archivos sintéticos mediante enlaces duros; la suite completa apro
 al repetirse con autorización fuera del aislamiento. No se cambió `src/data/`
 para eludir esa restricción. El componente descriptivo y la generación final se
 ejecutan dentro del aislamiento y no requieren enlaces duros.
+
+## Dataset derivado exclusivamente territorial
+
+`data/processed/pilot_municipalities_weekly.parquet` es un subconjunto del maestro
+para los seis municipios adoptados por el equipo. Su propósito es disponer del
+panel de esos territorios para las siguientes etapas; **no es un dataset
+supervisado ni contiene una variable objetivo epidemiológica**. Sigue siendo
+retrospectivo, bajo el screening provisional SIVIGILA evento 210. Las definiciones
+de sus 15 variables son las del [diccionario del maestro](data_dictionary.md).
+
+La única transformación de filas es `municipality_code` perteneciente a los
+códigos de `PILOTS` en `src/pilot_selection/config.py`. Después se ordena por código
+y `week_start`. Se trabaja directamente con tablas Arrow: no se convierte a
+Pandas para escribir, no se recastean columnas ni se imputan valores. Se conservan
+las 15 columnas en su orden original, los tipos y nulabilidad de sus campos y
+todos los valores, incluidos ceros. No se agregan etiquetas, ventanas, rezagos,
+características, canales endémicos ni una selección automática.
+
+**Se incluyen las 992 semanas de cada municipio**, también la última semana
+parcial que comienza el 2025-12-29 y termina efectivamente el 2025-12-31. Por tanto,
+se esperan 5.952 filas, seis municipios y seis posiciones parciales. Es distinto
+de las 5.946 posiciones completas utilizadas en la figura y las tablas anteriores.
+No se extrapolan los tres días finales a una semana completa.
+
+Comando desde la raíz, con las dependencias existentes de `requirements/data.txt`:
+
+```powershell
+python -m src.pilot_selection.subset
+```
+
+Forma explícita equivalente:
+
+```powershell
+python -m src.pilot_selection.subset --input data/processed/master_weekly_screening.parquet --output data/processed/pilot_municipalities_weekly.parquet
+```
+
+El comando rechaza cualquier salida existente, también si apareció después de la
+comprobación inicial. Para repetirlo sin sobrescribir, indicar un nombre nuevo
+mediante `--output`, siempre dentro de `data/processed/`. No ejecuta operaciones
+Git o DVC, ni accede a remotos. El seguimiento DVC del derivado queda pendiente de
+autorización; el Parquet permanece local y excluido de Git por las reglas actuales.
+
+Procedencia almacenada **dentro del Parquet**, sin archivo auxiliar:
+
+- `denguealertas.derivation`: ruta relativa y SHA-256 del maestro, códigos leídos
+  de `PILOTS`, autoridad de selección, operación, versión Arrow y perfiles agregados
+  de fuente y derivado: filas, claves, municipios, semanas, nulos, tipos, rangos y
+  totales. No incorpora rutas privadas absolutas.
+- `denguealertas.data_dictionary`: definiciones originales, sin cambios.
+- `denguealertas.rule`: campos de la regla de screening independientes del alcance
+  territorial. No se trasladan campos agregados o arbitrarios de alcance del maestro.
+- `denguealertas.warnings`: advertencias específicas del derivado. Se elimina la
+  advertencia antigua de que los municipios finales siguen pendientes. No se copia
+  el resto de metadatos globales del maestro, incluido su índice Pandas.
+
+Antes de escribir se comprueban el esquema y el calendario del maestro, la
+presencia de todos los pilotos, la ausencia de duplicados y nulos, las 992 fechas
+conservadas y una posición parcial por municipio. Se contrasta la igualdad exacta
+de campos, tipos y valores con el subconjunto del maestro. El Parquet se codifica
+y relee primero en memoria y luego se crea de forma exclusiva, se sincroniza y
+se relee desde disco. La igualdad incluye los nuevos metadatos al comprobar la
+lectura; al conciliar con el maestro se exceptúan únicamente sus metadatos globales
+y el orden de almacenamiento. El SHA-256 del maestro se compara antes de preparar
+y al terminar de guardar. La salida de consola informa controles, tamaño y hashes.
+
+No se garantiza publicación transaccional frente a una interrupción abrupta: un
+fallo durante la escritura puede dejar un archivo incompleto. Solo una ejecución
+terminada con código cero y conciliación aprobada certifica la exportación. No se
+eliminan ni sobrescriben automáticamente archivos tras un fallo.
+
+Pruebas sintéticas del procedimiento y regresión opcional contra el maestro real:
+
+```powershell
+python -m pytest tests/pilot_selection/test_subset.py -q
+python -m pytest tests/pilot_selection/test_subset.py -q --master-parquet data/processed/master_weekly_screening.parquet
+```
+
+Cubren igualdad exacta del subconjunto, códigos como texto, tipos, orden, semanas
+parciales, procedencia, sustitución de metadatos de alcance, lectura de `PILOTS`,
+datos inválidos, fuente intacta, fallos de codificación y rechazo de sobrescritura
+incluso ante creación concurrente de la salida. La regresión real no necesita
+escribir una segunda copia del maestro.
+
+**Comprobación ejecutada en esta ampliación (2026-10-20):** el derivado tiene
+5.952 filas y 15 columnas, exactamente seis códigos, 992 semanas por municipio,
+seis posiciones parciales, cero duplicados y cero nulos. Suma 231.406 registros:
+231.281 en semanas completas y 125 en la parcial. Ocupa 201.592 bytes. Los valores
+y campos Arrow coinciden exactamente con las filas del maestro, salvo los
+metadatos globales reemplazados según la política anterior. El maestro conservó
+su SHA-256 `ccc0ab5360e29cabb8b1f5d3a0feb7fe0f00dffba195c7f55ffe83c9d0a73c5e`.
+La ejecución de `tests/pilot_selection/` con regresión real aprobó **52 pruebas**:
+34 anteriores del componente y 18 nuevas del filtrado. No fue necesario modificar
+ni volver a ejecutar el pipeline de integración.
+
+El cambio de alcance territorial no resuelve la definición final del desenlace ni
+la disponibilidad prospectiva de los registros. Persisten las limitaciones de
+ceros, deduplicación y anomalía temporal de 2013 documentadas para el maestro.
 
 ## Fuentes documentales
 

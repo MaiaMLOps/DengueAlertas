@@ -1,10 +1,12 @@
-# Diccionario del dataset maestro municipio–semana
+# Diccionario del panel histórico y del derivado epidemiológico
 
-**Fecha de comprobación:** 2026-10-20.
+**Fecha de comprobación:** maestro 2026-10-20; cierre del derivado epidemiológico 2026-10-21.
 
 **Producto:** panel retrospectivo integrado bajo la regla provisional de screening;
 77.376 filas y 15 columnas. Cada fila representa un municipio candidato y un
-intervalo semanal. No contiene etiquetas epidemiológicas ni ejemplos supervisados.
+intervalo semanal. El maestro no contiene etiquetas epidemiológicas ni ejemplos
+supervisados. El derivado territorial de seis municipios conserva esos 15 campos;
+el producto epidemiológico añade tres campos, definidos al final de este documento.
 
 ## Evidencia y alcance de las definiciones
 
@@ -179,8 +181,8 @@ productos climáticos o demográficos de origen.
   claves de la grilla sin agregado elegible; un conteo nulo en una clave
   coincidente es un error, no un cero imputable.
 - **Interpretación:** suma comprobada de 637.271 registros; rango observado 0–914
-  por posición. No es tasa de incidencia, etiqueta de alerta ni definición final
-  del desenlace científico. Los estados finales 3 o 5 asociados al filtro son
+  por posición en el maestro. Este conteo se adoptó como insumo del EWT de esta
+  etapa; no es tasa de incidencia ni etiqueta de exceso por sí mismo. Los estados finales 3 o 5 asociados al filtro son
   retrospectivos: su disponibilidad en una fecha histórica de predicción no está
   demostrada. Se preserva la anomalía de fechas de notificación/síntomas de 2013,
   sin corregir ni excluir por ella. El alcance no presupone inclusión del evento 220.
@@ -243,13 +245,50 @@ sin multiplicación de filas ni pérdida de la suma de registros elegibles. Los
 controles contrastan cifras históricas; no se alteran datos para hacerlas coincidir.
 
 Los 78 candidatos se seleccionaron retrospectivamente con el periodo completo
-2007–2025; no constituyen la selección científica final. La comprobación del
+2007–2025; posteriormente se adoptaron seis pilotos, documentados en `pilot_selection.md`. La comprobación del
 manifiesto y de las cachés Parquet tampoco repite la auditoría de los Excel
 epidemiológicos originales.
 
-Este diccionario describe hechos del producto validado y reglas de integración
-ya autorizadas. Continúan abiertas la definición final de caso y exceso, los
-municipios finales, el tratamiento analítico de semanas parciales, la disponibilidad
-histórica de información, etiquetas, horizontes, rezagos y diseño de evaluación.
+Este diccionario describe hechos de la integración y del derivado epidemiológico.
+La referencia, etiquetas y elegibilidad se aprobaron e implementaron para los seis
+pilotos. Siguen pendientes la disponibilidad histórica simulada, horizontes,
+características predictoras, rezagos y diseño de evaluación.
 La completitud de esta tabla no demuestra disponibilidad prospectiva ni utilidad
 predictiva de sus columnas.
+
+## Derivado epidemiológico consolidado de 18 columnas
+
+**Ruta:** `data/processed/epidemiology/pilot_weekly_labels.parquet`.
+**Procedencia:** copia binaria de
+`data/processed/epidemiology/preliminary_20261021_01/pilot_weekly_labels.parquet`.
+El manifiesto adyacente documenta la promoción; el manifiesto de evidencias está
+en `reports/epidemiology/evidence/labels_20261021/run_manifest.json`.
+
+Conserva las primeras 15 columnas, tipos Arrow, valores y orden de filas del
+derivado territorial `pilot_municipalities_weekly.parquet`. Tiene 5.952 filas,
+seis municipios y 992 semanas por municipio, sin duplicados de clave. El rango
+de `week_start` es 2007-01-01–2025-12-29. No contiene ejemplos supervisados.
+
+| N.º | Campo añadido | Tipo Arrow | Dominio y significado |
+|---|---|---|---|
+| 16 | `ewt` | `double`, nullable | Referencia central municipal: media geométrica desplazada, ε=0,001, de las cinco semanas históricas alineadas en los cinco años anteriores; nulo si no elegible |
+| 17 | `excess_label` | `int8`, nullable | 1 exclusivamente si `confirmed_records_screening > ewt`; 0 si elegible y no lo supera; nulo si no elegible |
+| 18 | `label_eligible` | `bool`, no nullable | Verdadero para semanas completas desde 2012 con cinco antecedentes válidos; falso en inicialización 2007–2011 y semana parcial final |
+
+Las 15 columnas originales no tienen nulos. `ewt` y `excess_label` tienen cada
+una **1.572 nulos** coincidentes: 1.566 posiciones de inicialización y seis
+posiciones parciales. `label_eligible` no tiene nulos. Hay **4.380** elegibles,
+**2.870** etiquetas 1 y **1.510** etiquetas 0; no se cuentan nulos como negativos.
+
+El año es el del lunes inicial. Se enumeran sus lunes desde uno y se utiliza el
+mismo ordinal en los cinco años anteriores. Solo si falta el ordinal 53 histórico
+se sustituye por 52. Se conservan años epidémicos y cruces diciembre–enero sin
+redistribución. Los conteos cero reciben el mismo desplazamiento matemático que
+los demás conteos; no se imputan como casos faltantes. La comparación es estricta,
+sin redondear el EWT, tolerancia de clasificación ni mínimo epidemiológico.
+
+La nulabilidad deliberada de estos dos campos no relaja la integridad de las
+columnas originales. El indicador de ausencia de registros sigue siendo diferente
+de la elegibilidad y de una etiqueta negativa. La etiqueta indica superación de
+una referencia central retrospectiva, no brote oficial, pronóstico o probabilidad.
+Definición, estabilidad numérica y reproducción: `epidemiology_labels.md`.

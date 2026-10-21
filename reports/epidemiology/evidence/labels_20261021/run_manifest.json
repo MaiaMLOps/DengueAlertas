@@ -1,0 +1,1893 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "stage_status": "implemented_characterized_consolidated_pending_manual_versioning",
+  "created_at_utc": "2026-10-21T20:32:33.947738+00:00",
+  "output_dir": "reports/epidemiology/evidence/labels_20261021",
+  "git": {
+    "commit": "89506d0b158e150ad77e8d7591bf31662874891d",
+    "branch": "feature/epidemiology-labels",
+    "dirty": true
+  },
+  "inputs": {
+    "data/processed/pilot_municipalities_weekly.parquet": "7d3d8abab711df48b7a18c25cf1b302e0edcccf6a733bd849a24a4298c5e89a2",
+    "data/processed/epidemiology/pilot_weekly_labels.parquet": "b3b151a54b2dc7e8c18eb78757ad6a40093626bb807757bbccb6045b354f2c7f",
+    "data/processed/epidemiology/run_manifest.json": "e96a8da867eab383ced70c8908044e34dfe68b20356465fa369f60d1c1049991"
+  },
+  "method": {
+    "version": 1,
+    "approved_date": "2026-10-21",
+    "count": "confirmed_records_screening",
+    "history_years": 5,
+    "epsilon": 0.001,
+    "formula": "exp(sum(log(C + 0.001)) / 5) - 0.001",
+    "numerics": "0.001 * expm1(mean(log1p(C / 0.001))); exact constant and integer-mean identities; no tolerance",
+    "calendar": "Monday-Sunday W-SUN; no INS equivalence asserted",
+    "year": "year of week_start; weeks crossing years are not split",
+    "ordinal": "1-based position of Monday within its calendar year, not ISO week",
+    "reference": "same municipality and ordinal in years y-5 through y-1 only",
+    "week_53": "use ordinal 53 when present; otherwise ordinal 52 of that historical year",
+    "epidemic_years": "included without exclusion or substitution",
+    "first_label_year": 2012,
+    "partial_week": "retain 2025-12-29 with null ewt and label; never extrapolate",
+    "ineligible": "null ewt and excess_label; label_eligible=false",
+    "comparison": "observed count > unrounded ewt; no comparison tolerance or epidemiological floor",
+    "scope": "retrospective observed weekly state; no horizon, features, model or sustained episode"
+  },
+  "datasets": {
+    "pilot_input": {
+      "path": "data/processed/pilot_municipalities_weekly.parquet",
+      "sha256": "7d3d8abab711df48b7a18c25cf1b302e0edcccf6a733bd849a24a4298c5e89a2",
+      "rows": 5952,
+      "columns": 15
+    },
+    "epidemiological_product": {
+      "path": "data/processed/epidemiology/pilot_weekly_labels.parquet",
+      "sha256": "b3b151a54b2dc7e8c18eb78757ad6a40093626bb807757bbccb6045b354f2c7f",
+      "rows": 5952,
+      "columns": 18,
+      "promotion": "exact_binary_copy",
+      "metadata_unchanged": true
+    },
+    "upstream_master": {
+      "path": "data/processed/master_weekly_screening.parquet",
+      "sha256": "ccc0ab5360e29cabb8b1f5d3a0feb7fe0f00dffba195c7f55ffe83c9d0a73c5e"
+    }
+  },
+  "controls": {
+    "eligible_weeks": 4380,
+    "historical_references_checked": 21900,
+    "week_53_fallback_references": 84,
+    "eligible_weeks_with_zero": 569,
+    "positive_weeks_with_zero": 530,
+    "positive_weeks": 2870,
+    "negative_weeks": 1510,
+    "positive_runs": 271,
+    "long_runs": 20,
+    "weeks_in_long_runs": 1881,
+    "long_run_weeks_with_zero": 288,
+    "ineligible_weeks_in_statistics": 0
+  },
+  "dataset_validation": {
+    "rows": 5952,
+    "columns": 18,
+    "eligible": 4380,
+    "ineligible": 1572,
+    "initialization_rows": 1566,
+    "partial_rows": 6,
+    "original_columns_preserved": true,
+    "by_municipality": {
+      "08001": {
+        "rows": 992,
+        "eligible": 730,
+        "ineligible": 262
+      },
+      "08758": {
+        "rows": 992,
+        "eligible": 730,
+        "ineligible": 262
+      },
+      "41001": {
+        "rows": 992,
+        "eligible": 730,
+        "ineligible": 262
+      },
+      "50001": {
+        "rows": 992,
+        "eligible": 730,
+        "ineligible": 262
+      },
+      "54001": {
+        "rows": 992,
+        "eligible": 730,
+        "ineligible": 262
+      },
+      "76001": {
+        "rows": 992,
+        "eligible": 730,
+        "ineligible": 262
+      }
+    }
+  },
+  "numerical_audit": {
+    "eligible_labels_checked": 4380,
+    "historical_references_checked": 21900,
+    "week_53_fallback_references": 84,
+    "exact_observed_equalities": 0,
+    "exact_integer_label_comparison": "passed",
+    "decimal_60_digit_ewt_comparison": "passed",
+    "ewt_verification_tolerance_only": {
+      "relative": 3e-14,
+      "absolute": 1e-16
+    },
+    "label_comparison_tolerance": 0
+  },
+  "reference_runs": {
+    "preliminary_20261021_01": {
+      "manifest_path": "data/processed/epidemiology/preliminary_20261021_01/run_manifest.json",
+      "manifest_sha256": "f521d01f3d31f276e52e65c60bcb1e7b8e741c3aaf613eb0dba0c5797f70fbc9",
+      "snapshot": {
+        "schema_version": 1,
+        "status": "passed",
+        "product_status": "preliminary_for_team_review",
+        "created_at_utc": "2026-10-21T19:24:16.529702+00:00",
+        "method": {
+          "version": 1,
+          "approved_date": "2026-10-21",
+          "count": "confirmed_records_screening",
+          "history_years": 5,
+          "epsilon": 0.001,
+          "formula": "exp(sum(log(C + 0.001)) / 5) - 0.001",
+          "numerics": "0.001 * expm1(mean(log1p(C / 0.001))); exact constant and integer-mean identities; no tolerance",
+          "calendar": "Monday-Sunday W-SUN; no INS equivalence asserted",
+          "year": "year of week_start; weeks crossing years are not split",
+          "ordinal": "1-based position of Monday within its calendar year, not ISO week",
+          "reference": "same municipality and ordinal in years y-5 through y-1 only",
+          "week_53": "use ordinal 53 when present; otherwise ordinal 52 of that historical year",
+          "epidemic_years": "included without exclusion or substitution",
+          "first_label_year": 2012,
+          "partial_week": "retain 2025-12-29 with null ewt and label; never extrapolate",
+          "ineligible": "null ewt and excess_label; label_eligible=false",
+          "comparison": "observed count > unrounded ewt; no comparison tolerance or epidemiological floor",
+          "scope": "retrospective observed weekly state; no horizon, features, model or sustained episode"
+        },
+        "source": {
+          "path": "data/processed/pilot_municipalities_weekly.parquet",
+          "sha256": "7d3d8abab711df48b7a18c25cf1b302e0edcccf6a733bd849a24a4298c5e89a2",
+          "profile": {
+            "rows": 5952,
+            "columns": 15,
+            "municipalities": 6,
+            "municipality_codes": [
+              "08001",
+              "08758",
+              "41001",
+              "50001",
+              "54001",
+              "76001"
+            ],
+            "weeks_per_municipality": {
+              "08001": 992,
+              "08758": 992,
+              "41001": 992,
+              "50001": 992,
+              "54001": 992,
+              "76001": 992
+            },
+            "partial_positions": 6,
+            "duplicate_keys": 0,
+            "nulls": {
+              "municipality_code": 0,
+              "municipality": 0,
+              "week_start": 0,
+              "population": 0,
+              "area_km2": 0,
+              "population_density_km2": 0,
+              "temperature_c": 0,
+              "precipitation_mm": 0,
+              "relative_humidity_pct": 0,
+              "confirmed_records_screening": 0,
+              "no_eligible_records_observed": 0,
+              "week_end_nominal": 0,
+              "week_end_effective": 0,
+              "n_days": 0,
+              "partial_week": 0
+            },
+            "types": {
+              "municipality_code": "string",
+              "municipality": "string",
+              "week_start": "date32[day]",
+              "population": "int64",
+              "area_km2": "double",
+              "population_density_km2": "double",
+              "temperature_c": "double",
+              "precipitation_mm": "double",
+              "relative_humidity_pct": "double",
+              "confirmed_records_screening": "int64",
+              "no_eligible_records_observed": "bool",
+              "week_end_nominal": "date32[day]",
+              "week_end_effective": "date32[day]",
+              "n_days": "uint8",
+              "partial_week": "bool"
+            },
+            "numeric_ranges": {
+              "population": {
+                "min": 314910,
+                "max": 2283342
+              },
+              "area_km2": {
+                "min": 59.5911122703142,
+                "max": 1291.33995631807
+              },
+              "population_density_km2": {
+                "min": 247.010415769817,
+                "max": 12130.0806858758
+              },
+              "temperature_c": {
+                "min": 16.3866356109484,
+                "max": 29.8056187320702
+              },
+              "precipitation_mm": {
+                "min": 0.0,
+                "max": 282.005346340366
+              },
+              "relative_humidity_pct": {
+                "min": 39.8531204910069,
+                "max": 92.0744891319545
+              },
+              "confirmed_records_screening": {
+                "min": 0,
+                "max": 914
+              },
+              "n_days": {
+                "min": 3,
+                "max": 7
+              }
+            },
+            "week_start_min": "2007-01-01",
+            "week_start_max": "2025-12-29",
+            "week_end_effective_max": "2025-12-31",
+            "total_records": 231406,
+            "partial_records": 125
+          },
+          "metadata_sha256": {
+            "denguealertas.data_dictionary": "cc73a8efa1ffe0972040fbf6635abbb638f18b57199d3c99c8421d7b1f961d92",
+            "denguealertas.rule": "347d269dea582954f571f0dd6ec60e064692db06aaf17527b8e09469fafda214",
+            "denguealertas.warnings": "1e3d46fe9e5563e90c02de07b566bbc198ef583c57244b22b598343b687bfabf",
+            "denguealertas.derivation": "231598a9e36db5f33b44277909c8eb444f51a60bbfb954a519fdd0111a9cae25"
+          }
+        },
+        "git": {
+          "commit": "89506d0b158e150ad77e8d7591bf31662874891d",
+          "branch": "feature/epidemiology-labels",
+          "dirty": true
+        },
+        "code_sha256": {
+          "src/epidemiology/__init__.py": "5780edc17ab0f188a5533e576a6966e7e7d2f8c9b5b8ef5680b3601990196980",
+          "src/epidemiology/__main__.py": "1d334176ef8a6c96a37cc7dac0afb1d9ca18e0423f2611dab30cd3595679a8cf",
+          "src/epidemiology/config.py": "9c3d20eb4ace6dcda49dd1bd5e13a11b951092e452263be30f1cd4332baf8b1f",
+          "src/epidemiology/ewt.py": "652fa3cde05c430686500f359052aac2818c7f2093f8d1cc57bc1f2e3fda9b75",
+          "src/epidemiology/labels.py": "316e3429e0444c1efc493c4d615de828aec9fdf69b4d5448fe592d734480fad7",
+          "src/epidemiology/pipeline.py": "a8386c8a392fc5e5891766548a368eae1f63644574422bb60273e68ab6df206d",
+          "src/epidemiology/validation.py": "818d53020a72494242f5fe0d871208681b0adb5cf6a16054e0048bd49cc9ca53"
+        },
+        "environment": {
+          "python": "3.11.0",
+          "pandas": "2.3.1",
+          "numpy": "1.26.4",
+          "pyarrow": "21.0.0"
+        },
+        "diagnostics": {
+          "validation": {
+            "rows": 5952,
+            "columns": 18,
+            "eligible": 4380,
+            "ineligible": 1572,
+            "initialization_rows": 1566,
+            "partial_rows": 6,
+            "original_columns_preserved": true,
+            "by_municipality": {
+              "08001": {
+                "rows": 992,
+                "eligible": 730,
+                "ineligible": 262
+              },
+              "08758": {
+                "rows": 992,
+                "eligible": 730,
+                "ineligible": 262
+              },
+              "41001": {
+                "rows": 992,
+                "eligible": 730,
+                "ineligible": 262
+              },
+              "50001": {
+                "rows": 992,
+                "eligible": 730,
+                "ineligible": 262
+              },
+              "54001": {
+                "rows": 992,
+                "eligible": 730,
+                "ineligible": 262
+              },
+              "76001": {
+                "rows": 992,
+                "eligible": 730,
+                "ineligible": 262
+              }
+            }
+          },
+          "references": {
+            "initialization": 1566,
+            "partial_week": 6,
+            "missing_history": 0,
+            "eligible": 4380,
+            "historical_references": 21900,
+            "week_53_fallback_references": 84
+          }
+        },
+        "output": {
+          "path": "data/processed/epidemiology/preliminary_20261021_01/pilot_weekly_labels.parquet",
+          "bytes": 233665,
+          "sha256": "b3b151a54b2dc7e8c18eb78757ad6a40093626bb807757bbccb6045b354f2c7f",
+          "schema": {
+            "municipality_code": "string",
+            "municipality": "string",
+            "week_start": "date32[day]",
+            "population": "int64",
+            "area_km2": "double",
+            "population_density_km2": "double",
+            "temperature_c": "double",
+            "precipitation_mm": "double",
+            "relative_humidity_pct": "double",
+            "confirmed_records_screening": "int64",
+            "no_eligible_records_observed": "bool",
+            "week_end_nominal": "date32[day]",
+            "week_end_effective": "date32[day]",
+            "n_days": "uint8",
+            "partial_week": "bool",
+            "ewt": "double",
+            "excess_label": "int8",
+            "label_eligible": "bool"
+          }
+        },
+        "controls": {
+          "source_sha256_unchanged": true,
+          "encoded_readback_equal": true,
+          "saved_readback_equal": true,
+          "original_columns_preserved": true
+        }
+      }
+    },
+    "characterization_20261021_02": {
+      "manifest_path": "reports/epidemiology/runs/characterization_20261021_02/run_manifest.json",
+      "manifest_sha256": "12a76b8581a029cec1656d3737f89badc122e2373c923ee5d0acc697d50efe27",
+      "snapshot": {
+        "schema_version": 1,
+        "status": "passed",
+        "purpose": "descriptive characterization for team review; unchanged saved labels",
+        "created_at_utc": "2026-10-21T19:37:07.051766+00:00",
+        "inputs": {
+          "data/processed/epidemiology/preliminary_20261021_01/pilot_weekly_labels.parquet": "b3b151a54b2dc7e8c18eb78757ad6a40093626bb807757bbccb6045b354f2c7f",
+          "data/processed/epidemiology/preliminary_20261021_01/run_manifest.json": "f521d01f3d31f276e52e65c60bcb1e7b8e741c3aaf613eb0dba0c5797f70fbc9",
+          "data/processed/pilot_municipalities_weekly.parquet": "7d3d8abab711df48b7a18c25cf1b302e0edcccf6a733bd849a24a4298c5e89a2"
+        },
+        "output_dir": "reports/epidemiology/runs/characterization_20261021_02",
+        "git": {
+          "commit": "89506d0b158e150ad77e8d7591bf31662874891d",
+          "branch": "feature/epidemiology-labels",
+          "dirty": true
+        },
+        "method": {
+          "version": 1,
+          "approved_date": "2026-10-21",
+          "count": "confirmed_records_screening",
+          "history_years": 5,
+          "epsilon": 0.001,
+          "formula": "exp(sum(log(C + 0.001)) / 5) - 0.001",
+          "numerics": "0.001 * expm1(mean(log1p(C / 0.001))); exact constant and integer-mean identities; no tolerance",
+          "calendar": "Monday-Sunday W-SUN; no INS equivalence asserted",
+          "year": "year of week_start; weeks crossing years are not split",
+          "ordinal": "1-based position of Monday within its calendar year, not ISO week",
+          "reference": "same municipality and ordinal in years y-5 through y-1 only",
+          "week_53": "use ordinal 53 when present; otherwise ordinal 52 of that historical year",
+          "epidemic_years": "included without exclusion or substitution",
+          "first_label_year": 2012,
+          "partial_week": "retain 2025-12-29 with null ewt and label; never extrapolate",
+          "ineligible": "null ewt and excess_label; label_eligible=false",
+          "comparison": "observed count > unrounded ewt; no comparison tolerance or epidemiological floor",
+          "scope": "retrospective observed weekly state; no horizon, features, model or sustained episode"
+        },
+        "numerical_audit": {
+          "eligible_labels_checked": 4380,
+          "historical_references_checked": 21900,
+          "week_53_fallback_references": 84,
+          "exact_observed_equalities": 0,
+          "exact_integer_label_comparison": "passed",
+          "decimal_60_digit_ewt_comparison": "passed",
+          "ewt_verification_tolerance_only": {
+            "relative": 3e-14,
+            "absolute": 1e-16
+          },
+          "label_comparison_tolerance": 0
+        },
+        "controls": {
+          "rows": 5952,
+          "eligible_weeks": 4380,
+          "ineligible_weeks": 1572,
+          "positive_weeks": 2870,
+          "negative_weeks": 1510,
+          "n_positive_runs": 271,
+          "run_coverage_exact": true,
+          "null_labels_counted_as_negative": false
+        },
+        "description_rules": {
+          "denominator": "eligible weeks only",
+          "year": "year of week_start",
+          "statistics": "eligible weeks; sample std ddof=1; linear quantiles",
+          "runs": "maximal positive weekly sequences; negative/ineligible/gap breaks; years do not break",
+          "run_boundary": "boundaries describe observation, not confirmed episode onset/end"
+        },
+        "plot_checks": {
+          "weekly_cases_ewt_full": [
+            {
+              "municipality_code": "54001",
+              "plotted_count_positions": 991,
+              "plotted_ewt_positions": 730,
+              "count_total": 30489,
+              "ewt_sum": 11867.718219975224
+            },
+            {
+              "municipality_code": "08001",
+              "plotted_count_positions": 991,
+              "plotted_ewt_positions": 730,
+              "count_total": 39758,
+              "ewt_sum": 14388.55393610472
+            },
+            {
+              "municipality_code": "41001",
+              "plotted_count_positions": 991,
+              "plotted_ewt_positions": 730,
+              "count_total": 27717,
+              "ewt_sum": 10126.456926938521
+            },
+            {
+              "municipality_code": "50001",
+              "plotted_count_positions": 991,
+              "plotted_ewt_positions": 730,
+              "count_total": 25684,
+              "ewt_sum": 9817.59569144935
+            },
+            {
+              "municipality_code": "76001",
+              "plotted_count_positions": 991,
+              "plotted_ewt_positions": 730,
+              "count_total": 93894,
+              "ewt_sum": 32450.753733188132
+            },
+            {
+              "municipality_code": "08758",
+              "plotted_count_positions": 991,
+              "plotted_ewt_positions": 730,
+              "count_total": 13739,
+              "ewt_sum": 4645.351278216338
+            }
+          ],
+          "weekly_cases_ewt_eligible_period": [
+            {
+              "municipality_code": "54001",
+              "plotted_count_positions": 730,
+              "plotted_ewt_positions": 730,
+              "count_total": 23155,
+              "ewt_sum": 11867.718219975224
+            },
+            {
+              "municipality_code": "08001",
+              "plotted_count_positions": 730,
+              "plotted_ewt_positions": 730,
+              "count_total": 33259,
+              "ewt_sum": 14388.55393610472
+            },
+            {
+              "municipality_code": "41001",
+              "plotted_count_positions": 730,
+              "plotted_ewt_positions": 730,
+              "count_total": 24275,
+              "ewt_sum": 10126.456926938521
+            },
+            {
+              "municipality_code": "50001",
+              "plotted_count_positions": 730,
+              "plotted_ewt_positions": 730,
+              "count_total": 21530,
+              "ewt_sum": 9817.59569144935
+            },
+            {
+              "municipality_code": "76001",
+              "plotted_count_positions": 730,
+              "plotted_ewt_positions": 730,
+              "count_total": 78235,
+              "ewt_sum": 32450.753733188132
+            },
+            {
+              "municipality_code": "08758",
+              "plotted_count_positions": 730,
+              "plotted_ewt_positions": 730,
+              "count_total": 11908,
+              "ewt_sum": 4645.351278216338
+            }
+          ]
+        },
+        "inputs_unchanged": true,
+        "code_and_dependencies_sha256": {
+          "src/epidemiology/__init__.py": "5780edc17ab0f188a5533e576a6966e7e7d2f8c9b5b8ef5680b3601990196980",
+          "src/epidemiology/__main__.py": "1d334176ef8a6c96a37cc7dac0afb1d9ca18e0423f2611dab30cd3595679a8cf",
+          "src/epidemiology/characterization.py": "858c5a37dd969d62ad1329ff3bb607ff37cd3a8beed4066ee48b318aa600292d",
+          "src/epidemiology/characterization_plots.py": "03d0eeec61ead266a06a7ae7efee7235fdd5482bd12c8e50b1fc9aba26143886",
+          "src/epidemiology/characterization_report.py": "82d358ec12f5ce3cb2f1afaba371357ed2d45a4a122e9cb71a6bc080624fc755",
+          "src/epidemiology/config.py": "9c3d20eb4ace6dcda49dd1bd5e13a11b951092e452263be30f1cd4332baf8b1f",
+          "src/epidemiology/ewt.py": "652fa3cde05c430686500f359052aac2818c7f2093f8d1cc57bc1f2e3fda9b75",
+          "src/epidemiology/labels.py": "316e3429e0444c1efc493c4d615de828aec9fdf69b4d5448fe592d734480fad7",
+          "src/epidemiology/pipeline.py": "a8386c8a392fc5e5891766548a368eae1f63644574422bb60273e68ab6df206d",
+          "src/epidemiology/validation.py": "818d53020a72494242f5fe0d871208681b0adb5cf6a16054e0048bd49cc9ca53",
+          "tests/epidemiology/conftest.py": "bdc35e1fa679a26264b22fa6ccce9f4c3311521121be32380dbe4a152724f755",
+          "tests/epidemiology/test_characterization.py": "bf6865a0c1333d974b5780181cbf9a740be11e3af6f3e7b9ad0291c925973904",
+          "tests/epidemiology/test_ewt.py": "3e222fc538603d0f3f1aa6c5930014326a1c8fddb1a258d9945e45aa5690fe10",
+          "tests/epidemiology/test_labels.py": "9944f6576283ab41a7d50186f229a30eb27d3131e98c97515f4861bdd1480e6c",
+          "tests/epidemiology/test_local_regression.py": "e529267b8fb809a9c82e24794f60cf89a4ebec9f43bf576bf7dea38575c210b4",
+          "tests/epidemiology/test_pipeline.py": "61090bda4b9427e791f1f0108c7efae4decfa5007b9e659e01c4e60a28f574c1",
+          "requirements/data.txt": "b03fde253958c21b830461546cfd9ae9010d73b2d91a2f22c6b9a2baa1b938c6",
+          "requirements/data-test.txt": "0dcdeab69b8d47f1c524648b67867d473af20b7c525745489619d07ed7d13ac4",
+          "requirements/pilot-selection.txt": "3397833f6da8112e30c8b834e68a179c5cf89c2f28019a252f2fdad0b5d05d01",
+          "src/pilot_selection/config.py": "7c190d93cbb8ac6ddbaf8c8dd20fb37bb5e5b2ba1a5adbb63983a3a838d16650",
+          "src/pilot_selection/reporting.py": "c5e014b09a62ca5b287889753f63c576bdd121148dd50d47e115281622bcd46f"
+        },
+        "environment": {
+          "python": "3.11.0",
+          "pandas": "2.3.1",
+          "numpy": "1.26.4",
+          "pyarrow": "21.0.0",
+          "matplotlib": "3.9.2",
+          "Pillow": "9.4.0"
+        },
+        "tables": {
+          "labels_global.csv": {
+            "rows": 1,
+            "columns": [
+              "total_weeks",
+              "eligible_weeks",
+              "ineligible_weeks",
+              "positive_weeks",
+              "negative_weeks",
+              "positive_pct",
+              "negative_pct"
+            ]
+          },
+          "labels_by_municipality.csv": {
+            "rows": 6,
+            "columns": [
+              "municipality_code",
+              "municipality",
+              "total_weeks",
+              "eligible_weeks",
+              "ineligible_weeks",
+              "positive_weeks",
+              "negative_weeks",
+              "positive_pct",
+              "negative_pct"
+            ]
+          },
+          "labels_by_year.csv": {
+            "rows": 14,
+            "columns": [
+              "year",
+              "total_weeks",
+              "eligible_weeks",
+              "ineligible_weeks",
+              "positive_weeks",
+              "negative_weeks",
+              "positive_pct",
+              "negative_pct"
+            ]
+          },
+          "labels_by_municipality_year.csv": {
+            "rows": 84,
+            "columns": [
+              "municipality_code",
+              "municipality",
+              "year",
+              "total_weeks",
+              "eligible_weeks",
+              "ineligible_weeks",
+              "positive_weeks",
+              "negative_weeks",
+              "positive_pct",
+              "negative_pct"
+            ]
+          },
+          "statistics_global.csv": {
+            "rows": 2,
+            "columns": [
+              "variable",
+              "count",
+              "mean",
+              "std",
+              "min",
+              "p25",
+              "median",
+              "p75",
+              "max"
+            ]
+          },
+          "statistics_by_municipality.csv": {
+            "rows": 12,
+            "columns": [
+              "municipality_code",
+              "municipality",
+              "variable",
+              "count",
+              "mean",
+              "std",
+              "min",
+              "p25",
+              "median",
+              "p75",
+              "max"
+            ]
+          },
+          "positive_runs.csv": {
+            "rows": 271,
+            "columns": [
+              "municipality_code",
+              "municipality",
+              "start_week",
+              "end_week",
+              "duration_weeks",
+              "left_boundary",
+              "right_boundary"
+            ]
+          },
+          "run_summary_global.csv": {
+            "rows": 1,
+            "columns": [
+              "n_runs",
+              "positive_weeks",
+              "duration_mean",
+              "duration_min",
+              "duration_p25",
+              "duration_median",
+              "duration_p75",
+              "duration_max",
+              "single_week_runs",
+              "left_boundary_not_negative",
+              "right_boundary_not_negative"
+            ]
+          },
+          "run_summary_by_municipality.csv": {
+            "rows": 6,
+            "columns": [
+              "municipality_code",
+              "municipality",
+              "n_runs",
+              "positive_weeks",
+              "duration_mean",
+              "duration_min",
+              "duration_p25",
+              "duration_median",
+              "duration_p75",
+              "duration_max",
+              "single_week_runs",
+              "left_boundary_not_negative",
+              "right_boundary_not_negative"
+            ]
+          },
+          "run_duration_distribution.csv": {
+            "rows": 81,
+            "columns": [
+              "municipality_code",
+              "municipality",
+              "duration_weeks",
+              "n_runs",
+              "pct_runs"
+            ]
+          }
+        },
+        "artifacts": {
+          "labels_global.csv": {
+            "sha256": "e332c67ffcb5a455e2e10585631942dd19e48a9c3cf49a6c39b68b7e16652126",
+            "bytes": 181
+          },
+          "labels_by_municipality.csv": {
+            "sha256": "6ac5deafbc75d4999b6ed7f10390f6d0876dcb57c4be3b5b10f06f2fe266d564",
+            "bytes": 646
+          },
+          "labels_by_year.csv": {
+            "sha256": "260d8ba4a57aa6075bb0b8f48da80e7cb8efb5babd67b19cf92871d09c324942",
+            "bytes": 983
+          },
+          "labels_by_municipality_year.csv": {
+            "sha256": "d0b037d8a856aaa9b855fca1cb61657e122a380a8b0895c7509eb317e8918357",
+            "bytes": 6271
+          },
+          "statistics_global.csv": {
+            "sha256": "8e5972871c0b3c13714cbee15c943434ac3419e9d37a981e6745773f60ca2a9c",
+            "bytes": 329
+          },
+          "statistics_by_municipality.csv": {
+            "sha256": "df2e352897a1ee1d65ec2cc4303323d69556d91db8620b89e10f1d1445f4f5af",
+            "bytes": 1933
+          },
+          "positive_runs.csv": {
+            "sha256": "bb1c8d7f2bf6969adaa942b90dbab89089c6862c155eb934d046588366c6925f",
+            "bytes": 22179
+          },
+          "run_summary_global.csv": {
+            "sha256": "bf94c5103a020e6e44690e84915ebf3153ae9269d92e40be356c0cff06620789",
+            "bytes": 254
+          },
+          "run_summary_by_municipality.csv": {
+            "sha256": "564f43c99cb02344e1cfc64ca107d87337dd26f78ac1a612e535a762f1d53d3a",
+            "bytes": 673
+          },
+          "run_duration_distribution.csv": {
+            "sha256": "84d77c31fcb7b5af97e4088ae5c570a03181df48294b4d17e943af32599e65ef",
+            "bytes": 3642
+          },
+          "weekly_cases_ewt_full.png": {
+            "sha256": "1df839dc2bb60ac4776a5202e4dee33ef0cd06c4c9ceb7fc48f1fe7d5acb19b0",
+            "bytes": 675629
+          },
+          "weekly_cases_ewt_full.svg": {
+            "sha256": "834ec2e3198bdf36124dfdce82f306f4cb717aac2b9576c7d029286314d9770b",
+            "bytes": 374320
+          },
+          "weekly_cases_ewt_eligible_period.png": {
+            "sha256": "5fcdb91b06e3cc251c55d08b54ad96d94a6b66a3eac6605cb74cd457e613bb43",
+            "bytes": 711923
+          },
+          "weekly_cases_ewt_eligible_period.svg": {
+            "sha256": "5a9f7ce51118a64cd4723055b31c15dcfad1d6dcebdf9c4836fff9dae045c106",
+            "bytes": 335600
+          },
+          "annual_positive_percentage.png": {
+            "sha256": "659c3b0c0e3044ac606ccaa8455eaf161d902d4210b74d86529ff49e1513224e",
+            "bytes": 152532
+          },
+          "positive_run_durations.png": {
+            "sha256": "986c4ff07a325f4ab783854096c487d29b0942fb9b96e6a08c8c8e8cc04b7fc6",
+            "bytes": 134699
+          },
+          "README.txt": {
+            "sha256": "c6e2d5ffed27e3417a6d682560af4a303358960ba476aa61f2c27100b084da82",
+            "bytes": 1041
+          }
+        }
+      }
+    },
+    "reference_review_20261021_01": {
+      "manifest_path": "reports/epidemiology/runs/reference_review_20261021_01/run_manifest.json",
+      "manifest_sha256": "55026f956298eca30ca2859399f6f3442344b35917e83db5b427061e17db87c6",
+      "snapshot": {
+        "schema_version": 1,
+        "status": "passed",
+        "purpose": "descriptive historical-zero and long-run review; saved labels unchanged",
+        "created_at_utc": "2026-10-21T20:04:57.438421+00:00",
+        "git": {
+          "commit": "89506d0b158e150ad77e8d7591bf31662874891d",
+          "branch": "feature/epidemiology-labels",
+          "dirty": true
+        },
+        "output_dir": "reports/epidemiology/runs/reference_review_20261021_01",
+        "inputs_sha256": {
+          "data/processed/epidemiology/preliminary_20261021_01/pilot_weekly_labels.parquet": "b3b151a54b2dc7e8c18eb78757ad6a40093626bb807757bbccb6045b354f2c7f",
+          "data/processed/pilot_municipalities_weekly.parquet": "7d3d8abab711df48b7a18c25cf1b302e0edcccf6a733bd849a24a4298c5e89a2",
+          "data/processed/epidemiology/preliminary_20261021_01/run_manifest.json": "f521d01f3d31f276e52e65c60bcb1e7b8e741c3aaf613eb0dba0c5797f70fbc9",
+          "reports/epidemiology/runs/characterization_20261021_02/run_manifest.json": "12a76b8581a029cec1656d3737f89badc122e2373c923ee5d0acc697d50efe27",
+          "reports/epidemiology/runs/characterization_20261021_02/labels_global.csv": "e332c67ffcb5a455e2e10585631942dd19e48a9c3cf49a6c39b68b7e16652126",
+          "reports/epidemiology/runs/characterization_20261021_02/labels_by_municipality.csv": "6ac5deafbc75d4999b6ed7f10390f6d0876dcb57c4be3b5b10f06f2fe266d564",
+          "reports/epidemiology/runs/characterization_20261021_02/labels_by_year.csv": "260d8ba4a57aa6075bb0b8f48da80e7cb8efb5babd67b19cf92871d09c324942",
+          "reports/epidemiology/runs/characterization_20261021_02/labels_by_municipality_year.csv": "d0b037d8a856aaa9b855fca1cb61657e122a380a8b0895c7509eb317e8918357",
+          "reports/epidemiology/runs/characterization_20261021_02/statistics_global.csv": "8e5972871c0b3c13714cbee15c943434ac3419e9d37a981e6745773f60ca2a9c",
+          "reports/epidemiology/runs/characterization_20261021_02/statistics_by_municipality.csv": "df2e352897a1ee1d65ec2cc4303323d69556d91db8620b89e10f1d1445f4f5af",
+          "reports/epidemiology/runs/characterization_20261021_02/positive_runs.csv": "bb1c8d7f2bf6969adaa942b90dbab89089c6862c155eb934d046588366c6925f",
+          "reports/epidemiology/runs/characterization_20261021_02/run_summary_global.csv": "bf94c5103a020e6e44690e84915ebf3153ae9269d92e40be356c0cff06620789",
+          "reports/epidemiology/runs/characterization_20261021_02/run_summary_by_municipality.csv": "564f43c99cb02344e1cfc64ca107d87337dd26f78ac1a612e535a762f1d53d3a",
+          "reports/epidemiology/runs/characterization_20261021_02/run_duration_distribution.csv": "84d77c31fcb7b5af97e4088ae5c570a03181df48294b4d17e943af32599e65ef",
+          "reports/epidemiology/runs/characterization_20261021_02/weekly_cases_ewt_full.png": "1df839dc2bb60ac4776a5202e4dee33ef0cd06c4c9ceb7fc48f1fe7d5acb19b0",
+          "reports/epidemiology/runs/characterization_20261021_02/weekly_cases_ewt_full.svg": "834ec2e3198bdf36124dfdce82f306f4cb717aac2b9576c7d029286314d9770b",
+          "reports/epidemiology/runs/characterization_20261021_02/weekly_cases_ewt_eligible_period.png": "5fcdb91b06e3cc251c55d08b54ad96d94a6b66a3eac6605cb74cd457e613bb43",
+          "reports/epidemiology/runs/characterization_20261021_02/weekly_cases_ewt_eligible_period.svg": "5a9f7ce51118a64cd4723055b31c15dcfad1d6dcebdf9c4836fff9dae045c106",
+          "reports/epidemiology/runs/characterization_20261021_02/annual_positive_percentage.png": "659c3b0c0e3044ac606ccaa8455eaf161d902d4210b74d86529ff49e1513224e",
+          "reports/epidemiology/runs/characterization_20261021_02/positive_run_durations.png": "986c4ff07a325f4ab783854096c487d29b0942fb9b96e6a08c8c8e8cc04b7fc6",
+          "reports/epidemiology/runs/characterization_20261021_02/README.txt": "c6e2d5ffed27e3417a6d682560af4a303358960ba476aa61f2c27100b084da82"
+        },
+        "method": {
+          "version": 1,
+          "approved_date": "2026-10-21",
+          "count": "confirmed_records_screening",
+          "history_years": 5,
+          "epsilon": 0.001,
+          "formula": "exp(sum(log(C + 0.001)) / 5) - 0.001",
+          "numerics": "0.001 * expm1(mean(log1p(C / 0.001))); exact constant and integer-mean identities; no tolerance",
+          "calendar": "Monday-Sunday W-SUN; no INS equivalence asserted",
+          "year": "year of week_start; weeks crossing years are not split",
+          "ordinal": "1-based position of Monday within its calendar year, not ISO week",
+          "reference": "same municipality and ordinal in years y-5 through y-1 only",
+          "week_53": "use ordinal 53 when present; otherwise ordinal 52 of that historical year",
+          "epidemic_years": "included without exclusion or substitution",
+          "first_label_year": 2012,
+          "partial_week": "retain 2025-12-29 with null ewt and label; never extrapolate",
+          "ineligible": "null ewt and excess_label; label_eligible=false",
+          "comparison": "observed count > unrounded ewt; no comparison tolerance or epidemiological floor",
+          "scope": "retrospective observed weekly state; no horizon, features, model or sustained episode"
+        },
+        "numerical_audit": {
+          "eligible_labels_checked": 4380,
+          "historical_references_checked": 21900,
+          "week_53_fallback_references": 84,
+          "exact_observed_equalities": 0,
+          "exact_integer_label_comparison": "passed",
+          "decimal_60_digit_ewt_comparison": "passed",
+          "ewt_verification_tolerance_only": {
+            "relative": 3e-14,
+            "absolute": 1e-16
+          },
+          "label_comparison_tolerance": 0
+        },
+        "controls": {
+          "eligible_weeks": 4380,
+          "historical_references_checked": 21900,
+          "week_53_fallback_references": 84,
+          "eligible_weeks_with_zero": 569,
+          "positive_weeks_with_zero": 530,
+          "positive_weeks": 2870,
+          "negative_weeks": 1510,
+          "positive_runs": 271,
+          "long_runs": 20,
+          "weeks_in_long_runs": 1881,
+          "long_run_weeks_with_zero": 288,
+          "ineligible_weeks_in_statistics": 0
+        },
+        "description_rules": {
+          "statistics_population": "eligible target weeks only; reference counts may belong to initialization years",
+          "historical_zeros": "number of zero counts among the exact five approved aligned references, including 53->52 fallback",
+          "empty_zero_groups": "show zero weeks; undefined percentages and EWT summaries are empty, not zero",
+          "quartiles": "within each municipality using all eligible 2012-2025 weeks; linear interpolation",
+          "quartile_intervals": "Q1<=P25; P25<Q2<=P50; P50<Q3<=P75; Q4>P75; ties retained together",
+          "low_ewt": "<= municipal EWT P25; descriptive only",
+          "high_observed_count": "> municipal observed-count P75; descriptive only",
+          "pooled_grid": "aggregate municipal-relative quartiles, not pooled absolute cutoffs",
+          "long_runs": "existing maximal positive runs with duration >=52 weeks; annual profiles use year of week_start",
+          "statistics": "sample std ddof=1; linear quantiles; original values unmodified",
+          "interpretation": "association only; no counterfactual EWT, causal attribution, outbreak declaration or new target",
+          "modeling_warning": "full-period descriptive quantiles are not training features or approved model thresholds"
+        },
+        "environment": {
+          "python": "3.11.0",
+          "pandas": "2.3.1",
+          "numpy": "1.26.4",
+          "pyarrow": "21.0.0",
+          "matplotlib": "3.9.2"
+        },
+        "code_and_dependencies_sha256": {
+          "src/epidemiology/__init__.py": "5780edc17ab0f188a5533e576a6966e7e7d2f8c9b5b8ef5680b3601990196980",
+          "src/epidemiology/__main__.py": "1d334176ef8a6c96a37cc7dac0afb1d9ca18e0423f2611dab30cd3595679a8cf",
+          "src/epidemiology/characterization.py": "858c5a37dd969d62ad1329ff3bb607ff37cd3a8beed4066ee48b318aa600292d",
+          "src/epidemiology/characterization_plots.py": "03d0eeec61ead266a06a7ae7efee7235fdd5482bd12c8e50b1fc9aba26143886",
+          "src/epidemiology/characterization_report.py": "82d358ec12f5ce3cb2f1afaba371357ed2d45a4a122e9cb71a6bc080624fc755",
+          "src/epidemiology/config.py": "9c3d20eb4ace6dcda49dd1bd5e13a11b951092e452263be30f1cd4332baf8b1f",
+          "src/epidemiology/ewt.py": "652fa3cde05c430686500f359052aac2818c7f2093f8d1cc57bc1f2e3fda9b75",
+          "src/epidemiology/labels.py": "316e3429e0444c1efc493c4d615de828aec9fdf69b4d5448fe592d734480fad7",
+          "src/epidemiology/pipeline.py": "a8386c8a392fc5e5891766548a368eae1f63644574422bb60273e68ab6df206d",
+          "src/epidemiology/reference_diagnostic_plots.py": "cafe51817d7dd99ad5ed2efc3d3b0e92172b9d568a91a7ffe9d88e3b240fa100",
+          "src/epidemiology/reference_diagnostic_report.py": "b462a18d6d712621b60b4037696b4c78001d31873a7a33fc92e7692902b80497",
+          "src/epidemiology/reference_diagnostics.py": "0868dab37cecb708f0073e5b86dc6f19cd95803254683933ab7757768ad8a218",
+          "src/epidemiology/validation.py": "818d53020a72494242f5fe0d871208681b0adb5cf6a16054e0048bd49cc9ca53",
+          "tests/epidemiology/conftest.py": "bdc35e1fa679a26264b22fa6ccce9f4c3311521121be32380dbe4a152724f755",
+          "tests/epidemiology/test_characterization.py": "bf6865a0c1333d974b5780181cbf9a740be11e3af6f3e7b9ad0291c925973904",
+          "tests/epidemiology/test_ewt.py": "3e222fc538603d0f3f1aa6c5930014326a1c8fddb1a258d9945e45aa5690fe10",
+          "tests/epidemiology/test_labels.py": "9944f6576283ab41a7d50186f229a30eb27d3131e98c97515f4861bdd1480e6c",
+          "tests/epidemiology/test_local_regression.py": "e529267b8fb809a9c82e24794f60cf89a4ebec9f43bf576bf7dea38575c210b4",
+          "tests/epidemiology/test_pipeline.py": "61090bda4b9427e791f1f0108c7efae4decfa5007b9e659e01c4e60a28f574c1",
+          "tests/epidemiology/test_reference_diagnostics.py": "83bea8ac4d6c0251d1e49ca6433b0bf1d6e96816b4c833dd25f951234a979f0e",
+          "src/pilot_selection/config.py": "7c190d93cbb8ac6ddbaf8c8dd20fb37bb5e5b2ba1a5adbb63983a3a838d16650",
+          "src/pilot_selection/reporting.py": "c5e014b09a62ca5b287889753f63c576bdd121148dd50d47e115281622bcd46f",
+          "requirements/data.txt": "b03fde253958c21b830461546cfd9ae9010d73b2d91a2f22c6b9a2baa1b938c6",
+          "requirements/data-test.txt": "0dcdeab69b8d47f1c524648b67867d473af20b7c525745489619d07ed7d13ac4",
+          "requirements/pilot-selection.txt": "3397833f6da8112e30c8b834e68a179c5cf89c2f28019a252f2fdad0b5d05d01"
+        },
+        "tables": {
+          "zeros_global.csv": {
+            "rows": 6,
+            "columns": [
+              "municipality_code",
+              "municipality",
+              "historical_zero_count",
+              "eligible_weeks",
+              "pct_eligible_weeks",
+              "positive_weeks",
+              "negative_weeks",
+              "positive_pct_in_group",
+              "pct_all_positive_weeks",
+              "ewt_mean",
+              "ewt_std",
+              "ewt_min",
+              "ewt_p25",
+              "ewt_median",
+              "ewt_p75",
+              "ewt_max",
+              "observed_mean",
+              "observed_std",
+              "observed_min",
+              "observed_p25",
+              "observed_median",
+              "observed_p75",
+              "observed_max"
+            ]
+          },
+          "zeros_by_municipality.csv": {
+            "rows": 36,
+            "columns": [
+              "municipality_code",
+              "municipality",
+              "historical_zero_count",
+              "eligible_weeks",
+              "pct_eligible_weeks",
+              "positive_weeks",
+              "negative_weeks",
+              "positive_pct_in_group",
+              "pct_all_positive_weeks",
+              "ewt_mean",
+              "ewt_std",
+              "ewt_min",
+              "ewt_p25",
+              "ewt_median",
+              "ewt_p75",
+              "ewt_max",
+              "observed_mean",
+              "observed_std",
+              "observed_min",
+              "observed_p25",
+              "observed_median",
+              "observed_p75",
+              "observed_max"
+            ]
+          },
+          "municipal_quartile_cutoffs.csv": {
+            "rows": 6,
+            "columns": [
+              "municipality_code",
+              "municipality",
+              "eligible_weeks",
+              "ewt_p25",
+              "ewt_p50",
+              "ewt_p75",
+              "observed_p25",
+              "observed_p50",
+              "observed_p75"
+            ]
+          },
+          "quartile_grid_global.csv": {
+            "rows": 16,
+            "columns": [
+              "municipality_code",
+              "municipality",
+              "ewt_quartile",
+              "observed_quartile",
+              "eligible_weeks",
+              "positive_weeks",
+              "negative_weeks",
+              "positive_pct_in_cell"
+            ]
+          },
+          "quartile_grid_by_municipality.csv": {
+            "rows": 96,
+            "columns": [
+              "municipality_code",
+              "municipality",
+              "ewt_quartile",
+              "observed_quartile",
+              "eligible_weeks",
+              "positive_weeks",
+              "negative_weeks",
+              "positive_pct_in_cell"
+            ]
+          },
+          "low_reference_high_count_combinations.csv": {
+            "rows": 28,
+            "columns": [
+              "municipality_code",
+              "municipality",
+              "ewt_le_municipal_p25",
+              "observed_gt_municipal_p75",
+              "eligible_weeks",
+              "positive_weeks",
+              "negative_weeks",
+              "positive_pct_in_group",
+              "pct_all_positive_weeks"
+            ]
+          },
+          "long_runs_detail.csv": {
+            "rows": 20,
+            "columns": [
+              "run_id",
+              "municipality_code",
+              "municipality",
+              "start_week",
+              "end_week",
+              "duration_weeks",
+              "left_boundary",
+              "right_boundary",
+              "ewt_mean",
+              "ewt_std",
+              "ewt_min",
+              "ewt_p25",
+              "ewt_median",
+              "ewt_p75",
+              "ewt_max",
+              "observed_mean",
+              "observed_std",
+              "observed_min",
+              "observed_p25",
+              "observed_median",
+              "observed_p75",
+              "observed_max",
+              "weeks_with_historical_zero",
+              "pct_weeks_with_historical_zero",
+              "historical_zero_references",
+              "max_historical_zeros_per_week",
+              "pct_ewt_le_municipal_p25",
+              "pct_observed_gt_municipal_p75",
+              "municipal_ewt_p25",
+              "municipal_observed_p75"
+            ]
+          },
+          "long_runs_annual_profiles.csv": {
+            "rows": 51,
+            "columns": [
+              "run_id",
+              "municipality_code",
+              "municipality",
+              "year",
+              "weeks",
+              "ewt_min",
+              "ewt_median",
+              "ewt_max",
+              "observed_min",
+              "observed_median",
+              "observed_max",
+              "weeks_with_historical_zero",
+              "pct_ewt_le_municipal_p25",
+              "pct_observed_gt_municipal_p75"
+            ]
+          }
+        },
+        "artifacts": {
+          "zeros_global.csv": {
+            "sha256": "54d0de38602e1ccc7b157a05bb042a302a0c8c6d85e5f61cab09835db5c43bfb",
+            "bytes": 1931
+          },
+          "zeros_by_municipality.csv": {
+            "sha256": "24892f96f3ae345f5dc92636810361af4fe266ba740d241623115bbd9c6ca8d4",
+            "bytes": 7268
+          },
+          "municipal_quartile_cutoffs.csv": {
+            "sha256": "a48d113f9826130d2f294e5fc06222d7f1d26eb970268f6ac27b0be7f46dc9ed",
+            "bytes": 748
+          },
+          "quartile_grid_global.csv": {
+            "sha256": "4bb7540071e2645096bf1e27c67fa4a30275ca667d9a375cc370a67092dcdf7a",
+            "bytes": 811
+          },
+          "quartile_grid_by_municipality.csv": {
+            "sha256": "1ac3cebec7b091149d359ca97af2c5963f237043781d0d689e9f036f44234105",
+            "bytes": 4290
+          },
+          "low_reference_high_count_combinations.csv": {
+            "sha256": "a720770686665e30252cdffa0f9813d4b1c642bd8cb4b38b42c4011b4c03bcd9",
+            "bytes": 2379
+          },
+          "long_runs_detail.csv": {
+            "sha256": "016ef40ba913041e2d3965421aa049d94aad17ac0372c88b1702d85893c2a1f7",
+            "bytes": 8470
+          },
+          "long_runs_annual_profiles.csv": {
+            "sha256": "9190ba755556d16c382ca828f001856dc7f24c79b891357dd13747df850060c8",
+            "bytes": 7752
+          },
+          "ewt_by_historical_zeros.png": {
+            "sha256": "3824091b9564264bee0e39e5ecc68fae6495ad8ed3c000e93525dd6a2ca0fbce",
+            "bytes": 96807
+          },
+          "municipal_quartile_combinations.png": {
+            "sha256": "d9f7e82f0cace48afffdbd1ce2778f4efc694af4be3fc21b118f312293d62457",
+            "bytes": 193155
+          },
+          "long_runs_cases_ewt.png": {
+            "sha256": "7197daa6980e4b98f242677c79b14fa9f0b04e279ff8883f21f9c0872915b9e0",
+            "bytes": 1001982
+          }
+        },
+        "inputs_unchanged": true
+      }
+    }
+  },
+  "tables": {
+    "labels_global.csv": {
+      "rows": 1,
+      "columns": [
+        "total_weeks",
+        "eligible_weeks",
+        "ineligible_weeks",
+        "positive_weeks",
+        "negative_weeks",
+        "positive_pct",
+        "negative_pct"
+      ]
+    },
+    "labels_by_municipality.csv": {
+      "rows": 6,
+      "columns": [
+        "municipality_code",
+        "municipality",
+        "total_weeks",
+        "eligible_weeks",
+        "ineligible_weeks",
+        "positive_weeks",
+        "negative_weeks",
+        "positive_pct",
+        "negative_pct"
+      ]
+    },
+    "labels_by_year.csv": {
+      "rows": 14,
+      "columns": [
+        "year",
+        "total_weeks",
+        "eligible_weeks",
+        "ineligible_weeks",
+        "positive_weeks",
+        "negative_weeks",
+        "positive_pct",
+        "negative_pct"
+      ]
+    },
+    "labels_by_municipality_year.csv": {
+      "rows": 84,
+      "columns": [
+        "municipality_code",
+        "municipality",
+        "year",
+        "total_weeks",
+        "eligible_weeks",
+        "ineligible_weeks",
+        "positive_weeks",
+        "negative_weeks",
+        "positive_pct",
+        "negative_pct"
+      ]
+    },
+    "statistics_global.csv": {
+      "rows": 2,
+      "columns": [
+        "variable",
+        "count",
+        "mean",
+        "std",
+        "min",
+        "p25",
+        "median",
+        "p75",
+        "max"
+      ]
+    },
+    "statistics_by_municipality.csv": {
+      "rows": 12,
+      "columns": [
+        "municipality_code",
+        "municipality",
+        "variable",
+        "count",
+        "mean",
+        "std",
+        "min",
+        "p25",
+        "median",
+        "p75",
+        "max"
+      ]
+    },
+    "positive_runs.csv": {
+      "rows": 271,
+      "columns": [
+        "municipality_code",
+        "municipality",
+        "start_week",
+        "end_week",
+        "duration_weeks",
+        "left_boundary",
+        "right_boundary"
+      ]
+    },
+    "run_summary_global.csv": {
+      "rows": 1,
+      "columns": [
+        "n_runs",
+        "positive_weeks",
+        "duration_mean",
+        "duration_min",
+        "duration_p25",
+        "duration_median",
+        "duration_p75",
+        "duration_max",
+        "single_week_runs",
+        "left_boundary_not_negative",
+        "right_boundary_not_negative"
+      ]
+    },
+    "run_summary_by_municipality.csv": {
+      "rows": 6,
+      "columns": [
+        "municipality_code",
+        "municipality",
+        "n_runs",
+        "positive_weeks",
+        "duration_mean",
+        "duration_min",
+        "duration_p25",
+        "duration_median",
+        "duration_p75",
+        "duration_max",
+        "single_week_runs",
+        "left_boundary_not_negative",
+        "right_boundary_not_negative"
+      ]
+    },
+    "run_duration_distribution.csv": {
+      "rows": 81,
+      "columns": [
+        "municipality_code",
+        "municipality",
+        "duration_weeks",
+        "n_runs",
+        "pct_runs"
+      ]
+    },
+    "zeros_global.csv": {
+      "rows": 6,
+      "columns": [
+        "municipality_code",
+        "municipality",
+        "historical_zero_count",
+        "eligible_weeks",
+        "pct_eligible_weeks",
+        "positive_weeks",
+        "negative_weeks",
+        "positive_pct_in_group",
+        "pct_all_positive_weeks",
+        "ewt_mean",
+        "ewt_std",
+        "ewt_min",
+        "ewt_p25",
+        "ewt_median",
+        "ewt_p75",
+        "ewt_max",
+        "observed_mean",
+        "observed_std",
+        "observed_min",
+        "observed_p25",
+        "observed_median",
+        "observed_p75",
+        "observed_max"
+      ]
+    },
+    "zeros_by_municipality.csv": {
+      "rows": 36,
+      "columns": [
+        "municipality_code",
+        "municipality",
+        "historical_zero_count",
+        "eligible_weeks",
+        "pct_eligible_weeks",
+        "positive_weeks",
+        "negative_weeks",
+        "positive_pct_in_group",
+        "pct_all_positive_weeks",
+        "ewt_mean",
+        "ewt_std",
+        "ewt_min",
+        "ewt_p25",
+        "ewt_median",
+        "ewt_p75",
+        "ewt_max",
+        "observed_mean",
+        "observed_std",
+        "observed_min",
+        "observed_p25",
+        "observed_median",
+        "observed_p75",
+        "observed_max"
+      ]
+    },
+    "municipal_quartile_cutoffs.csv": {
+      "rows": 6,
+      "columns": [
+        "municipality_code",
+        "municipality",
+        "eligible_weeks",
+        "ewt_p25",
+        "ewt_p50",
+        "ewt_p75",
+        "observed_p25",
+        "observed_p50",
+        "observed_p75"
+      ]
+    },
+    "quartile_grid_global.csv": {
+      "rows": 16,
+      "columns": [
+        "municipality_code",
+        "municipality",
+        "ewt_quartile",
+        "observed_quartile",
+        "eligible_weeks",
+        "positive_weeks",
+        "negative_weeks",
+        "positive_pct_in_cell"
+      ]
+    },
+    "quartile_grid_by_municipality.csv": {
+      "rows": 96,
+      "columns": [
+        "municipality_code",
+        "municipality",
+        "ewt_quartile",
+        "observed_quartile",
+        "eligible_weeks",
+        "positive_weeks",
+        "negative_weeks",
+        "positive_pct_in_cell"
+      ]
+    },
+    "low_reference_high_count_combinations.csv": {
+      "rows": 28,
+      "columns": [
+        "municipality_code",
+        "municipality",
+        "ewt_le_municipal_p25",
+        "observed_gt_municipal_p75",
+        "eligible_weeks",
+        "positive_weeks",
+        "negative_weeks",
+        "positive_pct_in_group",
+        "pct_all_positive_weeks"
+      ]
+    },
+    "long_runs_detail.csv": {
+      "rows": 20,
+      "columns": [
+        "run_id",
+        "municipality_code",
+        "municipality",
+        "start_week",
+        "end_week",
+        "duration_weeks",
+        "left_boundary",
+        "right_boundary",
+        "ewt_mean",
+        "ewt_std",
+        "ewt_min",
+        "ewt_p25",
+        "ewt_median",
+        "ewt_p75",
+        "ewt_max",
+        "observed_mean",
+        "observed_std",
+        "observed_min",
+        "observed_p25",
+        "observed_median",
+        "observed_p75",
+        "observed_max",
+        "weeks_with_historical_zero",
+        "pct_weeks_with_historical_zero",
+        "historical_zero_references",
+        "max_historical_zeros_per_week",
+        "pct_ewt_le_municipal_p25",
+        "pct_observed_gt_municipal_p75",
+        "municipal_ewt_p25",
+        "municipal_observed_p75"
+      ]
+    },
+    "long_runs_annual_profiles.csv": {
+      "rows": 51,
+      "columns": [
+        "run_id",
+        "municipality_code",
+        "municipality",
+        "year",
+        "weeks",
+        "ewt_min",
+        "ewt_median",
+        "ewt_max",
+        "observed_min",
+        "observed_median",
+        "observed_max",
+        "weeks_with_historical_zero",
+        "pct_ewt_le_municipal_p25",
+        "pct_observed_gt_municipal_p75"
+      ]
+    }
+  },
+  "artifacts": {
+    "labels_global.csv": {
+      "sha256": "e332c67ffcb5a455e2e10585631942dd19e48a9c3cf49a6c39b68b7e16652126",
+      "bytes": 181,
+      "source": "reports/epidemiology/runs/characterization_20261021_02/labels_global.csv",
+      "source_sha256": "e332c67ffcb5a455e2e10585631942dd19e48a9c3cf49a6c39b68b7e16652126",
+      "operation": "exact_binary_copy",
+      "description": "Conteos y porcentajes globales de clase; nulos fuera del denominador."
+    },
+    "labels_by_municipality.csv": {
+      "sha256": "6ac5deafbc75d4999b6ed7f10390f6d0876dcb57c4be3b5b10f06f2fe266d564",
+      "bytes": 646,
+      "source": "reports/epidemiology/runs/characterization_20261021_02/labels_by_municipality.csv",
+      "source_sha256": "6ac5deafbc75d4999b6ed7f10390f6d0876dcb57c4be3b5b10f06f2fe266d564",
+      "operation": "exact_binary_copy",
+      "description": "Distribución de etiquetas y elegibilidad por municipio."
+    },
+    "labels_by_year.csv": {
+      "sha256": "260d8ba4a57aa6075bb0b8f48da80e7cb8efb5babd67b19cf92871d09c324942",
+      "bytes": 983,
+      "source": "reports/epidemiology/runs/characterization_20261021_02/labels_by_year.csv",
+      "source_sha256": "260d8ba4a57aa6075bb0b8f48da80e7cb8efb5babd67b19cf92871d09c324942",
+      "operation": "exact_binary_copy",
+      "description": "Positivos y negativos anuales agregados, 2012-2025."
+    },
+    "labels_by_municipality_year.csv": {
+      "sha256": "d0b037d8a856aaa9b855fca1cb61657e122a380a8b0895c7509eb317e8918357",
+      "bytes": 6271,
+      "source": "reports/epidemiology/runs/characterization_20261021_02/labels_by_municipality_year.csv",
+      "source_sha256": "d0b037d8a856aaa9b855fca1cb61657e122a380a8b0895c7509eb317e8918357",
+      "operation": "exact_binary_copy",
+      "description": "Distribución anual municipal, con denominadores elegibles."
+    },
+    "statistics_global.csv": {
+      "sha256": "8e5972871c0b3c13714cbee15c943434ac3419e9d37a981e6745773f60ca2a9c",
+      "bytes": 329,
+      "source": "reports/epidemiology/runs/characterization_20261021_02/statistics_global.csv",
+      "source_sha256": "8e5972871c0b3c13714cbee15c943434ac3419e9d37a981e6745773f60ca2a9c",
+      "operation": "exact_binary_copy",
+      "description": "Estadísticas globales de EWT y conteos en semanas elegibles."
+    },
+    "statistics_by_municipality.csv": {
+      "sha256": "df2e352897a1ee1d65ec2cc4303323d69556d91db8620b89e10f1d1445f4f5af",
+      "bytes": 1933,
+      "source": "reports/epidemiology/runs/characterization_20261021_02/statistics_by_municipality.csv",
+      "source_sha256": "df2e352897a1ee1d65ec2cc4303323d69556d91db8620b89e10f1d1445f4f5af",
+      "operation": "exact_binary_copy",
+      "description": "Estadísticas municipales de EWT y conteos elegibles."
+    },
+    "positive_runs.csv": {
+      "sha256": "bb1c8d7f2bf6969adaa942b90dbab89089c6862c155eb934d046588366c6925f",
+      "bytes": 22179,
+      "source": "reports/epidemiology/runs/characterization_20261021_02/positive_runs.csv",
+      "source_sha256": "bb1c8d7f2bf6969adaa942b90dbab89089c6862c155eb934d046588366c6925f",
+      "operation": "exact_binary_copy",
+      "description": "Intervalos y límites observados de las 271 rachas positivas."
+    },
+    "run_summary_global.csv": {
+      "sha256": "bf94c5103a020e6e44690e84915ebf3153ae9269d92e40be356c0cff06620789",
+      "bytes": 254,
+      "source": "reports/epidemiology/runs/characterization_20261021_02/run_summary_global.csv",
+      "source_sha256": "bf94c5103a020e6e44690e84915ebf3153ae9269d92e40be356c0cff06620789",
+      "operation": "exact_binary_copy",
+      "description": "Distribución global de duración de rachas."
+    },
+    "run_summary_by_municipality.csv": {
+      "sha256": "564f43c99cb02344e1cfc64ca107d87337dd26f78ac1a612e535a762f1d53d3a",
+      "bytes": 673,
+      "source": "reports/epidemiology/runs/characterization_20261021_02/run_summary_by_municipality.csv",
+      "source_sha256": "564f43c99cb02344e1cfc64ca107d87337dd26f78ac1a612e535a762f1d53d3a",
+      "operation": "exact_binary_copy",
+      "description": "Número, duración y límites de rachas por municipio."
+    },
+    "run_duration_distribution.csv": {
+      "sha256": "84d77c31fcb7b5af97e4088ae5c570a03181df48294b4d17e943af32599e65ef",
+      "bytes": 3642,
+      "source": "reports/epidemiology/runs/characterization_20261021_02/run_duration_distribution.csv",
+      "source_sha256": "84d77c31fcb7b5af97e4088ae5c570a03181df48294b4d17e943af32599e65ef",
+      "operation": "exact_binary_copy",
+      "description": "Frecuencia de cada duración por municipio."
+    },
+    "zeros_global.csv": {
+      "sha256": "54d0de38602e1ccc7b157a05bb042a302a0c8c6d85e5f61cab09835db5c43bfb",
+      "bytes": 1931,
+      "source": "reports/epidemiology/runs/reference_review_20261021_01/zeros_global.csv",
+      "source_sha256": "54d0de38602e1ccc7b157a05bb042a302a0c8c6d85e5f61cab09835db5c43bfb",
+      "operation": "exact_binary_copy",
+      "description": "Distribución global de 0-5 ceros históricos, etiquetas y EWT/conteos."
+    },
+    "zeros_by_municipality.csv": {
+      "sha256": "24892f96f3ae345f5dc92636810361af4fe266ba740d241623115bbd9c6ca8d4",
+      "bytes": 7268,
+      "source": "reports/epidemiology/runs/reference_review_20261021_01/zeros_by_municipality.csv",
+      "source_sha256": "24892f96f3ae345f5dc92636810361af4fe266ba740d241623115bbd9c6ca8d4",
+      "operation": "exact_binary_copy",
+      "description": "Distribución municipal de ceros históricos, etiquetas y valores."
+    },
+    "municipal_quartile_cutoffs.csv": {
+      "sha256": "a48d113f9826130d2f294e5fc06222d7f1d26eb970268f6ac27b0be7f46dc9ed",
+      "bytes": 748,
+      "source": "reports/epidemiology/runs/reference_review_20261021_01/municipal_quartile_cutoffs.csv",
+      "source_sha256": "a48d113f9826130d2f294e5fc06222d7f1d26eb970268f6ac27b0be7f46dc9ed",
+      "operation": "exact_binary_copy",
+      "description": "Cuantiles descriptivos municipales de EWT y conteos, 2012-2025."
+    },
+    "quartile_grid_global.csv": {
+      "sha256": "4bb7540071e2645096bf1e27c67fa4a30275ca667d9a375cc370a67092dcdf7a",
+      "bytes": 811,
+      "source": "reports/epidemiology/runs/reference_review_20261021_01/quartile_grid_global.csv",
+      "source_sha256": "4bb7540071e2645096bf1e27c67fa4a30275ca667d9a375cc370a67092dcdf7a",
+      "operation": "exact_binary_copy",
+      "description": "Cruce global de cuartiles relativos a cada municipio."
+    },
+    "quartile_grid_by_municipality.csv": {
+      "sha256": "1ac3cebec7b091149d359ca97af2c5963f237043781d0d689e9f036f44234105",
+      "bytes": 4290,
+      "source": "reports/epidemiology/runs/reference_review_20261021_01/quartile_grid_by_municipality.csv",
+      "source_sha256": "1ac3cebec7b091149d359ca97af2c5963f237043781d0d689e9f036f44234105",
+      "operation": "exact_binary_copy",
+      "description": "Cruces municipales de cuartiles y proporciones de clase."
+    },
+    "low_reference_high_count_combinations.csv": {
+      "sha256": "a720770686665e30252cdffa0f9813d4b1c642bd8cb4b38b42c4011b4c03bcd9",
+      "bytes": 2379,
+      "source": "reports/epidemiology/runs/reference_review_20261021_01/low_reference_high_count_combinations.csv",
+      "source_sha256": "a720770686665e30252cdffa0f9813d4b1c642bd8cb4b38b42c4011b4c03bcd9",
+      "operation": "exact_binary_copy",
+      "description": "Combinaciones descriptivas EWT<=P25 y conteo>P75."
+    },
+    "long_runs_detail.csv": {
+      "sha256": "016ef40ba913041e2d3965421aa049d94aad17ac0372c88b1702d85893c2a1f7",
+      "bytes": 8470,
+      "source": "reports/epidemiology/runs/reference_review_20261021_01/long_runs_detail.csv",
+      "source_sha256": "016ef40ba913041e2d3965421aa049d94aad17ac0372c88b1702d85893c2a1f7",
+      "operation": "exact_binary_copy",
+      "description": "Las 20 rachas >=52 semanas con EWT/conteos, ceros y rangos relativos."
+    },
+    "long_runs_annual_profiles.csv": {
+      "sha256": "9190ba755556d16c382ca828f001856dc7f24c79b891357dd13747df850060c8",
+      "bytes": 7752,
+      "source": "reports/epidemiology/runs/reference_review_20261021_01/long_runs_annual_profiles.csv",
+      "source_sha256": "9190ba755556d16c382ca828f001856dc7f24c79b891357dd13747df850060c8",
+      "operation": "exact_binary_copy",
+      "description": "Perfiles anuales dentro de cada racha prolongada."
+    },
+    "weekly_cases_ewt_eligible_period.png": {
+      "sha256": "5fcdb91b06e3cc251c55d08b54ad96d94a6b66a3eac6605cb74cd457e613bb43",
+      "bytes": 711923,
+      "source": "reports/epidemiology/runs/characterization_20261021_02/weekly_cases_ewt_eligible_period.png",
+      "source_sha256": "5fcdb91b06e3cc251c55d08b54ad96d94a6b66a3eac6605cb74cd457e613bb43",
+      "operation": "exact_binary_copy",
+      "description": "Comparación 2012-2025 de casos y EWT, seis ejes independientes."
+    },
+    "weekly_cases_ewt_eligible_period.svg": {
+      "sha256": "5a9f7ce51118a64cd4723055b31c15dcfad1d6dcebdf9c4836fff9dae045c106",
+      "bytes": 335600,
+      "source": "reports/epidemiology/runs/characterization_20261021_02/weekly_cases_ewt_eligible_period.svg",
+      "source_sha256": "5a9f7ce51118a64cd4723055b31c15dcfad1d6dcebdf9c4836fff9dae045c106",
+      "operation": "exact_binary_copy",
+      "description": "Versión vectorial de la comparación 2012-2025."
+    },
+    "weekly_cases_ewt_full.svg": {
+      "sha256": "834ec2e3198bdf36124dfdce82f306f4cb717aac2b9576c7d029286314d9770b",
+      "bytes": 374320,
+      "source": "reports/epidemiology/runs/characterization_20261021_02/weekly_cases_ewt_full.svg",
+      "source_sha256": "834ec2e3198bdf36124dfdce82f306f4cb717aac2b9576c7d029286314d9770b",
+      "operation": "exact_binary_copy",
+      "description": "Vista vectorial histórica 2007-2025, incluida inicialización sin EWT."
+    },
+    "annual_positive_percentage.png": {
+      "sha256": "659c3b0c0e3044ac606ccaa8455eaf161d902d4210b74d86529ff49e1513224e",
+      "bytes": 152532,
+      "source": "reports/epidemiology/runs/characterization_20261021_02/annual_positive_percentage.png",
+      "source_sha256": "659c3b0c0e3044ac606ccaa8455eaf161d902d4210b74d86529ff49e1513224e",
+      "operation": "exact_binary_copy",
+      "description": "Porcentajes anuales de etiquetas positivas por municipio."
+    },
+    "positive_run_durations.png": {
+      "sha256": "986c4ff07a325f4ab783854096c487d29b0942fb9b96e6a08c8c8e8cc04b7fc6",
+      "bytes": 134699,
+      "source": "reports/epidemiology/runs/characterization_20261021_02/positive_run_durations.png",
+      "source_sha256": "986c4ff07a325f4ab783854096c487d29b0942fb9b96e6a08c8c8e8cc04b7fc6",
+      "operation": "exact_binary_copy",
+      "description": "Distribución municipal de duración de rachas positivas."
+    },
+    "ewt_by_historical_zeros.png": {
+      "sha256": "3824091b9564264bee0e39e5ecc68fae6495ad8ed3c000e93525dd6a2ca0fbce",
+      "bytes": 96807,
+      "source": "reports/epidemiology/runs/reference_review_20261021_01/ewt_by_historical_zeros.png",
+      "source_sha256": "3824091b9564264bee0e39e5ecc68fae6495ad8ed3c000e93525dd6a2ca0fbce",
+      "operation": "exact_binary_copy",
+      "description": "Distribución de EWT por cantidad de ceros históricos; escala logarítmica."
+    },
+    "municipal_quartile_combinations.png": {
+      "sha256": "d9f7e82f0cace48afffdbd1ce2778f4efc694af4be3fc21b118f312293d62457",
+      "bytes": 193155,
+      "source": "reports/epidemiology/runs/reference_review_20261021_01/municipal_quartile_combinations.png",
+      "source_sha256": "d9f7e82f0cace48afffdbd1ce2778f4efc694af4be3fc21b118f312293d62457",
+      "operation": "exact_binary_copy",
+      "description": "Positividad según cuartiles municipales de EWT y conteos."
+    },
+    "long_runs_cases_ewt.png": {
+      "sha256": "7197daa6980e4b98f242677c79b14fa9f0b04e279ff8883f21f9c0872915b9e0",
+      "bytes": 1001982,
+      "source": "reports/epidemiology/runs/reference_review_20261021_01/long_runs_cases_ewt.png",
+      "source_sha256": "7197daa6980e4b98f242677c79b14fa9f0b04e279ff8883f21f9c0872915b9e0",
+      "operation": "exact_binary_copy",
+      "description": "Las 20 rachas prolongadas, con casos/EWT y marcadores de ceros."
+    },
+    "README.md": {
+      "sha256": "e390c181b526c939a6fa2ec79164f51e5bcc1840bba47f9a53e12472fc638ba9",
+      "bytes": 3374,
+      "operation": "closure_documentation",
+      "description": "Guía breve del inventario, método, reproducción y límites."
+    }
+  },
+  "selection_policy": "All 18 nonduplicate analytical CSV; six informative PNG and two existing SVG; no duplicate full-history PNG or exploratory README.",
+  "figure_data_traceability": {
+    "final_dataset_identical_to_plotted_preliminary": true,
+    "reference_plot_checks": {
+      "weekly_cases_ewt_full": [
+        {
+          "municipality_code": "54001",
+          "plotted_count_positions": 991,
+          "plotted_ewt_positions": 730,
+          "count_total": 30489,
+          "ewt_sum": 11867.718219975224
+        },
+        {
+          "municipality_code": "08001",
+          "plotted_count_positions": 991,
+          "plotted_ewt_positions": 730,
+          "count_total": 39758,
+          "ewt_sum": 14388.55393610472
+        },
+        {
+          "municipality_code": "41001",
+          "plotted_count_positions": 991,
+          "plotted_ewt_positions": 730,
+          "count_total": 27717,
+          "ewt_sum": 10126.456926938521
+        },
+        {
+          "municipality_code": "50001",
+          "plotted_count_positions": 991,
+          "plotted_ewt_positions": 730,
+          "count_total": 25684,
+          "ewt_sum": 9817.59569144935
+        },
+        {
+          "municipality_code": "76001",
+          "plotted_count_positions": 991,
+          "plotted_ewt_positions": 730,
+          "count_total": 93894,
+          "ewt_sum": 32450.753733188132
+        },
+        {
+          "municipality_code": "08758",
+          "plotted_count_positions": 991,
+          "plotted_ewt_positions": 730,
+          "count_total": 13739,
+          "ewt_sum": 4645.351278216338
+        }
+      ],
+      "weekly_cases_ewt_eligible_period": [
+        {
+          "municipality_code": "54001",
+          "plotted_count_positions": 730,
+          "plotted_ewt_positions": 730,
+          "count_total": 23155,
+          "ewt_sum": 11867.718219975224
+        },
+        {
+          "municipality_code": "08001",
+          "plotted_count_positions": 730,
+          "plotted_ewt_positions": 730,
+          "count_total": 33259,
+          "ewt_sum": 14388.55393610472
+        },
+        {
+          "municipality_code": "41001",
+          "plotted_count_positions": 730,
+          "plotted_ewt_positions": 730,
+          "count_total": 24275,
+          "ewt_sum": 10126.456926938521
+        },
+        {
+          "municipality_code": "50001",
+          "plotted_count_positions": 730,
+          "plotted_ewt_positions": 730,
+          "count_total": 21530,
+          "ewt_sum": 9817.59569144935
+        },
+        {
+          "municipality_code": "76001",
+          "plotted_count_positions": 730,
+          "plotted_ewt_positions": 730,
+          "count_total": 78235,
+          "ewt_sum": 32450.753733188132
+        },
+        {
+          "municipality_code": "08758",
+          "plotted_count_positions": 730,
+          "plotted_ewt_positions": 730,
+          "count_total": 11908,
+          "ewt_sum": 4645.351278216338
+        }
+      ]
+    }
+  },
+  "verification": {
+    "preflight_recomputed_csv_exact_matches": 18,
+    "pytest": {
+      "passed": 174,
+      "failed": 0,
+      "skipped": 0,
+      "command": "python -B -m pytest tests/data tests/pilot_selection tests/epidemiology -q -p no:cacheprovider --import-mode=importlib --master-parquet data/processed/master_weekly_screening.parquet --pilot-parquet data/processed/pilot_municipalities_weekly.parquet --labels-parquet data/processed/epidemiology/pilot_weekly_labels.parquet",
+      "execution": "outside sandbox with permission; existing hard-link publication tests are blocked inside sandbox",
+      "collection_note": "importlib resolves duplicate test_local_regression.py basenames without renaming existing tests"
+    },
+    "git_line_endings": "Scoped -text attributes preserve final evidence and paired dataset manifest bytes; other repository files unaffected."
+  },
+  "code_and_dependencies_sha256": {
+    "src/epidemiology/__init__.py": "5780edc17ab0f188a5533e576a6966e7e7d2f8c9b5b8ef5680b3601990196980",
+    "src/epidemiology/__main__.py": "1d334176ef8a6c96a37cc7dac0afb1d9ca18e0423f2611dab30cd3595679a8cf",
+    "src/epidemiology/characterization.py": "858c5a37dd969d62ad1329ff3bb607ff37cd3a8beed4066ee48b318aa600292d",
+    "src/epidemiology/characterization_plots.py": "03d0eeec61ead266a06a7ae7efee7235fdd5482bd12c8e50b1fc9aba26143886",
+    "src/epidemiology/characterization_report.py": "5daeb41c18aad13ecc7bb1cdd4ac414d954ea5fd90ff3dd1b22514fc46f7872e",
+    "src/epidemiology/config.py": "9c3d20eb4ace6dcda49dd1bd5e13a11b951092e452263be30f1cd4332baf8b1f",
+    "src/epidemiology/ewt.py": "652fa3cde05c430686500f359052aac2818c7f2093f8d1cc57bc1f2e3fda9b75",
+    "src/epidemiology/labels.py": "316e3429e0444c1efc493c4d615de828aec9fdf69b4d5448fe592d734480fad7",
+    "src/epidemiology/pipeline.py": "a8386c8a392fc5e5891766548a368eae1f63644574422bb60273e68ab6df206d",
+    "src/epidemiology/reference_diagnostic_plots.py": "cafe51817d7dd99ad5ed2efc3d3b0e92172b9d568a91a7ffe9d88e3b240fa100",
+    "src/epidemiology/reference_diagnostic_report.py": "cd3430cba432505f601e37d24b253fe8c0f0f3e209956346f3ef196a6c4fb334",
+    "src/epidemiology/reference_diagnostics.py": "0868dab37cecb708f0073e5b86dc6f19cd95803254683933ab7757768ad8a218",
+    "src/epidemiology/validation.py": "818d53020a72494242f5fe0d871208681b0adb5cf6a16054e0048bd49cc9ca53",
+    "tests/epidemiology/conftest.py": "308c4c15f6866fbf41b4590eff37a01a45d3ccc0019eff1be951aae849e8dfcb",
+    "tests/epidemiology/test_characterization.py": "bf6865a0c1333d974b5780181cbf9a740be11e3af6f3e7b9ad0291c925973904",
+    "tests/epidemiology/test_consolidated_product.py": "357a352cbe9ecaf073f9186b5eb37cb540b611cad9c9728b677a9207c863d615",
+    "tests/epidemiology/test_ewt.py": "3e222fc538603d0f3f1aa6c5930014326a1c8fddb1a258d9945e45aa5690fe10",
+    "tests/epidemiology/test_labels.py": "9944f6576283ab41a7d50186f229a30eb27d3131e98c97515f4861bdd1480e6c",
+    "tests/epidemiology/test_local_regression.py": "e529267b8fb809a9c82e24794f60cf89a4ebec9f43bf576bf7dea38575c210b4",
+    "tests/epidemiology/test_pipeline.py": "61090bda4b9427e791f1f0108c7efae4decfa5007b9e659e01c4e60a28f574c1",
+    "tests/epidemiology/test_reference_diagnostics.py": "83bea8ac4d6c0251d1e49ca6433b0bf1d6e96816b4c833dd25f951234a979f0e",
+    "src/data/__init__.py": "3eba234214f62856c44da2c00c97fdadffa840d7725163f16570bbd5599460f3",
+    "src/data/__main__.py": "fdd704b8a9e6561c9a3881d62bcf768138c1dff056906351e4959d56ecc60392",
+    "src/data/artifacts.py": "9303f4ba2681d282881001703cd6bac240d6319b3bd5f7d54d51a85b86201da4",
+    "src/data/calendar.py": "cf20707dfa4a0d44aebbe2bac6ba3b9209d65ed39e8aeb19dd4a87d90ea506e7",
+    "src/data/config.py": "7f858c7f58f887248cc3eca162af2c5aaf5eac36bc150e1d44bb4c20c892f614",
+    "src/data/normalization.py": "70a8744240c0492ec428235c0ca4d2e6f0474ec26659eca2e01d007c25082fda",
+    "src/data/pipeline.py": "70351ea6f7ce623b5d0f93f0072bceb805bf4fb8b871ad0afee2050b1790e70a",
+    "src/data/sources.py": "72f6658290a82295f7729568528c60937fdefc1e63b3fba56dc29bdd16f7a1ff",
+    "src/data/validation.py": "a0520609cbb9b55b57a63335d894a412f1ef0e7f97e182a721aa9b7661a375e5",
+    "src/pilot_selection/__init__.py": "1bdf7afc94793a6693aa5c2abea29d5f2e2e907a685cf65725a33cf0c755500c",
+    "src/pilot_selection/__main__.py": "551574d234efe7463004c4fb3ceca5c69782e8a6bf1c84974f2fd8ab968ac924",
+    "src/pilot_selection/analysis.py": "e7faef42f5d70d1090a25e77c76c0e5bfb03b3662df1602ddae277984b3a5781",
+    "src/pilot_selection/config.py": "7c190d93cbb8ac6ddbaf8c8dd20fb37bb5e5b2ba1a5adbb63983a3a838d16650",
+    "src/pilot_selection/plots.py": "207692439391abe6ef2bc0ef6801661dc3b0c932a9193e8d37b7463f3fd00f8f",
+    "src/pilot_selection/reporting.py": "c5e014b09a62ca5b287889753f63c576bdd121148dd50d47e115281622bcd46f",
+    "src/pilot_selection/subset.py": "fe0e55dad8d1881fe4f2897f551861b04f0fbc41092dc762ef3689a2a83f20ba",
+    "requirements/data.txt": "b03fde253958c21b830461546cfd9ae9010d73b2d91a2f22c6b9a2baa1b938c6",
+    "requirements/data-test.txt": "0dcdeab69b8d47f1c524648b67867d473af20b7c525745489619d07ed7d13ac4",
+    "requirements/pilot-selection.txt": "3397833f6da8112e30c8b834e68a179c5cf89c2f28019a252f2fdad0b5d05d01",
+    "AGENTS.md": "ed8de540b59d02616bb0a3821dc9f65d69ec4c83bdbb716fb6f3e65beb811fee",
+    ".gitignore": "022b0ca02cd8d1d530d08178b12baea0b9aa62332ea22afc30b05fd272ab8e07",
+    "docs/contexto_metodologico.md": "b5caede4e8ed3f7f7c436fea35f2b7796fb9adcd1a375d97a1a560da60fbb254",
+    "docs/data_dictionary.md": "4e11342c047f4e50f43452552d7fa7abd50d7aa88788a7c4f35c07c41c95a1c8",
+    "docs/data_pipeline.md": "550d1903ef37bee659a08e46b907add13183a59a3c4d7ab1d60c493f6e8a3c03",
+    "docs/pilot_selection.md": "9e7bfb3dd4bfd9baa29a6cdc1763647c0a8ed68d99a0bb8b1b5717051a80659f",
+    "docs/epidemiology_labels.md": "676e79ea0cc1ab16c5a92cea91f296fd2b9721a8130828db280c9860d0a014f6",
+    ".gitattributes": "9d24458b4811d55c369b6559e0a0cd02433fcdcebbc11803e2164964527391e4"
+  },
+  "environment": {
+    "python": "3.11.0",
+    "pandas": "2.3.1",
+    "numpy": "1.26.4",
+    "pyarrow": "21.0.0",
+    "openpyxl": "3.1.2",
+    "pytest": "8.3.1",
+    "matplotlib": "3.9.2",
+    "Pillow": "9.4.0"
+  },
+  "preservation": {
+    "verified_unchanged_count": 76,
+    "baseline_sha256": {
+      "data/processed/master_weekly_screening.parquet": "ccc0ab5360e29cabb8b1f5d3a0feb7fe0f00dffba195c7f55ffe83c9d0a73c5e",
+      "data/processed/pilot_municipalities_weekly.parquet": "7d3d8abab711df48b7a18c25cf1b302e0edcccf6a733bd849a24a4298c5e89a2",
+      "data/processed/epidemiology/preliminary_20261021_01/pilot_weekly_labels.parquet": "b3b151a54b2dc7e8c18eb78757ad6a40093626bb807757bbccb6045b354f2c7f",
+      "data/processed/epidemiology/preliminary_20261021_01/run_manifest.json": "f521d01f3d31f276e52e65c60bcb1e7b8e741c3aaf613eb0dba0c5797f70fbc9",
+      "reports/epidemiology/runs/characterization_20261021_01/annual_positive_percentage.png": "659c3b0c0e3044ac606ccaa8455eaf161d902d4210b74d86529ff49e1513224e",
+      "reports/epidemiology/runs/characterization_20261021_01/labels_by_municipality.csv": "6ac5deafbc75d4999b6ed7f10390f6d0876dcb57c4be3b5b10f06f2fe266d564",
+      "reports/epidemiology/runs/characterization_20261021_01/labels_by_municipality_year.csv": "d0b037d8a856aaa9b855fca1cb61657e122a380a8b0895c7509eb317e8918357",
+      "reports/epidemiology/runs/characterization_20261021_01/labels_by_year.csv": "260d8ba4a57aa6075bb0b8f48da80e7cb8efb5babd67b19cf92871d09c324942",
+      "reports/epidemiology/runs/characterization_20261021_01/labels_global.csv": "e332c67ffcb5a455e2e10585631942dd19e48a9c3cf49a6c39b68b7e16652126",
+      "reports/epidemiology/runs/characterization_20261021_01/positive_run_durations.png": "986c4ff07a325f4ab783854096c487d29b0942fb9b96e6a08c8c8e8cc04b7fc6",
+      "reports/epidemiology/runs/characterization_20261021_01/positive_runs.csv": "bb1c8d7f2bf6969adaa942b90dbab89089c6862c155eb934d046588366c6925f",
+      "reports/epidemiology/runs/characterization_20261021_01/README.txt": "c6e2d5ffed27e3417a6d682560af4a303358960ba476aa61f2c27100b084da82",
+      "reports/epidemiology/runs/characterization_20261021_01/run_duration_distribution.csv": "84d77c31fcb7b5af97e4088ae5c570a03181df48294b4d17e943af32599e65ef",
+      "reports/epidemiology/runs/characterization_20261021_01/run_manifest.json": "caac5ca30c4192faea72e8e3eaeba91a04844cd18c0950fe01bae81d80540a7b",
+      "reports/epidemiology/runs/characterization_20261021_01/run_summary_by_municipality.csv": "564f43c99cb02344e1cfc64ca107d87337dd26f78ac1a612e535a762f1d53d3a",
+      "reports/epidemiology/runs/characterization_20261021_01/run_summary_global.csv": "bf94c5103a020e6e44690e84915ebf3153ae9269d92e40be356c0cff06620789",
+      "reports/epidemiology/runs/characterization_20261021_01/statistics_by_municipality.csv": "df2e352897a1ee1d65ec2cc4303323d69556d91db8620b89e10f1d1445f4f5af",
+      "reports/epidemiology/runs/characterization_20261021_01/statistics_global.csv": "8e5972871c0b3c13714cbee15c943434ac3419e9d37a981e6745773f60ca2a9c",
+      "reports/epidemiology/runs/characterization_20261021_01/weekly_cases_ewt_eligible_period.png": "9ea311ec61fdf3da6aa80d748cb902b1ff58f09eabe552c71ac2d5c2579f0a28",
+      "reports/epidemiology/runs/characterization_20261021_01/weekly_cases_ewt_eligible_period.svg": "1cbb6a3af0b2137032c633da23af25bff925c93117bcf7c64660b52929bec35a",
+      "reports/epidemiology/runs/characterization_20261021_01/weekly_cases_ewt_full.png": "56dfb538cc4c89e30eeade2e7ca0695714d1d719df621de989218dabe1de84e0",
+      "reports/epidemiology/runs/characterization_20261021_01/weekly_cases_ewt_full.svg": "519c0d608d36be9f375d39718a57f40d418f0e1862cbb16d12db39275aaea376",
+      "reports/epidemiology/runs/characterization_20261021_02/annual_positive_percentage.png": "659c3b0c0e3044ac606ccaa8455eaf161d902d4210b74d86529ff49e1513224e",
+      "reports/epidemiology/runs/characterization_20261021_02/labels_by_municipality.csv": "6ac5deafbc75d4999b6ed7f10390f6d0876dcb57c4be3b5b10f06f2fe266d564",
+      "reports/epidemiology/runs/characterization_20261021_02/labels_by_municipality_year.csv": "d0b037d8a856aaa9b855fca1cb61657e122a380a8b0895c7509eb317e8918357",
+      "reports/epidemiology/runs/characterization_20261021_02/labels_by_year.csv": "260d8ba4a57aa6075bb0b8f48da80e7cb8efb5babd67b19cf92871d09c324942",
+      "reports/epidemiology/runs/characterization_20261021_02/labels_global.csv": "e332c67ffcb5a455e2e10585631942dd19e48a9c3cf49a6c39b68b7e16652126",
+      "reports/epidemiology/runs/characterization_20261021_02/positive_run_durations.png": "986c4ff07a325f4ab783854096c487d29b0942fb9b96e6a08c8c8e8cc04b7fc6",
+      "reports/epidemiology/runs/characterization_20261021_02/positive_runs.csv": "bb1c8d7f2bf6969adaa942b90dbab89089c6862c155eb934d046588366c6925f",
+      "reports/epidemiology/runs/characterization_20261021_02/README.txt": "c6e2d5ffed27e3417a6d682560af4a303358960ba476aa61f2c27100b084da82",
+      "reports/epidemiology/runs/characterization_20261021_02/run_duration_distribution.csv": "84d77c31fcb7b5af97e4088ae5c570a03181df48294b4d17e943af32599e65ef",
+      "reports/epidemiology/runs/characterization_20261021_02/run_manifest.json": "12a76b8581a029cec1656d3737f89badc122e2373c923ee5d0acc697d50efe27",
+      "reports/epidemiology/runs/characterization_20261021_02/run_summary_by_municipality.csv": "564f43c99cb02344e1cfc64ca107d87337dd26f78ac1a612e535a762f1d53d3a",
+      "reports/epidemiology/runs/characterization_20261021_02/run_summary_global.csv": "bf94c5103a020e6e44690e84915ebf3153ae9269d92e40be356c0cff06620789",
+      "reports/epidemiology/runs/characterization_20261021_02/statistics_by_municipality.csv": "df2e352897a1ee1d65ec2cc4303323d69556d91db8620b89e10f1d1445f4f5af",
+      "reports/epidemiology/runs/characterization_20261021_02/statistics_global.csv": "8e5972871c0b3c13714cbee15c943434ac3419e9d37a981e6745773f60ca2a9c",
+      "reports/epidemiology/runs/characterization_20261021_02/weekly_cases_ewt_eligible_period.png": "5fcdb91b06e3cc251c55d08b54ad96d94a6b66a3eac6605cb74cd457e613bb43",
+      "reports/epidemiology/runs/characterization_20261021_02/weekly_cases_ewt_eligible_period.svg": "5a9f7ce51118a64cd4723055b31c15dcfad1d6dcebdf9c4836fff9dae045c106",
+      "reports/epidemiology/runs/characterization_20261021_02/weekly_cases_ewt_full.png": "1df839dc2bb60ac4776a5202e4dee33ef0cd06c4c9ceb7fc48f1fe7d5acb19b0",
+      "reports/epidemiology/runs/characterization_20261021_02/weekly_cases_ewt_full.svg": "834ec2e3198bdf36124dfdce82f306f4cb717aac2b9576c7d029286314d9770b",
+      "reports/epidemiology/runs/reference_review_20261021_01/ewt_by_historical_zeros.png": "3824091b9564264bee0e39e5ecc68fae6495ad8ed3c000e93525dd6a2ca0fbce",
+      "reports/epidemiology/runs/reference_review_20261021_01/long_runs_annual_profiles.csv": "9190ba755556d16c382ca828f001856dc7f24c79b891357dd13747df850060c8",
+      "reports/epidemiology/runs/reference_review_20261021_01/long_runs_cases_ewt.png": "7197daa6980e4b98f242677c79b14fa9f0b04e279ff8883f21f9c0872915b9e0",
+      "reports/epidemiology/runs/reference_review_20261021_01/long_runs_detail.csv": "016ef40ba913041e2d3965421aa049d94aad17ac0372c88b1702d85893c2a1f7",
+      "reports/epidemiology/runs/reference_review_20261021_01/low_reference_high_count_combinations.csv": "a720770686665e30252cdffa0f9813d4b1c642bd8cb4b38b42c4011b4c03bcd9",
+      "reports/epidemiology/runs/reference_review_20261021_01/municipal_quartile_combinations.png": "d9f7e82f0cace48afffdbd1ce2778f4efc694af4be3fc21b118f312293d62457",
+      "reports/epidemiology/runs/reference_review_20261021_01/municipal_quartile_cutoffs.csv": "a48d113f9826130d2f294e5fc06222d7f1d26eb970268f6ac27b0be7f46dc9ed",
+      "reports/epidemiology/runs/reference_review_20261021_01/quartile_grid_by_municipality.csv": "1ac3cebec7b091149d359ca97af2c5963f237043781d0d689e9f036f44234105",
+      "reports/epidemiology/runs/reference_review_20261021_01/quartile_grid_global.csv": "4bb7540071e2645096bf1e27c67fa4a30275ca667d9a375cc370a67092dcdf7a",
+      "reports/epidemiology/runs/reference_review_20261021_01/run_manifest.json": "55026f956298eca30ca2859399f6f3442344b35917e83db5b427061e17db87c6",
+      "reports/epidemiology/runs/reference_review_20261021_01/zeros_by_municipality.csv": "24892f96f3ae345f5dc92636810361af4fe266ba740d241623115bbd9c6ca8d4",
+      "reports/epidemiology/runs/reference_review_20261021_01/zeros_global.csv": "54d0de38602e1ccc7b157a05bb042a302a0c8c6d85e5f61cab09835db5c43bfb",
+      "reports/pilot_selection/evolucion_interanual_8_precandidatos_2007_2025.png": "ed524645501e2e7a5e943144f1a4bd1bdd5390c61004cffaa1436a5db521a11d",
+      "reports/pilot_selection/evolucion_semanal_6_municipios_2007_2025_informe_horizontal.png": "4bc289cd04ad4b75335d8f33bc5b167f77a32759c202b4ba12e51e7229db7107",
+      "reports/pilot_selection/evolucion_semanal_7_municipios_potenciales_2007_2025_informe.png": "24546703595e8353586bda57bbd4a7e2216f44be5be68ae1151bc57dc21947e7",
+      "reports/pilot_selection/evolucion_semanal_8_precandidatos_2007_2025.png": "7fe4fb345b2924495abe0567150e5393626481eeab03dd8ce3a623c895a01c80",
+      "reports/pilot_selection/evolucion_semanal_6_municipios_2007_2025_informe_horizontal.svg": "14fafe354edf701be1ebef858694bfb63edc1bcb59d0503dc0448b7ea4cc2436",
+      "reports/pilot_selection/evolucion_semanal_7_municipios_potenciales_2007_2025_informe.svg": "7880abda3d68c854e6929b4df4a42e7b4a06ba93e377c3f48f83383ce0b50427",
+      "src/data/__init__.py": "3eba234214f62856c44da2c00c97fdadffa840d7725163f16570bbd5599460f3",
+      "src/data/__main__.py": "fdd704b8a9e6561c9a3881d62bcf768138c1dff056906351e4959d56ecc60392",
+      "src/data/artifacts.py": "9303f4ba2681d282881001703cd6bac240d6319b3bd5f7d54d51a85b86201da4",
+      "src/data/calendar.py": "cf20707dfa4a0d44aebbe2bac6ba3b9209d65ed39e8aeb19dd4a87d90ea506e7",
+      "src/data/config.py": "7f858c7f58f887248cc3eca162af2c5aaf5eac36bc150e1d44bb4c20c892f614",
+      "src/data/normalization.py": "70a8744240c0492ec428235c0ca4d2e6f0474ec26659eca2e01d007c25082fda",
+      "src/data/pipeline.py": "70351ea6f7ce623b5d0f93f0072bceb805bf4fb8b871ad0afee2050b1790e70a",
+      "src/data/sources.py": "72f6658290a82295f7729568528c60937fdefc1e63b3fba56dc29bdd16f7a1ff",
+      "src/data/validation.py": "a0520609cbb9b55b57a63335d894a412f1ef0e7f97e182a721aa9b7661a375e5",
+      "src/pilot_selection/__init__.py": "1bdf7afc94793a6693aa5c2abea29d5f2e2e907a685cf65725a33cf0c755500c",
+      "src/pilot_selection/__main__.py": "551574d234efe7463004c4fb3ceca5c69782e8a6bf1c84974f2fd8ab968ac924",
+      "src/pilot_selection/analysis.py": "e7faef42f5d70d1090a25e77c76c0e5bfb03b3662df1602ddae277984b3a5781",
+      "src/pilot_selection/config.py": "7c190d93cbb8ac6ddbaf8c8dd20fb37bb5e5b2ba1a5adbb63983a3a838d16650",
+      "src/pilot_selection/plots.py": "207692439391abe6ef2bc0ef6801661dc3b0c932a9193e8d37b7463f3fd00f8f",
+      "src/pilot_selection/reporting.py": "c5e014b09a62ca5b287889753f63c576bdd121148dd50d47e115281622bcd46f",
+      "src/pilot_selection/subset.py": "fe0e55dad8d1881fe4f2897f551861b04f0fbc41092dc762ef3689a2a83f20ba",
+      "data/processed/master_weekly_screening.parquet.dvc": "ea77bc96f56b426e02d43c891a058d35b6c206f285d72d32d92461aa57468286",
+      "data/processed/pilot_municipalities_weekly.parquet.dvc": "9489da0e3e28c34bc31c91c8331b4180135cc8bda0228c77fbe1d12e374ad905"
+    }
+  },
+  "manual_versioning_pending": {
+    "git_index_untouched": true,
+    "no_commit_push_merge_pr": true,
+    "dvc_add_push_not_executed": true,
+    "parquet_descriptor_not_created": true,
+    "remote_configuration_unchanged": true
+  }
+}

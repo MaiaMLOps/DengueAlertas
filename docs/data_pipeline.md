@@ -174,7 +174,9 @@ identificador no certifica deduplicación entre archivos, personas o episodios;
 no se aplica deduplicación. Tampoco se certifica equivalencia del calendario
 con semanas oficiales INS ni calidad meteorológica por ausencia de nulos.
 
-Los 78 son candidatos seleccionados retrospectivamente. Siguen pendientes la
-definición final de caso, municipios finales, uso analítico de semanas parciales,
-disponibilidad histórica de información y todo el diseño supervisado. Esta salida
-es un panel retrospectivo con conteos de screening, no una matriz supervisada.
+Los 78 son candidatos seleccionados retrospectivamente. Posteriormente se adoptaron
+seis pilotos y se implementaron sus etiquetas históricas y elegibilidad en una
+etapa independiente (`pilot_selection.md` y `epidemiology_labels.md`). Este pipeline
+conserva su alcance original: panel retrospectivo con conteos de screening, no
+etiquetas ni matriz supervisada. Disponibilidad histórica simulada y diseño
+predictivo continúan pendientes.

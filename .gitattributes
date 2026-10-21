@@ -1,0 +1,5 @@
+# Preserve the exact evidence bytes and their recorded SHA-256 across Git checkouts.
+/reports/epidemiology/evidence/labels_20261021/* -text
+/data/processed/epidemiology/run_manifest.json -text
+
+reports/epidemiology/evidence/labels_20261021/*.svg binary

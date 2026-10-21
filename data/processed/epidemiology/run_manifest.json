@@ -1,0 +1,271 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "product_status": "consolidated_local_pending_manual_versioning",
+  "created_at_utc": "2026-10-21T20:28:32.827829+00:00",
+  "method": {
+    "version": 1,
+    "approved_date": "2026-10-21",
+    "count": "confirmed_records_screening",
+    "history_years": 5,
+    "epsilon": 0.001,
+    "formula": "exp(sum(log(C + 0.001)) / 5) - 0.001",
+    "numerics": "0.001 * expm1(mean(log1p(C / 0.001))); exact constant and integer-mean identities; no tolerance",
+    "calendar": "Monday-Sunday W-SUN; no INS equivalence asserted",
+    "year": "year of week_start; weeks crossing years are not split",
+    "ordinal": "1-based position of Monday within its calendar year, not ISO week",
+    "reference": "same municipality and ordinal in years y-5 through y-1 only",
+    "week_53": "use ordinal 53 when present; otherwise ordinal 52 of that historical year",
+    "epidemic_years": "included without exclusion or substitution",
+    "first_label_year": 2012,
+    "partial_week": "retain 2025-12-29 with null ewt and label; never extrapolate",
+    "ineligible": "null ewt and excess_label; label_eligible=false",
+    "comparison": "observed count > unrounded ewt; no comparison tolerance or epidemiological floor",
+    "scope": "retrospective observed weekly state; no horizon, features, model or sustained episode"
+  },
+  "source": {
+    "path": "data/processed/pilot_municipalities_weekly.parquet",
+    "sha256": "7d3d8abab711df48b7a18c25cf1b302e0edcccf6a733bd849a24a4298c5e89a2",
+    "profile": {
+      "rows": 5952,
+      "columns": 15,
+      "municipalities": 6,
+      "municipality_codes": [
+        "08001",
+        "08758",
+        "41001",
+        "50001",
+        "54001",
+        "76001"
+      ],
+      "weeks_per_municipality": {
+        "08001": 992,
+        "08758": 992,
+        "41001": 992,
+        "50001": 992,
+        "54001": 992,
+        "76001": 992
+      },
+      "partial_positions": 6,
+      "duplicate_keys": 0,
+      "nulls": {
+        "municipality_code": 0,
+        "municipality": 0,
+        "week_start": 0,
+        "population": 0,
+        "area_km2": 0,
+        "population_density_km2": 0,
+        "temperature_c": 0,
+        "precipitation_mm": 0,
+        "relative_humidity_pct": 0,
+        "confirmed_records_screening": 0,
+        "no_eligible_records_observed": 0,
+        "week_end_nominal": 0,
+        "week_end_effective": 0,
+        "n_days": 0,
+        "partial_week": 0
+      },
+      "types": {
+        "municipality_code": "string",
+        "municipality": "string",
+        "week_start": "date32[day]",
+        "population": "int64",
+        "area_km2": "double",
+        "population_density_km2": "double",
+        "temperature_c": "double",
+        "precipitation_mm": "double",
+        "relative_humidity_pct": "double",
+        "confirmed_records_screening": "int64",
+        "no_eligible_records_observed": "bool",
+        "week_end_nominal": "date32[day]",
+        "week_end_effective": "date32[day]",
+        "n_days": "uint8",
+        "partial_week": "bool"
+      },
+      "numeric_ranges": {
+        "population": {
+          "min": 314910,
+          "max": 2283342
+        },
+        "area_km2": {
+          "min": 59.5911122703142,
+          "max": 1291.33995631807
+        },
+        "population_density_km2": {
+          "min": 247.010415769817,
+          "max": 12130.0806858758
+        },
+        "temperature_c": {
+          "min": 16.3866356109484,
+          "max": 29.8056187320702
+        },
+        "precipitation_mm": {
+          "min": 0.0,
+          "max": 282.005346340366
+        },
+        "relative_humidity_pct": {
+          "min": 39.8531204910069,
+          "max": 92.0744891319545
+        },
+        "confirmed_records_screening": {
+          "min": 0,
+          "max": 914
+        },
+        "n_days": {
+          "min": 3,
+          "max": 7
+        }
+      },
+      "week_start_min": "2007-01-01",
+      "week_start_max": "2025-12-29",
+      "week_end_effective_max": "2025-12-31",
+      "total_records": 231406,
+      "partial_records": 125
+    },
+    "metadata_sha256": {
+      "denguealertas.data_dictionary": "cc73a8efa1ffe0972040fbf6635abbb638f18b57199d3c99c8421d7b1f961d92",
+      "denguealertas.rule": "347d269dea582954f571f0dd6ec60e064692db06aaf17527b8e09469fafda214",
+      "denguealertas.warnings": "1e3d46fe9e5563e90c02de07b566bbc198ef583c57244b22b598343b687bfabf",
+      "denguealertas.derivation": "231598a9e36db5f33b44277909c8eb444f51a60bbfb954a519fdd0111a9cae25"
+    }
+  },
+  "git": {
+    "commit": "89506d0b158e150ad77e8d7591bf31662874891d",
+    "branch": "feature/epidemiology-labels",
+    "dirty": true
+  },
+  "code_sha256": {
+    "src/epidemiology/__init__.py": "5780edc17ab0f188a5533e576a6966e7e7d2f8c9b5b8ef5680b3601990196980",
+    "src/epidemiology/__main__.py": "1d334176ef8a6c96a37cc7dac0afb1d9ca18e0423f2611dab30cd3595679a8cf",
+    "src/epidemiology/characterization.py": "858c5a37dd969d62ad1329ff3bb607ff37cd3a8beed4066ee48b318aa600292d",
+    "src/epidemiology/characterization_plots.py": "03d0eeec61ead266a06a7ae7efee7235fdd5482bd12c8e50b1fc9aba26143886",
+    "src/epidemiology/characterization_report.py": "5daeb41c18aad13ecc7bb1cdd4ac414d954ea5fd90ff3dd1b22514fc46f7872e",
+    "src/epidemiology/config.py": "9c3d20eb4ace6dcda49dd1bd5e13a11b951092e452263be30f1cd4332baf8b1f",
+    "src/epidemiology/ewt.py": "652fa3cde05c430686500f359052aac2818c7f2093f8d1cc57bc1f2e3fda9b75",
+    "src/epidemiology/labels.py": "316e3429e0444c1efc493c4d615de828aec9fdf69b4d5448fe592d734480fad7",
+    "src/epidemiology/pipeline.py": "a8386c8a392fc5e5891766548a368eae1f63644574422bb60273e68ab6df206d",
+    "src/epidemiology/reference_diagnostic_plots.py": "cafe51817d7dd99ad5ed2efc3d3b0e92172b9d568a91a7ffe9d88e3b240fa100",
+    "src/epidemiology/reference_diagnostic_report.py": "cd3430cba432505f601e37d24b253fe8c0f0f3e209956346f3ef196a6c4fb334",
+    "src/epidemiology/reference_diagnostics.py": "0868dab37cecb708f0073e5b86dc6f19cd95803254683933ab7757768ad8a218",
+    "src/epidemiology/validation.py": "818d53020a72494242f5fe0d871208681b0adb5cf6a16054e0048bd49cc9ca53"
+  },
+  "environment": {
+    "python": "3.11.0",
+    "pandas": "2.3.1",
+    "numpy": "1.26.4",
+    "pyarrow": "21.0.0"
+  },
+  "diagnostics": {
+    "validation": {
+      "rows": 5952,
+      "columns": 18,
+      "eligible": 4380,
+      "ineligible": 1572,
+      "initialization_rows": 1566,
+      "partial_rows": 6,
+      "original_columns_preserved": true,
+      "by_municipality": {
+        "08001": {
+          "rows": 992,
+          "eligible": 730,
+          "ineligible": 262
+        },
+        "08758": {
+          "rows": 992,
+          "eligible": 730,
+          "ineligible": 262
+        },
+        "41001": {
+          "rows": 992,
+          "eligible": 730,
+          "ineligible": 262
+        },
+        "50001": {
+          "rows": 992,
+          "eligible": 730,
+          "ineligible": 262
+        },
+        "54001": {
+          "rows": 992,
+          "eligible": 730,
+          "ineligible": 262
+        },
+        "76001": {
+          "rows": 992,
+          "eligible": 730,
+          "ineligible": 262
+        }
+      }
+    },
+    "references": {
+      "initialization": 1566,
+      "partial_week": 6,
+      "missing_history": 0,
+      "eligible": 4380,
+      "historical_references": 21900,
+      "week_53_fallback_references": 84
+    }
+  },
+  "output": {
+    "path": "data/processed/epidemiology/pilot_weekly_labels.parquet",
+    "bytes": 233665,
+    "sha256": "b3b151a54b2dc7e8c18eb78757ad6a40093626bb807757bbccb6045b354f2c7f",
+    "schema": {
+      "municipality_code": "string",
+      "municipality": "string",
+      "week_start": "date32[day]",
+      "population": "int64",
+      "area_km2": "double",
+      "population_density_km2": "double",
+      "temperature_c": "double",
+      "precipitation_mm": "double",
+      "relative_humidity_pct": "double",
+      "confirmed_records_screening": "int64",
+      "no_eligible_records_observed": "bool",
+      "week_end_nominal": "date32[day]",
+      "week_end_effective": "date32[day]",
+      "n_days": "uint8",
+      "partial_week": "bool",
+      "ewt": "double",
+      "excess_label": "int8",
+      "label_eligible": "bool"
+    }
+  },
+  "controls": {
+    "source_sha256_unchanged": true,
+    "encoded_readback_equal": true,
+    "saved_readback_equal": true,
+    "original_columns_preserved": true,
+    "binary_identity_with_preliminary": true,
+    "metadata_identity_with_preliminary": true
+  },
+  "promotion": {
+    "operation": "exact_binary_copy",
+    "source": "data/processed/epidemiology/preliminary_20261021_01/pilot_weekly_labels.parquet",
+    "source_sha256": "b3b151a54b2dc7e8c18eb78757ad6a40093626bb807757bbccb6045b354f2c7f",
+    "source_manifest": "data/processed/epidemiology/preliminary_20261021_01/run_manifest.json",
+    "source_manifest_sha256": "f521d01f3d31f276e52e65c60bcb1e7b8e741c3aaf613eb0dba0c5797f70fbc9",
+    "source_execution_created_at_utc": "2026-10-21T19:24:16.529702+00:00",
+    "no_label_recalculation": true,
+    "embedded_metadata_unchanged": true,
+    "embedded_preliminary_status_retained": true,
+    "positive_weeks": 2870,
+    "negative_weeks": 1510,
+    "eligible_weeks": 4380,
+    "ineligible_weeks": 1572
+  },
+  "reference_execution_git": {
+    "commit": "89506d0b158e150ad77e8d7591bf31662874891d",
+    "branch": "feature/epidemiology-labels",
+    "dirty": true
+  },
+  "reference_execution_code_sha256": {
+    "src/epidemiology/__init__.py": "5780edc17ab0f188a5533e576a6966e7e7d2f8c9b5b8ef5680b3601990196980",
+    "src/epidemiology/__main__.py": "1d334176ef8a6c96a37cc7dac0afb1d9ca18e0423f2611dab30cd3595679a8cf",
+    "src/epidemiology/config.py": "9c3d20eb4ace6dcda49dd1bd5e13a11b951092e452263be30f1cd4332baf8b1f",
+    "src/epidemiology/ewt.py": "652fa3cde05c430686500f359052aac2818c7f2093f8d1cc57bc1f2e3fda9b75",
+    "src/epidemiology/labels.py": "316e3429e0444c1efc493c4d615de828aec9fdf69b4d5448fe592d734480fad7",
+    "src/epidemiology/pipeline.py": "a8386c8a392fc5e5891766548a368eae1f63644574422bb60273e68ab6df206d",
+    "src/epidemiology/validation.py": "818d53020a72494242f5fe0d871208681b0adb5cf6a16054e0048bd49cc9ca53"
+  }
+}

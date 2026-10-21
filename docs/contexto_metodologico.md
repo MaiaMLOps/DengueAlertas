@@ -1,177 +1,111 @@
 # Contexto metodológico y estado de decisiones — DengueAlertas
 
-**Actualizado:** 2026-10-20.
+**Actualizado:** 2026-10-20 (hora de Colombia; PR #4 integrado el 21-10-2026 UTC).  
+**Proyecto:** «Alerta temprana de excesos en canales endémicos de dengue en Colombia mediante Machine Learning».  
+**Equipo:** Maestría en Inteligencia Artificial, Universidad de los Andes; proyecto colaborativo con acompañamiento BIOMAC.  
+**Estado:** integración retrospectiva y selección de **seis municipios piloto** concluidas; definición del desenlace y modelamiento pendientes.  
+**Documentación asociada:** `../AGENTS.md`, `data_pipeline.md`, `data_dictionary.md`, `pilot_selection.md`.
 
-**Proyecto:** «Alerta temprana de excesos en canales endémicos de dengue en Colombia mediante Machine Learning».
+## 1. Propósito y alcance
 
-**Equipo:** proyecto de grado MAIA, Universidad de los Andes, con acompañamiento de BIOMAC.
+El proyecto busca construir un prototipo académico que **anticipe estados futuros de alerta/exceso de dengue** frente a una referencia histórica local. Un **canal endémico** permite interpretar estados epidemiológicos observados; un **modelo predictivo** debe anticiparlos sin utilizar información indisponible al emitir el pronóstico. Son componentes diferentes.
 
-**Estado:** integración retrospectiva inicial completada y validada. El protocolo científico supervisado permanece abierto. Consultar también `../AGENTS.md` y `data_pipeline.md`.
+El alcance vigente fue reducido respecto de la propuesta inicial: **modelos independientes por municipio**, en territorios seleccionados, con validación histórica y posterior integración en un prototipo. No se exige un único modelo nacional, cobertura de todos los municipios, conexión operativa con SIVIGILA, inferencia en tiempo real ni demostración causal de efectos climáticos.
 
-## 1. Autoridad y alcance vigente
+Esta documentación separa **resultados documentados**, **decisiones vigentes del equipo** y **aspectos científicos abiertos**. Parámetros exploratorios de la propuesta original no se adoptan automáticamente como diseño final.
 
-Distinguir resultados comprobados en archivos o ejecuciones, decisiones explícitas del equipo, propuestas históricas y recomendaciones técnicas. Una propuesta anterior no se convierte automáticamente en una decisión vigente. Las discrepancias se documentan sin modificar reglas para forzar resultados.
+## 2. Productos de datos disponibles
 
-El alcance científico vigente es un prototipo de predicción retrospectiva para **uno o unos pocos municipios**, con **modelos independientes por municipio**. Los 78 municipios del panel son candidatos, no la selección final. No se exige cobertura nacional, inferencia en tiempo real, adquisición periódica de SIVIGILA ni integración institucional operacional.
+### 2.1. Panel maestro integrado
 
-Un canal endémico define una referencia para interpretar estados observados. Un modelo predictivo anticipa un estado futuro utilizando solo información admisible hasta la fecha de emisión. La integración completada no demuestra capacidad de pronóstico ni disponibilidad prospectiva de sus variables.
+El pipeline `src/data/` integra la auditoría del evento 210 de SIVIGILA (archivos nominales 2007–2025) con las covariables semanales de ERA5-Land, CHIRPS y DANE. Se agrupa por municipio de ocurrencia y semana de inicio de síntomas (`INI_SIN`), y se une por `municipality_code` + `week_start`.
 
-## 2. Estado comprobado de la integración
+**Producto:** `data/processed/master_weekly_screening.parquet`; descriptor `data/processed/master_weekly_screening.parquet.dvc`.
 
-El pipeline modular de `src/data/` valida fuentes, normaliza códigos y fechas, reconstruye los conteos del screening y los integra con covariables mediante `municipality_code` + `week_start`. No genera etiquetas, canales endémicos, rezagos, horizontes, particiones de entrenamiento ni modelos.
-
-La ejecución validada y las repeticiones con salidas nuevas reprodujeron:
-
-| Control | Resultado comprobado |
+| Propiedad | Resultado documentado |
 |---|---:|
-| Parquet anuales, evento 210, años nominales 2007–2025 | 19 |
-| Registros fuente/caché según manifiesto y lectura | 1.705.604 |
-| Municipios candidatos / prefijos departamentales | 78 / 26 |
-| Posiciones semanales por municipio | 992 |
-| Filas del panel integrado | 77.376 |
-| Columnas del panel integrado | 15 |
-| Registros confirmados elegibles de los candidatos | 637.271 |
+| Registros individuales examinados en 19 cachés anuales | 1.705.604 |
+| Municipios candidatos / departamentos | 78 / 26 |
+| Semanas por municipio (2007–2025) | 992 |
+| Filas / columnas | 77.376 / 15 |
+| Registros confirmados elegibles según screening | 637.271 |
 | Posiciones con al menos un registro elegible | 52.831 |
 | Posiciones sin registros elegibles observados | 24.545 |
-| Posiciones finales parciales, de tres días | 78 |
-| Claves duplicadas / filas multiplicadas por las uniones | 0 / 0 |
+| Posiciones de semana parcial final | 78 |
 
-Se comprobó equivalencia exacta del esquema y los valores de las 15 columnas entre ejecuciones, ordenando por las claves. Los hashes de las fuentes permanecieron sin cambios. La suite cuenta con **46 pruebas aprobadas**, con entradas sintéticas y regresiones de errores de escritura, publicación, rutas y conteos nulos.
+El proceso es reproducible y cuenta con pruebas automatizadas (46 aprobadas en el cierre de integración). Las nueve columnas de covariables originales permanecen y se añaden conteo semanal de screening, indicador de ausencia de registros elegibles y cuatro campos de calendario. Las definiciones de las 15 columnas están en `data_dictionary.md`; transformaciones y controles en `data_pipeline.md`.
 
-El Parquet conserva las nueve columnas de covariables y añade `confirmed_records_screening`, `no_eligible_records_observed`, `week_end_nominal`, `week_end_effective`, `n_days` y `partial_week`. También se generó una copia XLSX de inspección, cuya lectura de regreso coincidió exactamente en valores, códigos, fechas, números y booleanos. Esa copia no sustituye al Parquet maestro.
+**Regla aplicada:** evento 210, `confirmados = 1` (estado final 3 o 5 en archivos auditados), municipio de ocurrencia, semana lunes–domingo derivada de `INI_SIN` y ventana de fecha del 01-01-2007 al 31-12-2025. Esa regla reproduce el **screening retrospectivo**, pero no determina todavía la definición final de casos ni de exceso. La agregación suma aportes de diferentes archivos nominales. Los ceros son ausencia de registros elegibles observados, no notificaciones negativas verificadas.
 
-Los artefactos de la ejecución validada se guardaron en `data/processed/` y `reports/data_quality/`, fuera de Git. El reporte incluye versiones, configuración, hashes de fuentes y código, reglas, perfiles de calidad, exclusiones, resultados de aceptación y checksum de salida. Los comandos, dependencias, diccionario y detalles de publicación están en `data_pipeline.md`.
+### 2.2. Selección territorial finalizada
 
-## 3. Fuentes y reglas de integridad
+La etapa `src/pilot_selection/` examinó descriptivamente los **78 candidatos**, su continuidad, volumen, rachas sin registros, perfiles interanuales y concentración de casos. Contrastó grupos de alta, media y baja persistencia, series gráficas semanales y una sensibilidad restringida a **2007–2022**. La selección es **intencional del equipo**, no un ranking automático ni una estratificación oficial del riesgo de transmisión.
 
-Las rutas de las fuentes son configurables y los originales son inmutables. El pipeline requiere los 19 archivos `sivigila_210_AAAA.parquet`, `cache_manifest.csv` y `covariates_weekly_78_2007_2025.xlsx`. Los nombres describen el contrato de entrada y deben contrastarse con los archivos recibidos en cada entorno. Un clon del código no incluye las fuentes ni los derivados.
+**Pilotos adoptados:**
 
-### 3.1. Epidemiología
+| Municipio | DIVIPOLA | Semanas activas en 2007–2022 (%) |
+|---|---|---:|
+| Cúcuta | `54001` | 98,08 |
+| Barranquilla | `08001` | 97,96 |
+| Neiva | `41001` | 97,72 |
+| Villavicencio | `50001` | 96,77 |
+| Cali | `76001` | 96,65 |
+| Soledad | `08758` | 93,41 |
 
-La auditoría histórica describió 69 campos comunes en los Excel originales. Las cachés utilizadas por el pipeline contienen una proyección de **12 campos fuente**, todos almacenados como texto:
+Los primeros cinco estuvieron en el grupo de mayor persistencia histórica; **Soledad se incorporó por decisión explícita** tras la exploración. La actividad semanal se refiere a presencia de al menos un registro elegible, no a calidad/completitud de vigilancia. La sensibilidad 2007–2022 reduce la dependencia descriptiva de picos recientes, pero no borra la selección retrospectiva con conocimiento de 2007–2025.
 
-`CONSECUTIVE`, `COD_EVE`, `FEC_NOT`, `SEMANA`, `ANO`, `COD_DPTO_O`, `COD_MUN_O`, `INI_SIN`, `TIP_CAS`, `confirmados`, `Estado_final_de_caso`, `nom_est_f_caso`.
+**Producto:** `data/processed/pilot_municipalities_weekly.parquet`, descriptor `data/processed/pilot_municipalities_weekly.parquet.dvc`.
 
-Se añaden `_year_nominal` y `_excel_row` como enteros, y `_source_file` como texto. Validar las cachés no equivale a repetir la auditoría de las 69 columnas ni a reconstruir los Excel originales.
-
-**Regla autorizada exclusivamente para reproducir el screening histórico:**
-
-1. Evento 210 y `confirmados = 1`, correspondiente en las fuentes comprobadas a estados finales 3 o 5.
-2. Municipio de **ocurrencia**, compuesto desde `COD_DPTO_O` + `COD_MUN_O`, como texto de cinco caracteres y preservando ceros iniciales.
-3. Fecha de síntomas `INI_SIN`, con parser explícito día/mes/año y normalización de marcadores AM/PM. Conservar solo fechas interpretables dentro de 2007-01-01–2025-12-31, inclusive.
-4. Agrupar por municipio y semana de síntomas. Sumar nuevamente entre archivos nominales: **542 claves** recibieron aportes de más de un archivo en la ejecución validada.
-5. Completar la grilla con cero únicamente cuando no exista agregado elegible para una clave. Un conteo nulo en una clave coincidente es un error de integridad y se rechaza.
-
-Esta regla es **provisional**, no la definición científica definitiva de caso ni del desenlace.
-
-El balance secuencial y mutuamente excluyente de la ejecución validada fue:
-
-| Resultado del filtrado | Registros |
+| Propiedad del derivado | Resultado documentado |
 |---|---:|
-| No confirmados | 701.166 |
-| Confirmados sin fecha de síntomas | 35 |
-| Confirmados con fecha no interpretable | 0 |
-| Confirmados fuera de la ventana | 883 |
-| Confirmados con fecha válida fuera de los candidatos | 366.249 |
-| Incluidos | 637.271 |
-| Total | 1.705.604 |
+| Municipios / semanas por municipio | 6 / 992 |
+| Filas / columnas | 5.952 / 15 |
+| Confirmados elegibles, todas las semanas | 231.406 |
+| Filas / elegibles en semanas completas | 5.946 / 231.281 |
+| Posiciones de semana parcial (3 días) | 6 |
+| Claves duplicadas / nulos reportados | 0 / 0 |
 
-Advertencias que deben preservarse:
+Este producto **solo filtra territorialmente** el maestro y conserva las 15 columnas, su esquema y sus valores. No contiene canales endémicos, etiquetas, ventanas, rezagos, particiones ni modelos. El filtro usa la tupla `PILOTS` de `src/pilot_selection/config.py`. El informe de cierre, `pilot_selection.md` y la evidencia en `reports/pilot_selection/evidence/selection_20261020/` sustentan la decisión. PR #4 fusionado en `main` (commit de fusión `5cae9f8a`).
 
-- En el conjunto completo, `INI_SIN` tiene **133 vacíos** y ningún fallo de parseo en valores no vacíos bajo el parser validado. El año nominal, `ANO` y `SEMANA` no sustituyen la fecha de síntomas.
-- Hay **58.876** pares con `FEC_NOT` anterior a `INI_SIN`: **58.869** en el archivo nominal 2013 y siete en 2007. No se corrigen ni se excluyen automáticamente por esta anomalía. No interpretar esos pares como retrasos válidos de notificación.
-- `CONSECUTIVE` es único dentro de cada archivo comprobado. No se certificó deduplicación entre archivos, personas o episodios; no se aplica una estrategia de deduplicación.
-- Los estados finales y la confirmación se conocen retrospectivamente. No se reconstruyó qué clasificación estaba disponible en una fecha histórica de alerta.
-- La ausencia de registros elegibles no demuestra notificación negativa verificada, vigilancia activa ni ausencia de infecciones.
-- El alcance auditado es el evento 210; no se presupone inclusión del evento 220 ni equivalencia con todo el conjunto institucional de dengue.
-- Los 78 candidatos se seleccionaron con información del periodo completo 2007–2025. Esa selección retrospectiva puede incorporar información de periodos que después se destinen a evaluación.
+## 3. Fuentes y limitaciones que no deben perderse
 
-### 3.2. Calendario
+**SIVIGILA.** Se utilizaron los 19 Parquet anuales de la caché del evento 210, no la totalidad de las 69 variables de los libros originales. Los estados de confirmación son finales y retrospectivos. No se reconstruyeron secuencias de revisiones, disponibilidad histórica de cada registro ni deduplicación de personas/episodios entre años. En la auditoría se identificaron **58.876** pares con notificación anterior a síntomas, de los cuales **58.869** corresponden al archivo nominal 2013; no se corrigieron automáticamente. La selección original de 78 y la adopción de seis pilotos utilizaron información de todo el histórico, lo que condiciona la interpretación de futuras evaluaciones temporales.
 
-El calendario utiliza `week_start` y periodos **lunes–domingo (W-SUN)** derivados de síntomas:
+**Calendario.** La referencia es `week_start`, lunes inicial de semanas **W-SUN**. La equivalencia con las semanas oficiales INS no se verificó. El último periodo comienza el **2025-12-29** y contiene **tres días** observados hasta 2025-12-31. Se **excluyó de las estadísticas de selección**, pero **se conservó en ambos datasets Parquet**. La cantidad de días del intervalo no demuestra completitud epidemiológica ni climática.
 
-- Primer inicio: **2007-01-01**; último inicio: **2025-12-29**.
-- Cada municipio conserva **991 semanas completas y una parcial**.
-- La última semana tiene fin nominal **2026-01-04**, fin efectivo **2025-12-31** y **tres días**. Se conserva sin extrapolar ni completar artificialmente.
-- `n_days` mide la intersección del calendario con la ventana autorizada; no certifica observaciones de vigilancia o raster para cada día.
-- No se validó equivalencia exacta con la numeración epidemiológica oficial del INS.
-- La población anual y los resúmenes semanales se asignan por el año del lunes inicial. Una semana que cruza año no equivale a una agrupación individual de días calendario.
+**Clima y demografía.** Temperatura del aire y humedad relativa estimada proceden de **ERA5-Land**; precipitación de **CHIRPS v2.0 Final**; población anual y densidad de **DANE/MGN 2025**. La humedad es derivada a partir de temperatura y punto de rocío diarios, no medida directa; las medias son zonales municipales, no necesariamente representativas de zonas pobladas. Población/densidad no equivalen a población oficial en riesgo. ONI/ENSO y MODIS LST **no fueron incorporados** al núcleo actual. Ninguna covariable tiene aporte predictivo probado todavía.
 
-El tratamiento de esta semana parcial en futuros experimentos y la fecha de corte de información disponible siguen pendientes.
+**Interpretación de la selección.** Alta persistencia de registros no garantiza suficientes episodios positivos bajo la futura definición de exceso. Los picos graficados no son por sí mismos brotes definidos. Los seis pilotos no son una muestra probabilística ni necesariamente equivalentes en dificultad predictiva.
 
-### 3.3. Covariables
+## 4. Definiciones científicas todavía abiertas
 
-El integrado de entrada contiene nueve columnas comprobadas:
-
-| Columna | Significado |
+| Tema | Estado |
 |---|---|
-| `municipality_code` | Código DIVIPOLA de cinco caracteres; clave territorial |
-| `municipality` | Nombre descriptivo; no utilizar para unir |
-| `week_start` | Lunes inicial; clave temporal |
-| `population` | Población total DANE anual asignada por año del lunes inicial |
-| `area_km2` | Área municipal fija del MGN DANE 2025 |
-| `population_density_km2` | Población anual / área fija |
-| `temperature_c` | Media semanal municipal de temperatura del aire a 2 m, ERA5-Land, °C |
-| `precipitation_mm` | Acumulado de precipitación del intervalo y media zonal municipal, CHIRPS v2.0 Final, mm |
-| `relative_humidity_pct` | Humedad relativa estimada desde temperatura y punto de rocío medios diarios, ERA5-Land, % |
+| Definición de caso del estudio | El screening `confirmados = 1` no se ha adoptado como criterio universal del desenlace |
+| Canal endémico | Sin método/parametrización aprobados: referencia histórica, años, tratamiento de ceros y periodos epidémicos, umbrales, historia insuficiente |
+| Variable objetivo | Falta distinguir y elegir entre estado de alerta, exceso epidémico o inicio de episodio sostenido; estudiar su frecuencia por municipio |
+| Disponibilidad retrospectiva | Falta fijar fecha de emisión y reconocer retrasos/ajustes de SIVIGILA y latencias climáticas |
+| Predicción supervisada | Horizonte, ventanas, rezagos y matriz de entrada aún no fijados |
+| Entrenamiento y evaluación | Baselines, modelos, cortes cronológicos, métricas, calibración y umbral de decisión aún no fijados |
+| Despliegue del predictor | API/frontend existen, pero todavía no hay un modelo de dengue validado conectado al producto |
 
-Se comprobaron las 77.376 claves únicas del integrado y de las cinco capas de respaldo, sin faltantes en sus columnas y con valores numéricos concordantes dentro de precisión de punto flotante. Los nombres descriptivos difieren entre algunas capas; los códigos y las fechas sostienen la unión.
+El artículo de **Umaña et al. (2026)** (*Endemic Channel Parametrization in Dengue Surveillance*) es una referencia central sobre definición y sensibilidad de umbrales, ventanas históricas y tratamiento de ceros. **El artículo no valida pronósticos de ML**. Las opciones históricas de ventanas de 3/5/7 años, desplazamiento mínimo `ε = 0,001`, exclusión de años epidémicos, rachas y horizontes `h = 1, 2, 4` se deben estudiar, **no ejecutar por defecto**.
 
-Límites físicos y temporales:
+En la etapa siguiente debe distinguirse la **asignación retrospectiva de un estado epidemiológico** de su **anticipación futura**. No utilizar umbrales calculados con años posteriores a la fecha relevante ni características contemporáneas/futuras de la semana objetivo. Una vez aprobada la formulación del desenlace, caracterizar su prevalencia y distribución temporal antes de entrenar modelos.
 
-- Las medias climáticas corresponden a geometrías municipales, no a estaciones ni exclusivamente a cabeceras. La ausencia de nulos no certifica exactitud meteorológica ni cobertura de cada día y píxel.
-- La humedad es derivada mediante una formulación tipo Magnus aplicada a entradas diarias; no es medición directa ni promedio exacto de humedad horaria.
-- La población se conserva anual, sin interpolación semanal, y no equivale necesariamente a la población en riesgo oficial del INS.
-- El área MGN 2025 se mantiene fija para todo el histórico; la densidad no es densidad urbana ni exposición efectiva al vector.
-- La caída poblacional de **Montelíbano en 2008, −9,30 %**, se conserva sin corrección causal no validada.
-- Los ceros de precipitación son valores observados y no se sustituyen por ausencias. No se imputan covariables ni se eliminan extremos automáticamente.
-- ONI/ENSO y MODIS LST no forman parte del núcleo integrado. ONI queda como extensión con disponibilidad temporal pendiente; LST fue descartada de esta versión tras pruebas de calidad/cobertura.
-- La disponibilidad de estas variables no prueba su aporte predictivo ni obliga a incluirlas en un modelo por municipio.
+## 5. Código, versionamiento y forma de trabajo
 
-## 4. Decisiones científicas pendientes
+- Git/GitHub aloja el código, pruebas, documentación y los descriptores DVC; el repositorio `MaiaMLOps/DengueAlertas` integra las etapas de datos y selección territorial mediante los **PR #3 y #4**.
+- DVC referencia ambos Parquet en `data/processed/`. El contenido se almacena en el remoto WebDAV **`vps-storage`**; la transferencia del maestro fue comprobada y la del derivado está **reportada** por el equipo. No está documentado un `dvc pull` independiente desde otro equipo. Credenciales locales quedan fuera de Git.
+- `src/data/` integra fuentes; `src/pilot_selection/` genera análisis territorial y derivado; `tests/` contiene comprobaciones; `docs/` y `reports/pilot_selection/evidence/` recogen metodología y evidencia. No se exige volver a generar las fuentes de origen para estudiar el desenlace.
+- MLflow y los servicios de aplicación forman parte de la infraestructura del equipo, pero no hay aún entrenamiento/registro de un predictor epidemiológico definitivo que pueda inferirse de su existencia.
+- ChatGPT apoya discusión científica y tutoría; Codex ejecuta tareas autorizadas sobre el repositorio local. El usuario supervisa las decisiones científicas, desea comprender los propósitos y flujo de los módulos y prefiere **prompts breves, implementación modular y sin sobreingeniería**.
 
-| Asunto | Estado y precaución |
-|---|---|
-| Municipios finales | Abierto: uno o pocos municipios, sin selección oportunista por desempeño en test |
-| Definición final de caso | Abierta: el screening restrictivo no constituye una definición institucional universal |
-| Canal endémico | Abierto: algoritmo, ventana histórica, ceros, años epidémicos, umbrales y semanas sin historial suficiente |
-| Variable objetivo | Abierta: estado futuro de alerta/exceso e inicio de episodio sostenido son objetivos distintos |
-| Horizonte | Abierto: las opciones históricas de una, dos y cuatro semanas no son configuración adoptada |
-| Emisión y disponibilidad | Abiertas: corte de información, retrasos de notificación y publicación de productos climáticos |
-| Ventanas y rezagos | Abiertos: longitud de historia y prevención de información futura |
-| Predictores finales | Abiertos: historia de casos, clima y contexto poblacional deben compararse, no incorporarse por disponibilidad |
-| Modelos y baselines | Abiertos: comparación parsimoniosa y defendible bajo condiciones idénticas |
-| Cortes y métricas | Abiertos: particiones cronológicas, métricas principales y eventos suficientes en evaluación |
-| Umbral de decisión | Abierto: no fijarlo con test ni interpretar scores como probabilidades calibradas sin evaluación |
+## 6. Fuentes y prioridad de evidencia
 
-Las propuestas históricas de horizontes `h = 1, 2, 4`, ventanas del canal de 3/5/7 años, *minimal shift* `ε = 0,001`, rachas sostenidas y arquitecturas DLNM/INLA, boosting, LSTM o ST-GNN no deben implementarse automáticamente. Las posiciones sin confirmados tampoco equivalen a etiquetas negativas de exceso.
+- `docs/pilot_selection.md` y el informe **«Informe_final_seleccion_municipios_piloto_DengueAlertas.docx»**: decisión y resultados territoriales.
+- `docs/data_pipeline.md`, `docs/data_dictionary.md` y los informes técnicos de **SIVIGILA** y **covariables**: construcción e interpretación de las 15 columnas.
+- Umaña et al. (2026): soporte científico para estudiar la parametrización del canal endémico, sin trasladar automáticamente sus métodos a las etiquetas del proyecto.
+- `Base científica y estado del arte.docx` y propuesta académica original: antecedentes; algunas opciones reflejan un alcance anterior.
 
-## 5. Principios para etapas posteriores
-
-- Mantener separados el panel integrado, las etiquetas epidemiológicas y la matriz de ejemplos supervisados.
-- Toda característica utilizada en una predicción emitida en `t` debe estar disponible en `t` bajo una convención aprobada. Evitar conteos o clima de la semana objetivo y estadísticas aprendidas con datos futuros.
-- Usar validación temporal. Ajustar imputaciones, escaladores, selección de variables, calibración y parámetros aprendidos exclusivamente dentro del entrenamiento correspondiente.
-- Calcular umbrales de referencia sin años posteriores a la fecha relevante. Conservar las limitaciones de ajustes retrospectivos de SIVIGILA y de selección territorial.
-- Entrenar estimadores independientes por municipio dentro del alcance vigente. Comparar baselines y grupos de covariables con idéntico target, horizonte y cortes, una vez aprobados.
-- Registrar resultados por municipio, horizonte y periodo, con prevalencia, eventos positivos, falsas alertas, errores en picos/transiciones e incertidumbre cuando corresponda.
-
-## 6. Ingeniería, versionamiento y servicios
-
-El código, las pruebas, la documentación y las dependencias son versionables en Git. Los datos individuales, derivados, reportes y temporales permanecen excluidos. Los artefactos actuales describen una integración retrospectiva validada, no un modelo supervisado.
-
-El pipeline rechaza sobrescrituras, verifica hashes de fuentes y prepara Parquet/JSON en temporales antes de publicarlos. Requiere soporte de enlaces duros para publicación exclusiva y utiliza un reporte de éxito con checksum como señal de finalización. No existe una transacción indivisible entre ambos archivos ante una terminación abrupta; los detalles y la recuperación están en `data_pipeline.md`.
-
-El seguimiento mediante DVC está pendiente de configuración en esta etapa. Antes de incorporarlo deben acordarse los artefactos y su provisión, revisar las exclusiones para permitir los metadatos necesarios y definir la reproducción conservando protección contra sobrescrituras. La disponibilidad remota de DVC o MLflow no se presume por una configuración reportada; no se ha comprobado en esta integración. No se han registrado experimentos ni promovido modelos.
-
-El repositorio incluye frontend y backend, cuyo contrato debe inspeccionarse cuando una tarea explícita los involucre. No modificar API, frontend, CI/CD, secretos, infraestructura, remotos o despliegues como efecto lateral del trabajo de datos. Commits, pushes, publicaciones y operaciones remotas requieren autorización específica; nunca imprimir o persistir credenciales.
-
-## 7. Referencias y prioridad de evidencia
-
-Las referencias se consultan en la ubicación configurada, sin alterar sus originales. Fuentes principales:
-
-- `Informe_integral_auditoria_SIVIGILA_2007_2025_consenso_78.docx`: auditoría, filtros, calendario y selección de candidatos.
-- `Informe_final_covariables_semanales_78_municipios_2007_2025.docx`: origen, transformaciones y límites de las covariables.
-- `Endemic Channel Parametrization in Dengue Surveillance.pdf`: referente sobre parametrización del canal; no certifica pronóstico ML.
-- `Base científica y estado del arte.docx` y propuestas académicas: antecedentes sujetos al alcance vigente y a las decisiones posteriores del equipo.
-
-Ante discrepancias prevalecen: instrucciones expresas y recientes del usuario/equipo; evidencias de ejecución y archivos inspeccionados; informes técnicos; propuestas anteriores. Toda decisión científica nueva debe registrar fecha, justificación, responsable y efectos sobre reproducibilidad, etiquetas y evaluación.
+Ante discrepancias, distinguir lo observado de lo inferido y usar primero las decisiones expresas más recientes del equipo y la evidencia reproducible actual. Cambios científicos importantes requieren justificación y aprobación.

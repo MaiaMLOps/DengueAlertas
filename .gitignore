@@ -55,3 +55,5 @@ env/
 /reports/epidemiology/runs/
 !/reports/pilot_selection/evidence/selection_20261020/*.csv
 !/reports/epidemiology/evidence/labels_20261021/*.csv
+
+catboost_info/

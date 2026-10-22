@@ -12,15 +12,23 @@ from sklearn.model_selection import TimeSeriesSplit
 warnings.filterwarnings('ignore')
 
 if __name__ == "__main__":
-    current_dir = Path(__file__).resolve().parent
+    # 1. Obtener la raíz del repositorio (sube un nivel desde modelos_enmascarados/)
+    script_dir = Path(__file__).resolve().parent
+    repo_root = script_dir.parent  # Llega a DengueAlertas/
 
-    # 1. Detección dinámica de la ruta del dataset
-    if (current_dir / "muy_alta_transmision_labeled.parquet").exists():
-        default_data = current_dir / "muy_alta_transmision_labeled.parquet"
-    elif (current_dir / "data" / "processed" / "muy_alta_transmision_labeled.parquet").exists():
-        default_data = current_dir / "data" / "processed" / "muy_alta_transmision_labeled.parquet"
-    else:
-        default_data = current_dir.parents[1] / "data" / "processed" / "muy_alta_transmision_labeled.parquet"
+    # 2. Conectar a MLflow en la base de datos de la raíz
+    mlflow.set_tracking_uri(f"sqlite:///{repo_root / 'mlflow.db'}")
+
+    # 3. Ruta dinámica al dataset (buscando en data/processed/)
+    default_data = repo_root / "data" / "processed" / "muy_alta_transmision_labeled.parquet"
+    if not default_data.exists():
+        # Fallback si estuviera en epidemiology o en la raíz
+        if (repo_root / "data" / "processed" / "epidemiology" / "muy_alta_transmision_labeled.parquet").exists():
+            default_data = repo_root / "data" / "processed" / "epidemiology" / "muy_alta_transmision_labeled.parquet"
+        elif (repo_root / "muy_alta_transmision_labeled.parquet").exists():
+            default_data = repo_root / "muy_alta_transmision_labeled.parquet"
+        else:
+            default_data = script_dir / "muy_alta_transmision_labeled.parquet"
 
     parser = argparse.ArgumentParser(description="Entrenar LightGBM N2 con Masking Epidemiológico")
     parser.add_argument("--input_data", type=str, default=str(default_data))

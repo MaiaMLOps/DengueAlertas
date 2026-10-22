@@ -12,14 +12,27 @@ import xgboost as xgb
 warnings.filterwarnings('ignore')
 
 if __name__ == "__main__":
-  # 1. Definición dinámica de rutas y argumentos para DVC / VS Code Play ▶️
-  BASE_DIR = Path(__file__).resolve().parent
-  default_data = (
-      BASE_DIR
-      / "data"
-      / "processed"
-      / "muy_alta_transmision_labeled.parquet"
-  )
+  current_dir = Path(__file__).resolve().parent
+
+  # Detección inteligente de la ruta del parquet
+  if (current_dir / "muy_alta_transmision_labeled.parquet").exists():
+    default_data = current_dir / "muy_alta_transmision_labeled.parquet"
+  elif (
+      current_dir / "data" / "processed" / "muy_alta_transmision_labeled.parquet"
+  ).exists():
+    default_data = (
+        current_dir
+        / "data"
+        / "processed"
+        / "muy_alta_transmision_labeled.parquet"
+    )
+  else:
+    default_data = (
+        current_dir.parents[1]
+        / "data"
+        / "processed"
+        / "muy_alta_transmision_labeled.parquet"
+    )
 
   parser = argparse.ArgumentParser(
       description=(

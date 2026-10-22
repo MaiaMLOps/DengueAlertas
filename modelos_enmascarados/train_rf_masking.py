@@ -1,9 +1,9 @@
 import argparse
 from pathlib import Path
 import warnings
-import xgboost as xgb
+from sklearn.ensemble import RandomForestClassifier
 import mlflow
-import mlflow.xgboost
+import mlflow.sklearn
 import numpy as np
 import pandas as pd
 from sklearn.metrics import auc, classification_report, confusion_matrix, f1_score, precision_recall_curve
@@ -12,22 +12,32 @@ from sklearn.model_selection import TimeSeriesSplit
 warnings.filterwarnings('ignore')
 
 if __name__ == "__main__":
-    current_dir = Path(__file__).resolve().parent
-    if (current_dir / "muy_alta_transmision_labeled.parquet").exists():
-        default_data = current_dir / "muy_alta_transmision_labeled.parquet"
-    elif (current_dir / "data" / "processed" / "muy_alta_transmision_labeled.parquet").exists():
-        default_data = current_dir / "data" / "processed" / "muy_alta_transmision_labeled.parquet"
-    else:
-        default_data = current_dir.parents[1] / "data" / "processed" / "muy_alta_transmision_labeled.parquet"
+    # 1. Obtener la raíz del repositorio (sube un nivel desde modelos_enmascarados/)
+    script_dir = Path(__file__).resolve().parent
+    repo_root = script_dir.parent  # Llega a DengueAlertas/
 
-    parser = argparse.ArgumentParser(description="XGBoost N2 con Masking")
+    # 2. Conectar a MLflow en la base de datos de la raíz
+    mlflow.set_tracking_uri(f"sqlite:///{repo_root / 'mlflow.db'}")
+
+    # 3. Ruta dinámica al dataset (buscando en data/processed/)
+    default_data = repo_root / "data" / "processed" / "muy_alta_transmision_labeled.parquet"
+    if not default_data.exists():
+        # Fallback si estuviera en epidemiology o en la raíz
+        if (repo_root / "data" / "processed" / "epidemiology" / "muy_alta_transmision_labeled.parquet").exists():
+            default_data = repo_root / "data" / "processed" / "epidemiology" / "muy_alta_transmision_labeled.parquet"
+        elif (repo_root / "muy_alta_transmision_labeled.parquet").exists():
+            default_data = repo_root / "muy_alta_transmision_labeled.parquet"
+        else:
+            default_data = script_dir / "muy_alta_transmision_labeled.parquet"
+
+    parser = argparse.ArgumentParser(description="Random Forest N2 con Masking")
     parser.add_argument("--input_data", type=str, default=str(default_data))
     parser.add_argument("--horizonte", type=int, default=4)
     args = parser.parse_args()
 
     horizonte_h = args.horizonte
 
-    with mlflow.start_run(run_name="XGBoost_N2_Masking"):
+    with mlflow.start_run(run_name="RandomForest_N2_Masking"):
         df = pd.read_parquet(args.input_data)
         
         df[f"target_h{horizonte_h}"] = df.groupby("municipality_code")["y_it"].shift(-horizonte_h)
@@ -42,8 +52,9 @@ if __name__ == "__main__":
         df_model["umbral_ewt_actual"] = df_model["EWT_5y"]
         df_model["indice_exceso_t"] = df_model["cases_lag1"] / (df_model["EWT_5y"] + 0.001)
         
-        df_model["municipality_code"] = df_model["municipality_code"].astype("category")
-        features_n2.extend(["municipality_code", "umbral_ewt_actual", "indice_exceso_t"])
+        # Scikit-Learn requiere numéricos
+        df_model["municipality_code_encoded"] = df_model["municipality_code"].astype("category").cat.codes
+        features_n2.extend(["municipality_code_encoded", "umbral_ewt_actual", "indice_exceso_t"])
 
         X = df_model[features_n2]
         y = df_model[f"target_h{horizonte_h}"]
@@ -52,7 +63,7 @@ if __name__ == "__main__":
         auc_pr_scores, f1_scores = [], []
 
         print("\n=======================================================")
-        print(f"--- ENTRENAMIENTO XGBOOST N2 CON MASKING ---")
+        print(f"--- ENTRENAMIENTO RANDOM FOREST N2 CON MASKING ---")
         print(f"Horizonte predictivo (h): {horizonte_h} semanas")
         print(f"=======================================================")
 
@@ -65,12 +76,8 @@ if __name__ == "__main__":
             valid_test_mask = ~mask.iloc[test_idx]
             X_test, y_test = X.iloc[test_idx][valid_test_mask], y.iloc[test_idx][valid_test_mask]
 
-            ratio_desbalance = (len(y_train) - y_train.sum()) / (y_train.sum() + 1e-9)
-
-            model_fold = xgb.XGBClassifier(
-                n_estimators=200, learning_rate=0.03, max_depth=5,
-                scale_pos_weight=ratio_desbalance, subsample=0.8, colsample_bytree=0.8,
-                tree_method="hist", enable_categorical=True, random_state=42, n_jobs=-1
+            model_fold = RandomForestClassifier(
+                n_estimators=200, max_depth=10, class_weight="balanced", random_state=42, n_jobs=-1
             )
             model_fold.fit(X_train, y_train)
 
@@ -84,7 +91,7 @@ if __name__ == "__main__":
         mlflow.log_metric("mean_auc_pr", np.mean(auc_pr_scores))
         mlflow.log_metric("mean_f1_score", np.mean(f1_scores))
 
-        print("\n--- RESULTADOS XGBOOST CON MASKING (ROLLING-ORIGIN CV) ---")
+        print("\n--- RESULTADOS RANDOM FOREST CON MASKING (ROLLING-ORIGIN CV) ---")
         print(f"Mean AUC-PR: {np.mean(auc_pr_scores):.4f}")
         print(f"Mean F1-Score: {np.mean(f1_scores):.4f}")
 
@@ -99,16 +106,11 @@ if __name__ == "__main__":
         
         valid_global_mask = ~mask
         X_global, y_global = X[valid_global_mask], y[valid_global_mask]
-        ratio_final = (len(y_global) - y_global.sum()) / (y_global.sum() + 1e-9)
         
-        model_final = xgb.XGBClassifier(
-            n_estimators=200, learning_rate=0.03, max_depth=5, scale_pos_weight=ratio_final,
-            tree_method="hist", enable_categorical=True, random_state=42, n_jobs=-1
-        )
+        model_final = RandomForestClassifier(n_estimators=200, max_depth=10, class_weight="balanced", random_state=42, n_jobs=-1)
         model_final.fit(X_global, y_global)
         
-        # Corregido el MLflow warning usando artifact_path
-        mlflow.xgboost.log_model(model_final, artifact_path="modelo_xgb_masking")
+        mlflow.sklearn.log_model(model_final, artifact_path="modelo_rf_masking", serialization_format="cloudpickle")
 
         importances = pd.DataFrame({
             "Variable": features_n2,

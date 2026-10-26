@@ -12,7 +12,8 @@ MUNICIPIOS = {
     "08758": "Soledad",
 }
 
-TARGET_TYPES = ["exceso_simple", "racha_brote"]
+# AHORA INCLUYE LAS TRES DEFINICIONES
+TARGET_TYPES = ["exceso_simple", "racha_brote", "inicio_racha_masking"]
 MODELS = ["baseline", "lightgbm", "xgboost", "random_forest", "catboost"]
 
 if __name__ == "__main__":
@@ -24,9 +25,10 @@ if __name__ == "__main__":
     python_executable = sys.executable
     resultados = []
 
-    print("\n" + "="*110)
-    print("INICIANDO SUITE COMPLETA DE EXPERIMENTOS TERRITORIALES (Métricas + Matrices + Variables)")
-    print("="*110)
+    print("\n" + "="*120)
+    print("INICIANDO SUITE COMPLETA DE EXPERIMENTOS TERRITORIALES (Incluye Masking de Epidemias Activas)")
+    print(f"Total combinaciones esperadas: {len(MUNICIPIOS) * len(TARGET_TYPES) * len(MODELS)}")
+    print("="*120)
 
     for code, name in MUNICIPIOS.items():
         for target in TARGET_TYPES:
@@ -49,8 +51,9 @@ if __name__ == "__main__":
                         _, mean_auc_pr, mean_f1, prec, rec, tn, fp, fn, tp = summary_line.split("|")
                         top_feats = features_line.split("|")[1] if features_line else "N/A"
                         
-                        print(f"[{name[:12]:<12}] {model.upper():<13} | {target[:13]:<13} | "
-                              f"F1: {mean_f1} | Prec: {prec} | Rec: {rec} | "
+                        target_short = target[:13] if len(target) > 13 else target
+                        print(f"[{name[:12]:<12}] {model.upper():<13} | {target_short:<13} | "
+                              f"F1: {float(mean_f1):.4f} | Prec: {float(prec):.4f} | Rec: {float(rec):.4f} | "
                               f"CM: [[{tn}, {fp}], [{fn}, {tp}]]")
 
                         resultados.append({
@@ -75,6 +78,6 @@ if __name__ == "__main__":
     output_path = reports_dir / "resumen_experimentos_completo.csv"
     df_res.to_csv(output_path, index=False)
 
-    print("\n" + "="*110)
+    print("\n" + "="*120)
     print(f"EJECUCIÓN COMPLETADA. Resumen Maestro guardado en: {output_path}")
-    print("="*110)
+    print("="*120)

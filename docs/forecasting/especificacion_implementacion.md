@@ -114,7 +114,7 @@ Un commit por unidad.
 
 | Ruta | Responsabilidad | Requisitos (contrato §10) |
 |---|---|---|
-| `src/epidemiology/channel_epico.py` | Canal de epiCo: central, gsd, U1e y zonas; `build_channel_table`, transformación pura del panel al producto (sin E/S ni lectura de configuración) | 1, 2, 3, 4 |
+| `src/epidemiology/channel_epico.py` | Canal de epiCo: central, gsd, U1e y zonas; `build_channel_table`, transformación pura del panel al producto (sin E/S ni lectura de configuración); `reference_weeks` y `channel_for_week` para cualquier semana (F2) | 1, 2, 3, 4 |
 | `src/forecasting/build_channel.py` | Línea de comandos del producto del canal: carga la sección `canal` de la configuración, lee el panel y calcula su hash, llama a `build_channel_table` y escribe el producto y su manifiesto sin sobrescribir | 2 |
 | `src/forecasting/config.py` | Carga y validación de `configs/forecasting.yaml` con Pydantic; sobrescritura de h por variable de entorno | 5, 14 |
 | `src/forecasting/dataset.py` | Ejemplos supervisados (t, t + h) y las 15 features; entrada de la GRU | 5, 7 |
@@ -139,10 +139,15 @@ Un commit por unidad.
 **Canal: reparto y reutilización [D, F1].**
 - La dependencia va de `src/forecasting/` a `src/epidemiology/`, nunca al revés: las funciones del canal reciben `n_years`, `shift` y `alpha` solo por nombre y sin valores por defecto, y `first_year` es `src/epidemiology/config.FIRST_LABEL_YEAR`.
 - `build_channel_table` exige el calendario del panel (`validate_source`: desde 2007-01-01 hasta, como máximo, 2025-12-31), así que no sirve para semanas posteriores ni para datos subidos.
-- **Pendiente para F2:** una función del canal que no dependa del calendario del panel y calcule central y U1e para una semana arbitraria a partir de la serie de conteos del municipio (por ejemplo, U1e_{t+8} y las bandas hasta t + 8 de contrato §9.3).
-- F8 reutiliza la lógica del canal mediante esa función. En F8 se decide si `/predict/upload` usa esa función o una versión de `build_channel_table` con la validación relajada.
+- **Resuelto en F2 [H, U2.2 y U2.4].**
+  - `reference_weeks(weeks, week_start, *, n_years)` (`channel_epico.py`) es la **única** función que elige las semanas de referencia: mismo ordinal en los cinco años anteriores, en orden de año; la sustitución 53 → 52 solo se aplica cuando el año no tiene ordinal 53 en el calendario; si la semana existe y falta el dato, devuelve `None`. Delega en `ewt.historical_references` sin modificarla. La usan el canal y clim_s (contrato §5.1), así que comparten la alineación por construcción.
+  - `channel_for_week(counts, week_start, *, n_years, shift, alpha)` calcula central y U1e de cualquier semana, también posterior a 2025 y sin que sea fila del panel, a partir de los conteos de las semanas **completas** de un municipio (quien la llama excluye la semana parcial). Llama a `epico_channel` con el mismo vector de historia que `build_channel_table`: reproduce `epico_central` y `epico_upper` bit a bit en las 4.380 semanas elegibles y devuelve `None` en las 1.566 de 2007–2011.
+  - Reconstruir el producto desde el árbol limpio (commit 9ac13bb) da el mismo md5 `99fd1231…6cfc`.
+- **Pendientes para F8.** `/predict/upload` reutiliza `channel_for_week` y `reference_weeks`, pero:
+  - no puede pasar por `validate_source`, porque exige que la serie empiece el 2007-01-01 y termine a más tardar el 2025-12-31; F8 necesita una validación propia del contrato de entrada (contrato §3.3);
+  - un CSV subido puede traer completa la semana del 2025-12-29, que en la base es parcial (3 días). F8 decide cómo se trata: como semana completa del archivo subido (entonces es referencia válida de las semanas de 2026 con ordinal 52) o con la regla de la base.
 - Producto: `data/processed/epidemiology/pilot_weekly_channel.parquet`, con el manifiesto `pilot_weekly_channel_manifest.json` (no `run_manifest.json`, que es del legado). `configs/forecasting.yaml` fija `datos.version_dvc_canal` con el md5 del `.dvc`.
-- **Verificación del producto (F2).** Antes de construir features, el cargador del canal calcula el md5 del parquet en disco y lo compara con `datos.version_dvc_canal`; si no coinciden, falla con un mensaje claro. No basta con el md5 que declara el `.dvc`.
+- **Verificación del producto (F2) [H, U2.2].** `load_channel_product(path, *, expected_md5)` (`src/forecasting/dataset.py`) lee el parquet en bloques de 1 MiB, calcula su md5, lo compara con `datos.version_dvc_canal` y lee la tabla de esos mismos bytes; si no coinciden, lanza `ChannelVersionError` con los dos md5. El md5 de DVC 3 (`hash: md5`) es el de los bytes del archivo, así que es comparable. Además, `build_examples` compara `n`, `desplazamiento` y `cuantil_t` de la configuración con los metadatos del canal del producto.
 
 **Barrera de prueba: detalle [R].**
 - `guard.py` expone una única función de verificación. La llaman `metrics`, `events`, `baselines` y `evaluate` cuando reciben filas cuyo año de semana objetivo cae en la prueba.
@@ -219,6 +224,27 @@ Cifras de contrato §2.2, §5.4, §6.1, §7.4, §8.2 y `registro_decisiones.md` 
 - **Truncamiento:** para al menos 50 orígenes t por municipio, distribuidos en todo el rango y siempre con el primero y el último, las 15 features calculadas con la base completa y con la base recortada en t son exactamente iguales.
 - U1e_{t+8} no cambia al truncar en t en ninguna fila.
 
+**Lo que se congeló en F2 [H].** Archivos `tests/acceptance/test_f2_dataset.py` y `test_f2_channel_loader.py` (commit ac850b5) y `test_f2gru_input.py` (commit 2e9a0b6), cada uno con su regla `Edit(...)` de denegación. Además de las cifras anteriores:
+- **Base recortada en t:** las 15 columnas fuente de un solo municipio con `week_start ≤ t`, sin columnas del canal; las cantidades del canal y clim_s se recalculan desde ella. La muestra son 56 orígenes por municipio: 50 repartidos (con el primero y el último), los tres cuyo objetivo tiene ordinal 53, los tres cuyo t tiene ordinal 53 y el caso A.
+- **Sensibilidad:** alterar semanas ≤ t de la base recortada cambia `crecimiento_4s`, `cambio_umbral` y `anom_*_m1`; así las features salen de la base que se pasa, no de un archivo.
+- **Consistencia del canal:** `channel_for_week` reproduce `epico_central` y `epico_upper` en las 4.380 semanas elegibles y devuelve `None` en las 1.566 de 2007–2011; el canal de t + 8 calculado con los conteos ≤ t es igual al del producto en las 4.266 filas.
+- **Tres casos literales**, calculados por Jesús fuera del repositorio (intermedios del canal y las 15 features):
+  - A: Villavicencio `50001`, t = 2018-12-03 (t + 8 = 2019-01-28, en el año siguiente);
+  - B: Barranquilla `08001`, t = 2018-11-05 (t + 8 = 2018-12-31, ordinal 53, con las cinco referencias en la semana 52);
+  - C: Barranquilla `08001`, t = 2012-12-31 (t con ordinal 53; clim_t usa 2007-12-31 y la semana 52 de 2008–2011).
+- **Oráculo independiente** en pandas de las 15 features en los orígenes de la muestra, validado contra los tres casos literales.
+- **Cargador:** el producto real pasa la verificación md5 y una copia con un byte alterado se rechaza nombrando los dos md5.
+- **Entrada de la GRU** (`test_f2gru_input.py`, contrato §5.3): secuencia de 4.266 × 12 × 8 (log C_s, pos_s, zona_s en one-hot y las tres anomalías; cronológica, de t − 11 a t) y 4.266 × 3 entradas estáticas (`cambio_umbral`, `sem_sin`, `sem_cos`); mismas filas que `build_examples`; igualdad exacta entre la base completa y la recortada; coherencia exacta con `posicion_4s`, `crecimiento_4s`, `zona_t`, las estáticas y `anom_*_m1..m3`.
+- **Control negativo** (`tests/forecasting/test_truncation_control.py`): importa la comparación congelada y comprueba que detecta clim_s con todos los años y C_{t+1} en lugar de C_t.
+
+**Convención de tolerancias [D, F2].** Igualdad exacta (`==`) cuando se compara una función consigo misma (truncamiento, `channel_for_week` frente al producto, coherencia GRU–tabular); `rel=1e-9, abs=1e-12` cuando se comparan dos implementaciones (oráculo, casos literales).
+
+**Convención de agregación [D, F2].** Toda suma o media sobre semanas es una suma de izquierda a derecha, de la semana más antigua a t. Por eso la entrada de la GRU reproduce las features tabulares bit a bit.
+
+**Guarda de la semana objetivo [D, F2].** `build_features` y `build_gru_input` fallan si la referencia más reciente de t + h es posterior a t (posible desde h = 53); con h ∈ {2, 4, 8, 12} nunca ocurre.
+
+**La GRU en la búsqueda.** Su entrada está construida y probada, pero su inclusión en la búsqueda se decide en el pre-registro (§7).
+
 **F3**
 - Desarrollo: 208 filas evaluadas por municipio, 1.248 en total, 319 positivas.
 - Prueba: 156 por municipio, 936 en total, 322 positivas.
@@ -269,6 +295,8 @@ Contrato §6.3 exige fijarlo antes de correr el desarrollo. Esta propuesta inici
 | LightGBM | 25 candidatos aleatorios con semilla fija. Espacio orientado a regularizar: `num_leaves` 4–31, `max_depth` 2–5, `learning_rate` 0,01–0,1 (escala log), `n_estimators` 100–600, `min_child_samples` 10–50, `reg_lambda` 0–10, `subsample` y `colsample_bytree` 0,6–1,0 |
 | GRU (opcional) | 2–3 arquitecturas de una capa (16 o 32 unidades, dropout 0,2), parada temprana con el último año de cada entrenamiento, 5 semillas |
 | Semillas | Una semilla global documentada, la misma en los seis municipios |
+
+**GRU [D, F2].** La entrada de la GRU (`build_gru_input`, contrato §5.3) quedó construida y probada en F2. Si la GRU entra en la búsqueda de F5b se decide en este pre-registro.
 
 **Puntos que hay que resolver en el punto de control [I]:**
 - Con `max_depth` d, un árbol tiene como mucho 2^d hojas. `num_leaves` > 2^`max_depth` no tiene efecto, así que conviene acotar `num_leaves` en función de `max_depth` o muestrear solo uno de los dos.
@@ -360,10 +388,14 @@ Contrato §6.3 exige fijarlo antes de correr el desarrollo. Esta propuesta inici
 
 ## 12. Preguntas abiertas
 
+**Resueltas:**
+- ~~Qué rol tiene Jesús y si puede crear experimentos y registrar modelos.~~ Rol **Runners**: puede crear experimentos y registrar modelos en `platform.arkoiot.com` [respuesta de Jesús, 2026-11-11]. `seguimiento.modo` sigue en `local` hasta antes de F5b (§9).
+- ~~Qué versión de MLflow corre en el servidor.~~ **MLflow 3.17.0** [H, F0 U0.7; §9]; cliente `mlflow-skinny==3.17.0`.
+
+**Abiertas:**
 - **Para el compañero que administra arkoiot** (antes del jueves 12, porque F5b lo necesita):
-  - qué rol tiene Jesús y si puede crear experimentos y registrar modelos;
-  - qué versión de MLflow corre en el servidor;
   - si las credenciales de DVC y las de MLflow son las mismas personas o cuentas;
+  - cómo conviven los modelos `DengueAlertas_*` ya registrados (Bucaramanga, Cali, Cartagena, Ibagué, Villavicencio) con los seis pilotos;
   - si `/predict` y el descubrimiento de modelos soportan seis modelos `DengueAlertas_*` con las etiquetas de §9;
   - qué firma espera la API.
 - **Rol de Daniel** y reparto de fases dentro del equipo; en particular, quién toma F8 de la API.

@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "created_at_utc": "2026-11-11T16:46:56.768883+00:00",
+  "parameters": {
+    "n_years": 5,
+    "shift": 1,
+    "alpha": 0.025,
+    "first_year": 2012,
+    "round_decimals": 5,
+    "reference": "epiverse-trace/epiCo commit 39a45ef, endemic_channel, method = geometric",
+    "formula": "central = round(exp(mean(log(x + shift))) - shift, 5); gsd = round(sd(log(x + shift)), 5); U1e = central * exp(|qt(alpha; n - 1)| * gsd / sqrt(n)), 0 if central = 0"
+  },
+  "source": {
+    "path": "data/processed/pilot_municipalities_weekly.parquet",
+    "sha256": "7d3d8abab711df48b7a18c25cf1b302e0edcccf6a733bd849a24a4298c5e89a2",
+    "rows": 5952
+  },
+  "config": {
+    "path": "configs/forecasting.yaml",
+    "sha256": "9927e76d84b5d0a4e37138562739158d94fa40d42e21f7b016d684f013021d3f"
+  },
+  "git": {
+    "commit": "cc53851fb4ae4b1be9406593ae030e173a25b3e6",
+    "branch": "feature/forecasting-mvp",
+    "src_dirty": false
+  },
+  "code_sha256": {
+    "src/epidemiology/channel_epico.py": "6514aaa9dc08cf33de12f90e01046dfa9913cebf4acf46308a02599ba719490b",
+    "src/epidemiology/ewt.py": "7192f43f47ee2a48152c324d86e745ec068b22a3a5ca71b1df6148ec2f070732",
+    "src/epidemiology/validation.py": "0eea2bb034af0d3473b51417b8a8cc4cf644d2cf9236fd6169e2b45eeaf52441",
+    "src/epidemiology/config.py": "ef9feccce861fce00eb2fa78078a1af922ca2b2c209b68edccee0fc1e4c38a48",
+    "src/forecasting/build_channel.py": "686cccf22512a6a4716bb6f7e3fdda46de9fa6c90d5efc0e76413c7b004ed608",
+    "src/forecasting/config.py": "aaeaebe813ff6bc0b0ca9b4fd1e617ff18bccda0f9fabf3d7b1cdf7274252bc9"
+  },
+  "environment": {
+    "python": "3.11.0",
+    "numpy": "1.26.4",
+    "pandas": "2.3.1",
+    "pyarrow": "21.0.0",
+    "scipy": "1.14.1"
+  },
+  "counts": {
+    "rows": 5952,
+    "columns": 20,
+    "eligible": 4380,
+    "ineligible": 1572,
+    "positives": 945,
+    "zones": {
+      "seguridad": 1660,
+      "alerta": 1775,
+      "epidemia": 945
+    },
+    "by_municipality": {
+      "08001": {
+        "rows": 992,
+        "eligible": 730,
+        "positives": 171,
+        "zones": {
+          "seguridad": 243,
+          "alerta": 316,
+          "epidemia": 171
+        }
+      },
+      "08758": {
+        "rows": 992,
+        "eligible": 730,
+        "positives": 204,
+        "zones": {
+          "seguridad": 278,
+          "alerta": 248,
+          "epidemia": 204
+        }
+      },
+      "41001": {
+        "rows": 992,
+        "eligible": 730,
+        "positives": 152,
+        "zones": {
+          "seguridad": 308,
+          "alerta": 270,
+          "epidemia": 152
+        }
+      },
+      "50001": {
+        "rows": 992,
+        "eligible": 730,
+        "positives": 165,
+        "zones": {
+          "seguridad": 304,
+          "alerta": 261,
+          "epidemia": 165
+        }
+      },
+      "54001": {
+        "rows": 992,
+        "eligible": 730,
+        "positives": 129,
+        "zones": {
+          "seguridad": 278,
+          "alerta": 323,
+          "epidemia": 129
+        }
+      },
+      "76001": {
+        "rows": 992,
+        "eligible": 730,
+        "positives": 124,
+        "zones": {
+          "seguridad": 249,
+          "alerta": 357,
+          "epidemia": 124
+        }
+      }
+    }
+  },
+  "output": {
+    "path": "data/processed/epidemiology/pilot_weekly_channel.parquet",
+    "bytes": 263155,
+    "sha256": "a1dfd862c2401ea7963ecdac2cbd1a7acb56e3eb3e7f609cddaf470078336bd3",
+    "schema": {
+      "municipality_code": "string",
+      "municipality": "string",
+      "week_start": "date32[day]",
+      "population": "int64",
+      "area_km2": "double",
+      "population_density_km2": "double",
+      "temperature_c": "double",
+      "precipitation_mm": "double",
+      "relative_humidity_pct": "double",
+      "confirmed_records_screening": "int64",
+      "no_eligible_records_observed": "bool",
+      "week_end_nominal": "date32[day]",
+      "week_end_effective": "date32[day]",
+      "n_days": "uint8",
+      "partial_week": "bool",
+      "epico_central": "double",
+      "epico_upper": "double",
+      "target_u1e": "int8",
+      "channel_zone": "string",
+      "channel_eligible": "bool"
+    }
+  },
+  "controls": {
+    "source_sha256_unchanged": true,
+    "encoded_readback_equal": true,
+    "saved_readback_equal": true,
+    "channel_columns": [
+      "epico_central",
+      "epico_upper",
+      "target_u1e",
+      "channel_zone",
+      "channel_eligible"
+    ]
+  }
+}

@@ -48,6 +48,9 @@ env/
 /data/processed/epidemiology/?*
 !/data/processed/epidemiology/pilot_weekly_labels.parquet.dvc
 !/data/processed/epidemiology/run_manifest.json
+# epiCo channel product (F1): only its DVC descriptor and adjacent manifest.
+!/data/processed/epidemiology/pilot_weekly_channel.parquet.dvc
+!/data/processed/epidemiology/pilot_weekly_channel_manifest.json
 
 # Forecasting results (especificación §4): Parquet ignored; only DVC descriptors in Git.
 !/data/processed/forecasting/

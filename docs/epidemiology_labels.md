@@ -1,5 +1,7 @@
 # EWT y etiquetas epidemiológicas semanales
 
+> **Legado (2026-11-10).** `ewt` y `excess_label` se conservan congelados para reproducir el informe de avance y la auditoría. No son el objetivo del MVP de pronóstico: este usa el canal de epiCo (`epico_central`, `epico_upper`, `target_u1e`), definido en `docs/forecasting/contrato_predictivo.md` y construido desde `pilot_municipalities_weekly.parquet`, no desde `pilot_weekly_labels.parquet`. Lo dicho abajo sobre el versionamiento pendiente quedó superado: el producto y su descriptor DVC están en `main` (PR #5).
+
 Contrato aprobado por el equipo el 2026-10-21, implementado, probado y caracterizado.
 El cierre local prepara los artefactos para su posterior versionamiento manual;
 no acredita commit, integración a `main`, registro DVC ni transferencia remota.

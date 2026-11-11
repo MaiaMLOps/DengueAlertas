@@ -45,6 +45,7 @@ Convención: **[H]** hecho verificado; **[D]** decisión; **[I]** inferencia; **
 6. **Desviaciones.** Cualquier desviación del contrato se registra en `desviaciones.md`, con la aprobación de Jesús, antes de continuar.
 7. **Credenciales.** No se leen, imprimen ni versionan `.env` ni las credenciales de DVC.
 8. **Control humano.** No hay commits, pushes, `dvc add` ni `dvc push`, instalaciones ni merges sin aprobación explícita (`AGENTS.md` §5).
+   - **DVC contra el remoto [D, F1].** `.dvc/config.local` usa `ask_password = true`, y DVC espera la contraseña por teclado; en una sesión no interactiva se queda sin salida. Por eso los comandos contra el remoto (`dvc push`, `dvc pull`, `dvc fetch`, `dvc status -c`) los ejecuta solo Jesús en su terminal. Claude Code no los lanza ni modifica `.dvc/config.local`; sí puede ejecutar comandos locales (`dvc status` sin `-c`, y `dvc add` con aprobación).
 
 ## 2. Modo de trabajo [D]
 
@@ -113,7 +114,8 @@ Un commit por unidad.
 
 | Ruta | Responsabilidad | Requisitos (contrato §10) |
 |---|---|---|
-| `src/epidemiology/channel_epico.py` | Canal de epiCo: central, gsd, U1e y zonas; construcción del producto | 1, 2, 3, 4 |
+| `src/epidemiology/channel_epico.py` | Canal de epiCo: central, gsd, U1e y zonas; `build_channel_table`, transformación pura del panel al producto (sin E/S ni lectura de configuración) | 1, 2, 3, 4 |
+| `src/forecasting/build_channel.py` | Línea de comandos del producto del canal: carga la sección `canal` de la configuración, lee el panel y calcula su hash, llama a `build_channel_table` y escribe el producto y su manifiesto sin sobrescribir | 2 |
 | `src/forecasting/config.py` | Carga y validación de `configs/forecasting.yaml` con Pydantic; sobrescritura de h por variable de entorno | 5, 14 |
 | `src/forecasting/dataset.py` | Ejemplos supervisados (t, t + h) y las 15 features; entrada de la GRU | 5, 7 |
 | `src/forecasting/splits.py` | Cortes por año de la semana objetivo | 11 |
@@ -133,6 +135,14 @@ Un commit por unidad.
 | `requirements/forecasting.txt` | Dependencias de modelado, fijadas en F0 | — |
 | `tests/forecasting/` | Pruebas unitarias | Todos |
 | `tests/acceptance/` | Pruebas de aceptación por fase (§6) | Todos |
+
+**Canal: reparto y reutilización [D, F1].**
+- La dependencia va de `src/forecasting/` a `src/epidemiology/`, nunca al revés: las funciones del canal reciben `n_years`, `shift` y `alpha` solo por nombre y sin valores por defecto, y `first_year` es `src/epidemiology/config.FIRST_LABEL_YEAR`.
+- `build_channel_table` exige el calendario del panel (`validate_source`: desde 2007-01-01 hasta, como máximo, 2025-12-31), así que no sirve para semanas posteriores ni para datos subidos.
+- **Pendiente para F2:** una función del canal que no dependa del calendario del panel y calcule central y U1e para una semana arbitraria a partir de la serie de conteos del municipio (por ejemplo, U1e_{t+8} y las bandas hasta t + 8 de contrato §9.3).
+- F8 reutiliza la lógica del canal mediante esa función. En F8 se decide si `/predict/upload` usa esa función o una versión de `build_channel_table` con la validación relajada.
+- Producto: `data/processed/epidemiology/pilot_weekly_channel.parquet`, con el manifiesto `pilot_weekly_channel_manifest.json` (no `run_manifest.json`, que es del legado). `configs/forecasting.yaml` fija `datos.version_dvc_canal` con el md5 del `.dvc`.
+- **Verificación del producto (F2).** Antes de construir features, el cargador del canal calcula el md5 del parquet en disco y lo compara con `datos.version_dvc_canal`; si no coinciden, falla con un mensaje claro. No basta con el md5 que declara el `.dvc`.
 
 **Barrera de prueba: detalle [R].**
 - `guard.py` expone una única función de verificación. La llaman `metrics`, `events`, `baselines` y `evaluate` cuando reciben filas cuyo año de semana objetivo cae en la prueba.

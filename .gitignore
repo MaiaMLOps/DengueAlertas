@@ -66,4 +66,5 @@ env/
 /reports/epidemiology/runs/
 !/reports/pilot_selection/evidence/selection_20261020/*.csv
 !/reports/epidemiology/evidence/labels_20261021/*.csv
+!/reports/epidemiology/evidence/channel_20261111/*.csv
 !/reports/forecasting/evidence/*/*.csv

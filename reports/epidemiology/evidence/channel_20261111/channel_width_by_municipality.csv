@@ -1,0 +1,7 @@
+municipality_code,municipality,eligible_weeks,ratio_p10,ratio_median,ratio_p90,weeks_central_zero,weeks_central_below_1,central_min
+54001,Cúcuta,730,2.2633,3.8041,6.9658,0,0,3.562
+08001,Barranquilla,730,2.0755,3.4128,6.1588,0,0,2.7645
+41001,Neiva,730,2.301,3.6581,6.9461,0,0,2.6087
+50001,Villavicencio,730,2.0207,3.6844,6.8519,0,0,2.7565
+76001,Cali,730,2.9106,4.4754,8.6432,0,0,12.2686
+08758,Soledad,730,1.9334,3.0125,4.8286,0,11,0.1487

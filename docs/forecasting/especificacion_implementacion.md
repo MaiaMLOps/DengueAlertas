@@ -313,6 +313,8 @@ Contrato §6.3 exige fijarlo antes de correr el desarrollo. Esta propuesta inici
 
 **Respaldo local [D, contingencia].** Si en F0 el servidor no responde o Jesús no tiene credenciales o un rol con permiso de escritura, los runs van a un almacén local dentro del repositorio, ignorado por git (`mlruns/` ya está en `.gitignore`), que se respalda aparte. Solo los modelos finales se registran en el servidor en F8. F0 elige el tipo de almacén según la versión de MLflow fijada.
 
+**Cliente y almacén fijados en F0 [D, U0.3].** El cliente es `mlflow-skinny==2.16.2` (provisional hasta confirmar la versión del servidor; si resulta incompatible, se cambia por la versión skinny correspondiente). Razón: el paquete `mlflow` completo 2.16.2 exige `pyarrow<18` y choca con `pyarrow==21.0.0` de `requirements/data.txt`; skinny trae el mismo cliente de seguimiento sin esa dependencia. Como skinny no incluye SQLAlchemy, el respaldo local es el almacén de archivos en `mlruns/`.
+
 **Registro de modelos finales [P: acordar en F8 con quien administra la API].** Propuesta, compatible con `src/api.py`:
 - un modelo registrado por municipio, `DengueAlertas_<Municipio>`;
 - etiquetas `enabled = true`, `municipality_code`, `department`, `depto_id`, `receta_hash` y `familia`;

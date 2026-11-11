@@ -1,0 +1,19 @@
+# Modelado del MVP de pronóstico (feature/forecasting-mvp). Python 3.11, solo en .venv.
+# pilot-selection.txt incluye data.txt y matplotlib (pruebas del legado y F7).
+# Entorno completo verificado (pip freeze del .venv, incluye DVC): forecasting.lock.txt.
+-r pilot-selection.txt
+
+pytest==8.3.1          # igual que data-test.txt
+scikit-learn==1.7.2
+lightgbm==4.6.0
+scipy==1.14.1
+
+# PROVISIONAL: confirmar contra la versión del servidor MLflow (especificación §9).
+# Si el servidor resulta incompatible, se cambia por la versión mlflow-skinny correspondiente.
+# Cliente skinny: el paquete mlflow completo 2.16.2 exige pyarrow<18 y choca con pyarrow==21.0.0 de data.txt.
+mlflow-skinny==2.16.2
+
+# Versiones ya presentes en .venv; python-dotenv>=1.2.2 lo exige pydantic-settings (DVC).
+pydantic==2.14.1
+PyYAML==6.0.3
+python-dotenv==1.2.4

@@ -87,4 +87,4 @@ def test_feature_and_channel_values_match_yaml():
     assert config.features.ventana_semanas == 12
     assert (config.canal.n, config.canal.desplazamiento, config.canal.cuantil_t) == (5, 1, 0.025)
     assert config.validacion.primer_anio_entrenamiento == 2012
-    assert config.seguimiento.modo == "servidor"
+    assert config.seguimiento.modo == "local"

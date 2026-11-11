@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(/.env)",
+      "Edit(/.env)",
+      "Edit(/docs/forecasting/contrato_predictivo.md)",
+      "Edit(/docs/forecasting/registro_decisiones.md)",
+      "Edit(/docs/forecasting/verificacion/**)",
+      "Edit(/src/epidemiology/ewt.py)",
+      "Edit(/src/epidemiology/labels.py)",
+      "Edit(/data/processed/master_weekly_screening.parquet.dvc)",
+      "Edit(/data/processed/pilot_municipalities_weekly.parquet.dvc)",
+      "Edit(/data/processed/epidemiology/pilot_weekly_labels.parquet.dvc)",
+      "Bash(git push *)",
+      "PowerShell(git push *)"
+    ],
+    "ask": [
+      "Bash(git commit *)",
+      "PowerShell(git commit *)",
+      "Bash(dvc push *)",
+      "PowerShell(dvc push *)"
+    ]
+  }
+}

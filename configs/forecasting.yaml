@@ -5,7 +5,7 @@
 datos:
   panel: data/processed/pilot_municipalities_weekly.parquet
   canal: data/processed/epidemiology/pilot_weekly_channel.parquet
-  version_dvc_canal: null          # se fija en F1
+  version_dvc_canal: 99fd12311a261264019645d906631cfc   # md5 del .dvc del canal (F1, U1.4)
 
 canal:                             # contrato D1.1 y §1 (epiCo, method = "geometric")
   n: 5

@@ -49,6 +49,11 @@ env/
 !/data/processed/epidemiology/pilot_weekly_labels.parquet.dvc
 !/data/processed/epidemiology/run_manifest.json
 
+# Forecasting results (especificación §4): Parquet ignored; only DVC descriptors in Git.
+!/data/processed/forecasting/
+/data/processed/forecasting/?*
+!/data/processed/forecasting/*.dvc
+
 # DVC local cache
 .dvc/cache/
 .dvc/tmp/
@@ -58,3 +63,4 @@ env/
 /reports/epidemiology/runs/
 !/reports/pilot_selection/evidence/selection_20261020/*.csv
 !/reports/epidemiology/evidence/labels_20261021/*.csv
+!/reports/forecasting/evidence/*/*.csv

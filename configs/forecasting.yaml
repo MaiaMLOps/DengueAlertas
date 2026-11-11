@@ -1,0 +1,45 @@
+# Parámetros del MVP de pronóstico (especificación §8). Se validan con Pydantic en
+# src/forecasting/config.py. Los valores vienen del contrato predictivo; no se ajustan con datos.
+# La sección `busqueda` se añade después del pre-registro (especificación §7).
+
+datos:
+  panel: data/processed/pilot_municipalities_weekly.parquet
+  canal: data/processed/epidemiology/pilot_weekly_channel.parquet
+  version_dvc_canal: null          # se fija en F1
+
+canal:                             # contrato D1.1 y §1 (epiCo, method = "geometric")
+  n: 5
+  desplazamiento: 1
+  cuantil_t: 0.025
+
+horizonte:                         # contrato §3.5 (principal) y §3.6 (sensibilidad)
+  h: 8                             # sobrescribible con FORECAST_HORIZON
+  permitidos: [2, 4, 8, 12]
+
+features:                          # contrato §5 y D6
+  w: 4
+  bloques:                         # semanas relativas a t, ambos extremos incluidos
+    m1: [-3, 0]
+    m2: [-7, -4]
+    m3: [-11, -8]
+  ventana_semanas: 12
+
+validacion:                        # contrato D7 y §6.1
+  desarrollo: [2019, 2022]
+  prueba: [2023, 2025]
+  primer_anio_entrenamiento: 2012
+
+decision:                          # contrato D8, §7.4 y §7.5
+  k: 2
+  W: 12
+  tau_grid: [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50,
+             0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95]
+
+seguimiento:                       # especificación §9
+  modo: servidor                   # servidor | local; sin respaldo automático
+  uri_servidor: https://platform.arkoiot.com   # MLFLOW_TRACKING_URI tiene prioridad
+  directorio_local: mlruns
+  experimentos:
+    desarrollo: dengue_h8_desarrollo
+    prueba: dengue_h8_prueba
+    final: dengue_h8_final

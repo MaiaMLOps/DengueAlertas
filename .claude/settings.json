@@ -12,7 +12,8 @@
       "Edit(/data/processed/pilot_municipalities_weekly.parquet.dvc)",
       "Edit(/data/processed/epidemiology/pilot_weekly_labels.parquet.dvc)",
       "Bash(git push *)",
-      "PowerShell(git push *)"
+      "PowerShell(git push *)",
+      "Edit(/tests/acceptance/test_f0_*.py)"
     ],
     "ask": [
       "Bash(git commit *)",

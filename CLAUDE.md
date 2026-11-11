@@ -57,7 +57,9 @@ Una unidad cubre uno o dos requisitos de `contrato §10` y dura entre 30 y 90 mi
 ## Entorno: Windows, app de escritorio, sesión local
 
 - **Python:** usa siempre el del entorno virtual del repositorio por su ruta: `.venv/Scripts/python.exe` (Python 3.11.0; ruta confirmada en F0). No uses el Python global aunque tenga paquetes instalados. No supongas que el entorno está activado.
-  - Pruebas: `.venv/Scripts/python.exe -m pytest ...`
+  - Pruebas: `pytest.ini` ya aplica `--import-mode=importlib` (hay dos `test_local_regression.py` en el legado).
+    - Suite completa: `.venv/Scripts/python.exe -B -m pytest tests/ -q -p no:cacheprovider`
+    - Aceptación: `.venv/Scripts/python.exe -B -m pytest tests/acceptance -q -rA -p no:cacheprovider` más las opciones de datos de `tests/acceptance/conftest.py` (`--panel-parquet`, `--channel-parquet`, `--legacy-labels-parquet`). Las opciones de datos solo se reconocen si la carpeta cuyo `conftest.py` las define se pasa explícitamente como argumento (no basta `tests/`).
   - DVC: `.venv/Scripts/dvc.exe ...` (`status` y `pull` sin preguntar; `add` y `push` con aprobación).
 - **Dependencias:** el conjunto de modelado está en `requirements/forecasting.txt`, que se crea en F0. No instales nada sin aprobación.
 - **Credenciales:** `.env` contiene las credenciales de Cloudflare Access para MLflow. **No lo leas, no lo imprimas y no copies su contenido en mensajes, código, logs ni commits.** Los scripts las cargan con `python-dotenv`. Las credenciales de DVC son locales y nunca se escriben.

@@ -182,7 +182,7 @@ Cifras de contrato §2.2, §5.4, §6.1, §7.4, §8.2 y `registro_decisiones.md` 
 - `FORECAST_HORIZON=4` sobrescribe h y un valor no entero falla.
 - `tracking.py` falla con un mensaje claro si faltan `CF_ACCESS_CLIENT_ID` o `CF_ACCESS_CLIENT_SECRET`, sin imprimir sus valores.
 
-**F1** (con `--channel-parquet` y `--labels-parquet`)
+**F1** (con `--channel-parquet` y `--legacy-labels-parquet`; este nombre evita chocar con la opción `--labels-parquet` del legado en `tests/epidemiology/conftest.py`, U0.5)
 - El producto tiene 5.952 filas (6 × 992); la clave (municipio, `week_start`) es única; no tiene `ewt` ni `excess_label`.
 - Los conteos, `temperature_c`, `precipitation_mm` y `relative_humidity_pct` son idénticos a los del parquet de legado, y la elegibilidad coincide con `label_eligible`.
 - Hay 4.380 semanas elegibles y 945 con `target_u1e = 1`.

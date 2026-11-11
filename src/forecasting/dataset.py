@@ -187,7 +187,11 @@ def _weekly_quantities(source: pa.Table, origins: list[tuple[str, date]], *, h: 
                        channel_offsets: Sequence[int], climate_offsets: Sequence[int]) -> _Weekly:
     """Per-week quantities, each computed once per municipality and week without repetitions:
     channel (central, U1e) for t + channel_offsets and t + h, and anomalies a_s for t + climate_offsets.
-    Any missing quantity raises an error naming municipality, week and quantity."""
+    Any missing quantity raises an error naming municipality, week and quantity.
+
+    Guard (contrato §3.2): U1e_{t+h} is known in advance only if its most recent reference week is
+    <= t. With a full base a long horizon (h >= 53) could reach a reference after t; that origin
+    raises an error naming municipality, t and h instead of silently using a later week."""
     counts, climate = _complete_weeks(source)
     channel_kwargs = {"n_years": canal.n, "shift": canal.desplazamiento, "alpha": canal.cuantil_t}
     channel: dict[tuple[str, date], tuple[float, float]] = {}
@@ -197,8 +201,14 @@ def _weekly_quantities(source: pa.Table, origins: list[tuple[str, date]], *, h: 
         channel_weeks, climate_weeks = set(), set()
         for origin_code, t in origins:
             if origin_code == code:
+                target = t + timedelta(weeks=h)
+                target_references = reference_weeks(counts[code], target, n_years=canal.n)
+                require(target_references is None or max(target_references) <= t,
+                        f"Target-week channel for {code}, t = {t}, h = {h} would use the week "
+                        f"{max(target_references) if target_references else None} after t: U1e_(t+h) must "
+                        "come only from weeks <= t (contrato §3.2).")
                 channel_weeks.update(t + timedelta(weeks=offset) for offset in channel_offsets)
-                channel_weeks.add(t + timedelta(weeks=h))
+                channel_weeks.add(target)
                 climate_weeks.update(t + timedelta(weeks=offset) for offset in climate_offsets)
         for week in sorted(channel_weeks):
             result = channel_for_week(counts[code], week, **channel_kwargs)

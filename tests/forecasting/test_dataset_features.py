@@ -204,6 +204,27 @@ def test_base_with_channel_columns_is_rejected():
         features_of(product(panel()), [(CODE, date(2012, 6, 4))])
 
 
+# --------------------------------------------------------------------------- guard: references of t + h <= t
+def test_target_references_after_t_raise_naming_municipality_t_and_h():
+    # t + 60 = 2013-07-29 (ordinal 30); its 2012 reference, ordinal 30, is 2012-07-23, after t = 2012-06-04.
+    with pytest.raises(EpidemiologyValidationError, match=r"08001, t = 2012-06-04, h = 60 .*2012-07-23"):
+        features_of(panel(), [(CODE, date(2012, 6, 4))], h=60)
+
+
+def test_horizon_of_52_weeks_never_reaches_after_t():
+    # The previous-year reference of t + 52 is t itself or one week before (ordinal alignment).
+    row = features_of(panel(), [(CODE, date(2012, 6, 4))], h=52).iloc[0]
+
+    assert math.isfinite(row["cambio_umbral"])
+
+
+def test_guard_also_applies_to_the_gru_input():
+    from src.forecasting.dataset import build_gru_input
+
+    with pytest.raises(EpidemiologyValidationError, match="h = 60"):
+        build_gru_input(panel(), [(CODE, date(2012, 6, 4))], h=60, canal=CANAL, features=FEATURES_CFG)
+
+
 # --------------------------------------------------------------------------- climate (variables 7-15)
 CLIM_2012 = {"temperature_c": 22.0, "precipitation_mm": 30.0, "relative_humidity_pct": 64.0}
 

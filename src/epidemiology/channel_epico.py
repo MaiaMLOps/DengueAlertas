@@ -20,12 +20,18 @@ Parameters are explicit keyword-only arguments without defaults; callers take th
 `canal` section of configs/forecasting.yaml and `first_year` from `config.FIRST_LABEL_YEAR`.
 This module never reads configuration nor files.
 
+`channel_for_week` computes central and upper for any week, also after 2025 and without that week
+being a panel row, from a municipality's counts of complete weeks. It follows the same chain as
+`build_channel_table` (historical_references -> epico_channel), so on panel weeks it reproduces the
+product bit for bit.
+
 Limitation: what is verified is this transcription of the epiCo formula, not epiCo executed
 in R. Python `round` and R `round` could differ only on an exact tie at the sixth decimal;
 the acceptance figures were computed with Python as well, so they would not detect it.
 """
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from datetime import date, datetime, timedelta
 import math
 
 import numpy as np
@@ -33,7 +39,7 @@ import pyarrow as pa
 from scipy import stats
 
 from .config import COUNT, HISTORY_YEARS
-from .ewt import history_index, historical_references, week_ordinal
+from .ewt import HistoricalWeek, history_index, historical_references, week_ordinal
 from .validation import require, validate_source
 
 ROUND_DECIMALS = 5  # part of the transcribed epiCo formula, not a tunable parameter
@@ -100,6 +106,71 @@ def channel_zone(count: int, central: float, upper: float) -> str:
     if count <= upper:
         return ZONES[1]
     return ZONES[2]
+
+
+def _is_monday_date(value) -> bool:
+    # datetime and pandas.Timestamp are date subclasses; they would never match a date key.
+    return isinstance(value, date) and not isinstance(value, datetime) and value.weekday() == 0
+
+
+_SERIES = "series"  # single-municipality key for the legacy history index
+
+
+def _candidate_index(counts: Mapping[date, int], year: int, ordinal: int) -> dict | None:
+    """Minimal history index: the weeks of ordinal `ordinal` (and 52 when it is 53) in the
+    n prior years that are present in `counts`.
+
+    A candidate date that falls outside its year (ordinal 53 in a 52-Monday year) does not exist,
+    so historical_references falls back to 52, as in the panel. If a year does have ordinal 53 but
+    `counts` lacks it, the reference is missing and None is returned: the fallback to 52 applies
+    only to years without that week, never to a missing one."""
+    index = {}
+    wanted = (ordinal, 52) if ordinal == 53 else (ordinal,)
+    for historical_year in range(year - HISTORY_YEARS, year):
+        first_day = date(historical_year, 1, 1)
+        first_monday = first_day + timedelta(days=(-first_day.weekday()) % 7)
+        for candidate_ordinal in wanted:
+            start = first_monday + timedelta(weeks=candidate_ordinal - 1)
+            if start.year != historical_year:
+                continue
+            if start not in counts:
+                if candidate_ordinal == 53:
+                    return None
+                continue
+            require(week_ordinal(start) == candidate_ordinal, "Inconsistent ordinal alignment.")
+            index[(_SERIES, historical_year, candidate_ordinal)] = HistoricalWeek(
+                start, candidate_ordinal, counts[start], False)
+    return index
+
+
+def channel_for_week(counts: Mapping[date, int], week_start: date, *, n_years: int, shift: float,
+                     alpha: float) -> tuple[float, float] | None:
+    """Return (central, upper) of any week from one municipality's counts, or None without history.
+
+    `counts` maps the Monday of each COMPLETE week to its count (precondition: the caller excludes
+    partial weeks, such as 2025-12-29; this function cannot detect them). `week_start` need not be a
+    key, so weeks after the panel (e.g. 2026-02-16) are allowed. History follows `ewt.py`: same
+    ordinal in years y-5..y-1, ordinal 53 falling back to 52 year by year; then `epico_channel` gets
+    the same vector as in `build_channel_table`. D1 eligibility (year >= first_year, complete week)
+    is the caller's decision.
+    """
+    require(n_years == HISTORY_YEARS,
+            f"The legacy calendar utilities use {HISTORY_YEARS} history years; got n_years={n_years!r}.")
+    _check_parameters(n_years, alpha, shift)
+    require(_is_monday_date(week_start), f"week_start must be a Monday datetime.date; got {week_start!r}.")
+    require(isinstance(counts, Mapping), "counts must map Monday dates to weekly counts.")
+    bad = next((key for key in counts if not _is_monday_date(key)), None)
+    require(bad is None, f"counts keys must be Monday datetime.date values; got {bad!r}.")
+    ordinal = week_ordinal(week_start)
+    index = _candidate_index(counts, week_start.year, ordinal)
+    if index is None:
+        return None
+    references = historical_references(index, _SERIES, week_start.year, ordinal)
+    if not references:
+        return None
+    central, _, upper = epico_channel([reference.count for reference in references],
+                                      n_years=n_years, shift=shift, alpha=alpha)
+    return central, upper
 
 
 def build_channel_table(table: pa.Table, *, n_years: int, shift: float, alpha: float,

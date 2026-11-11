@@ -1,7 +1,9 @@
-"""Unit tests of build_features and build_examples, part 1 (variables 1-6), with synthetic data (U2.3).
+"""Unit tests of build_features and build_examples with synthetic data (U2.3 and U2.4).
 
 Synthetic municipality: history years 2007-2011 repeat a per-ordinal count c(ordinal), so for 2012
 weeks the channel has gsd = 0 and central = U1e = c(ordinal) exactly; values follow by hand.
+Climate: in 2007-2011 each variable depends only on the year (temperature 20..24, precipitation
+10..50, humidity 60..68), so clim_s of any 2012 week is 22, 30 and 64.
 """
 
 from datetime import date, timedelta
@@ -20,7 +22,6 @@ from src.forecasting.dataset import ANNUAL_PERIOD_WEEKS, FEATURES, build_example
 
 CANAL = ChannelSection(n=5, desplazamiento=1, cuantil_t=0.025)
 FEATURES_CFG = FeatureSection(w=4, bloques={"m1": (-3, 0), "m2": (-7, -4), "m3": (-11, -8)}, ventana_semanas=12)
-IMPLEMENTED = list(FEATURES[:6])
 CODE = "08001"
 
 
@@ -28,15 +29,24 @@ def history_count(start: date) -> int:
     return week_ordinal(start) % 7 + 1
 
 
-def panel(last=date(2013, 12, 30), overrides=None) -> pa.Table:
-    overrides = overrides or {}
+def default_climate(start: date) -> tuple[float, float, float]:
+    if start.year < 2012:
+        k = start.year - 2007
+        return 20.0 + k, 10.0 * (k + 1), 60.0 + 2 * k
+    return 25.0 + (start.toordinal() % 3), 5.0 * (start.toordinal() % 4), 70.0 - (start.toordinal() % 5)
+
+
+def panel(last=date(2013, 12, 30), overrides=None, climate=None) -> pa.Table:
+    overrides, climate = overrides or {}, climate or {}
     rows, current = [], date(2007, 1, 1)
     while current <= last:
         value = overrides.get(current, history_count(current) if current.year < 2012 else 3)
+        temperature, precipitation, humidity = climate.get(current, default_climate(current))
         nominal = current + timedelta(days=6)
         rows.append({"municipality_code": CODE, "municipality": "Synthetic", "week_start": current,
                      "population": 1000, "area_km2": 10.0, "population_density_km2": 100.0,
-                     "temperature_c": 25.0, "precipitation_mm": 0.0, "relative_humidity_pct": 70.0,
+                     "temperature_c": temperature, "precipitation_mm": precipitation,
+                     "relative_humidity_pct": humidity,
                      "confirmed_records_screening": value, "no_eligible_records_observed": value == 0,
                      "week_end_nominal": nominal, "week_end_effective": nominal, "n_days": 7,
                      "partial_week": False})
@@ -68,11 +78,11 @@ def test_origin_range_follows_the_configured_window():
     assert examples["t"].iloc[0] == date(2012, 3, 19)
     assert examples["t"].iloc[-1] == date(2013, 11, 4)
     assert len(examples) == 105 - 11 - 8
-    assert list(examples.columns) == ["municipality_code", "t", "target_week", "y", *IMPLEMENTED]
+    assert list(examples.columns) == ["municipality_code", "t", "target_week", "y", *FEATURES]
 
 
 def test_origin_range_moves_with_the_window_and_h():
-    shorter = FeatureSection(w=4, bloques={"m1": (-3, 0)}, ventana_semanas=6)
+    shorter = FeatureSection(w=4, bloques={"m1": (-1, 0), "m2": (-3, -2), "m3": (-5, -4)}, ventana_semanas=6)
     examples = build_examples(product(panel()), h=4, canal=CANAL, features=shorter)
 
     assert examples["t"].iloc[0] == date(2012, 2, 6)
@@ -173,7 +183,7 @@ def test_no_missing_values():
 @pytest.mark.parametrize("origin, message", [
     ((CODE, date(2011, 6, 6)), "Channel .* unavailable"),          # no five-year history
     ((CODE, date(2007, 1, 15)), "unavailable"),                    # C_{t-4} before the base
-    ((CODE, date(2014, 1, 6)), "Count C unavailable|Channel"),     # origin after the base
+    ((CODE, date(2014, 1, 6)), "unavailable"),                     # origin after the base
     (("99999", date(2012, 6, 4)), "not in the base"),
     ((CODE, date(2012, 6, 5)), "Monday"),
 ])
@@ -192,3 +202,72 @@ def test_duplicate_origins_and_invalid_h_fail():
 def test_base_with_channel_columns_is_rejected():
     with pytest.raises(EpidemiologyValidationError, match="fifteen original columns"):
         features_of(product(panel()), [(CODE, date(2012, 6, 4))])
+
+
+# --------------------------------------------------------------------------- climate (variables 7-15)
+CLIM_2012 = {"temperature_c": 22.0, "precipitation_mm": 30.0, "relative_humidity_pct": 64.0}
+
+
+def test_climate_blocks_by_hand():
+    t = date(2012, 6, 4)  # all block weeks t-11..t are in 2012: clim = 22, 30, 64
+    row = features_of(panel(), [(CODE, t)]).iloc[0]
+
+    for short, column, how in (("temp", "temperature_c", "mean"), ("prec", "precipitation_mm", "sum"),
+                               ("hum", "relative_humidity_pct", "mean")):
+        index = ("temperature_c", "precipitation_mm", "relative_humidity_pct").index(column)
+        for block, (start, end) in {"m1": (-3, 0), "m2": (-7, -4), "m3": (-11, -8)}.items():
+            weeks = [t + timedelta(weeks=k) for k in range(start, end + 1)]
+            anomalies = [default_climate(s)[index] - CLIM_2012[column] for s in weeks]
+            expected = sum(anomalies) if how == "sum" else sum(anomalies) / 4
+            assert row[f"anom_{short}_{block}"] == pytest.approx(expected, rel=1e-12, abs=1e-12), (short, block)
+
+
+def test_block_limits_respond_only_to_their_weeks():
+    t = date(2012, 6, 4)
+    base = features_of(panel(), [(CODE, t)]).iloc[0]
+    for week, block in ((t, "m1"), (t - timedelta(weeks=3), "m1"), (t - timedelta(weeks=4), "m2"),
+                        (t - timedelta(weeks=7), "m2"), (t - timedelta(weeks=8), "m3"), (t - timedelta(weeks=11), "m3")):
+        temperature, precipitation, humidity = default_climate(week)
+        row = features_of(panel(climate={week: (temperature + 4.0, precipitation, humidity)}), [(CODE, t)]).iloc[0]
+        changed = {b for b in ("m1", "m2", "m3") if row[f"anom_temp_{b}"] != base[f"anom_temp_{b}"]}
+        assert changed == {block}, week
+        assert row[f"anom_temp_{block}"] == pytest.approx(base[f"anom_temp_{block}"] + 1.0, rel=1e-12)
+
+
+def test_climatology_of_ordinal_53_uses_2007_week_53_and_then_52():
+    t = date(2012, 12, 31)  # ordinal 53; references 2007-12-31 (53), 2008-2011 week 52
+    references = [date(2007, 12, 31), date(2008, 12, 29), date(2009, 12, 28), date(2010, 12, 27), date(2011, 12, 26)]
+    climate = {date(2007, 12, 31): (100.0, 10.0, 60.0)}  # 2007-12-24 (ordinal 52) keeps 20.0
+    table = panel(climate=climate)
+    temperatures = dict(zip(table.column("week_start").to_pylist(), table.column("temperature_c").to_pylist()))
+    clim_t = sum(temperatures[r] for r in references) / 5
+    a_t = temperatures[t] - clim_t
+    others = [temperatures[t - timedelta(weeks=k)] - 22.0 for k in (1, 2, 3)]  # ordinals 50-52 of 2012
+
+    row = features_of(table, [(CODE, t)]).iloc[0]
+
+    assert row["anom_temp_m1"] == pytest.approx((a_t + sum(others)) / 4, rel=1e-12)
+
+
+def test_missing_climate_reference_raises_instead_of_nan():
+    t = date(2012, 1, 30)  # channel weeks are in 2012, but t-11 = 2011-11-14 has no 2006 reference
+    with pytest.raises(EpidemiologyValidationError, match="Climate references"):
+        features_of(panel(), [(CODE, t)])
+
+
+@pytest.mark.parametrize("bloques, message", [
+    ({"m1": (-3, 0), "m2": (-7, -4)}, "expected the climate block"),
+    ({"m1": (-3, 0), "m2": (-7, -4), "m4": (-11, -8)}, "expected the climate block"),
+    ({"m1": (-3, 0), "m2": (-7, -4), "m3": (-12, -8)}, "starts before"),
+])
+def test_invalid_climate_blocks_fail(bloques, message):
+    config = FeatureSection(w=4, bloques=bloques, ventana_semanas=12)
+    with pytest.raises(EpidemiologyValidationError, match=message):
+        features_of(panel(), [(CODE, date(2012, 6, 4))], features=config)
+
+
+def test_examples_have_the_nineteen_columns_without_missing_values():
+    examples = build_examples(product(panel()), h=8, canal=CANAL, features=FEATURES_CFG)
+
+    assert list(examples.columns) == ["municipality_code", "t", "target_week", "y", *FEATURES]
+    assert not examples.isna().any().any()

@@ -43,7 +43,7 @@ Una unidad cubre uno o dos requisitos de `contrato §10` y dura entre 30 y 90 mi
    - **Archivos tocados:** lista.
    - **Pruebas:** comando exacto y resultado (aprobadas, fallidas, omitidas). Una prueba de aceptación omitida no cuenta como aprobada.
    - **Referencia:** cifras obtenidas frente a las esperadas.
-   - **Pruebas de aceptación intactas:** salida de `git diff --stat HEAD -- tests/acceptance/` y de `git log --oneline <commit de congelamiento>..HEAD -- tests/acceptance/`; ambas deben estar vacías.
+   - **Pruebas de aceptación intactas:** salida de `git diff --stat HEAD -- "tests/acceptance/test_f*_*.py"` y de `git log --oneline <commit de congelamiento>..HEAD -- "tests/acceptance/test_f*_*.py"`; ambas deben estar vacías. Los cambios en `tests/acceptance/conftest.py` se señalan aparte y solo pueden añadir opciones (con su fixture de ruta), nunca alterar las existentes.
    - **Dudas o desviaciones:** con la sección del contrato afectada.
    - **Fuera de alcance:** confirmación de que no tocaste nada más.
 4. **Espera.** Jesús decide entre commit, recorrido del código o corrección. **No hagas `git commit`, `git push`, `dvc push`, instalaciones ni merges sin su aprobación explícita.**

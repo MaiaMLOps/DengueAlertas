@@ -8,10 +8,10 @@ scikit-learn==1.7.2
 lightgbm==4.6.0
 scipy==1.14.1
 
-# PROVISIONAL: confirmar contra la versión del servidor MLflow (especificación §9).
-# Si el servidor resulta incompatible, se cambia por la versión mlflow-skinny correspondiente.
-# Cliente skinny: el paquete mlflow completo 2.16.2 exige pyarrow<18 y choca con pyarrow==21.0.0 de data.txt.
-mlflow-skinny==2.16.2
+# Igual a la versión del servidor del equipo (MLflow 3.17.0, verificada en F0 con
+# scripts/check_mlflow_readonly.py). Si el servidor cambia de versión, se cambia aquí.
+# Cliente skinny: el paquete mlflow completo exige pyarrow con tope y choca con pyarrow==21.0.0 de data.txt.
+mlflow-skinny==3.17.0
 
 # Versiones ya presentes en .venv; python-dotenv>=1.2.2 lo exige pydantic-settings (DVC).
 pydantic==2.14.1

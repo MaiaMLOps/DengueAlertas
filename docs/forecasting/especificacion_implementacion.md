@@ -293,14 +293,14 @@ Contrato §6.3 exige fijarlo antes de correr el desarrollo. Esta propuesta inici
 - MLflow en `https://platform.arkoiot.com`, protegido por Cloudflare Zero Trust. Cada petición necesita los encabezados `CF-Access-Client-Id` y `CF-Access-Client-Secret`, tomados de `.env` (`.env.example` ya lo documenta; `.env` está en `.gitignore`).
 - El mecanismo es un `RequestHeaderProvider` registrado en el registro de MLflow, que es una API privada (`_request_header_provider_registry`).
 - Hay RBAC con cuatro roles: Administradores, Analistas, Runners y Solo Lectura.
-- La API descubre modelos registrados con nombre `DengueAlertas_*` y la etiqueta `enabled = true`. Los carga por el alias igual a `STAGE` en minúscula (`staging` o `production`) y lee las etiquetas `municipality_code`, `department` y `depto_id`.
+- La API descubre modelos registrados con nombre `DengueAlertas_*` y la etiqueta `enabled = true`. Los carga por el alias igual a `STAGE` en minúscula (`staging` o `production`) y lee las etiquetas `municipality_code`, `department` y `depto_id` si existen; no son obligatorias. [H, F0 U0.7] Los modelos `DengueAlertas_*` registrados hoy solo tienen la etiqueta `enabled` y el alias `staging`.
 - Hay dos ambientes: producción (`demo.arkoiot.com`) y pruebas (`staging.denguealertas.pages.dev`). Según el compañero, la API valida cada 45 segundos y toma el esquema registrado del modelo.
 
 **`src/forecasting/tracking.py` [R]:**
 - Toma el mecanismo de `mlflow_auth.py` del compañero y el de `src/api.py`, con dos cambios:
   - la URI de seguimiento sale de `MLFLOW_TRACKING_URI`, con `https://platform.arkoiot.com` por defecto;
   - si faltan las credenciales, falla de inmediato con un mensaje claro, en lugar de enviar encabezados vacíos.
-- Como depende de una API privada de MLflow, la versión del cliente se fija en `requirements/forecasting.txt`, compatible con la del servidor [P: preguntar la versión al compañero].
+- Como depende de una API privada de MLflow, la versión del cliente se fija en `requirements/forecasting.txt`, igual a la del servidor. [H, F0 U0.7] El servidor corre **MLflow 3.17.0** (endpoint `/version`, leído con `scripts/check_mlflow_readonly.py`); el cliente fijado es `mlflow-skinny==3.17.0`.
 
 **Experimentos:**
 - `dengue_h8_desarrollo`: un run por municipio, familia y candidato, con los puntajes de cada año como métricas separadas (`logloss_2019` … `logloss_2022`, `brier_YYYY`, `mejora_b2_YYYY`). Las líneas base van como runs con familia `B1` o `B2`. En la GRU, un run por arquitectura y semilla.
@@ -313,7 +313,7 @@ Contrato §6.3 exige fijarlo antes de correr el desarrollo. Esta propuesta inici
 
 **Respaldo local [D, contingencia].** Si en F0 el servidor no responde o Jesús no tiene credenciales o un rol con permiso de escritura, los runs van a un almacén local dentro del repositorio, ignorado por git (`mlruns/` ya está en `.gitignore`), que se respalda aparte. Solo los modelos finales se registran en el servidor en F8. F0 elige el tipo de almacén según la versión de MLflow fijada.
 
-**Cliente y almacén fijados en F0 [D, U0.3].** El cliente es `mlflow-skinny==2.16.2` (provisional hasta confirmar la versión del servidor; si resulta incompatible, se cambia por la versión skinny correspondiente). Razón: el paquete `mlflow` completo 2.16.2 exige `pyarrow<18` y choca con `pyarrow==21.0.0` de `requirements/data.txt`; skinny trae el mismo cliente de seguimiento sin esa dependencia. Como skinny no incluye SQLAlchemy, el respaldo local es el almacén de archivos en `mlruns/`.
+**Cliente y almacén fijados en F0 [D, U0.3].** El cliente es `mlflow-skinny`, primero 2.16.2 y, desde el cierre de F0, **3.17.0**, igual a la versión del servidor. Razón de usar skinny: el paquete `mlflow` completo 2.16.2 exige `pyarrow<18` y choca con `pyarrow==21.0.0` de `requirements/data.txt`; skinny trae el mismo cliente de seguimiento sin esa dependencia. Como skinny no incluye SQLAlchemy, el respaldo local es el almacén de archivos en `mlruns/`. `seguimiento.modo` queda en `local` hasta antes de F5b, porque los runs del servidor no se pueden borrar; el regreso a `servidor` va en un commit explícito.
 
 **Registro de modelos finales [P: acordar en F8 con quien administra la API].** Propuesta, compatible con `src/api.py`:
 - un modelo registrado por municipio, `DengueAlertas_<Municipio>`;

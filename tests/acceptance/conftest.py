@@ -16,6 +16,7 @@ def pytest_addoption(parser):
     parser.addoption("--legacy-labels-parquet", default=None, help="Legacy labels Parquet, read only by tests.")
     parser.addoption("--search-dir", default=None, help="Folder with the development search outputs (F5b).")
     parser.addoption("--prueba-dir", default=None, help="Folder with the outputs of the single test run (F7).")
+    parser.addoption("--sin-clima-dir", default=None, help="Folder with the sin_clima search outputs (F6b, D7.2).")
 
 
 def _explicit_path(request, option, purpose):
@@ -63,4 +64,16 @@ def prueba_dir(request):
     path = Path(value).resolve()
     if not path.is_dir() or not (path / "predicciones_prueba.parquet").is_file():
         pytest.fail("Explicit --prueba-dir folder or its test predictions are unavailable.")
+    return path
+
+
+@pytest.fixture
+def sin_clima_dir(request):
+    value = request.config.getoption("--sin-clima-dir")
+    if value is None:
+        pytest.skip("sin_clima search acceptance not requested (--sin-clima-dir).")
+    path = Path(value).resolve()
+    required = ("tabla_unica_desarrollo.parquet", "predicciones_desarrollo.parquet", "busqueda_manifest.json")
+    if not path.is_dir() or not all((path / name).is_file() for name in required):
+        pytest.fail("Explicit --sin-clima-dir folder or its search outputs are unavailable.")
     return path

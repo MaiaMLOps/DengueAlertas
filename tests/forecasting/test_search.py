@@ -298,6 +298,8 @@ def _config_file(tmp_path, with_search=True):
     data = yaml.safe_load(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"))
     if with_search:
         data["busqueda"] = {"logistica": {"C": [0.1, 1.0], "max_iter": 2000}}
+    else:
+        data.pop("busqueda", None)
     path = tmp_path / "forecasting.yaml"
     path.write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
     return path

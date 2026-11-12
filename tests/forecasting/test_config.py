@@ -117,10 +117,10 @@ def test_feature_and_channel_values_match_yaml():
     assert config.features.ventana_semanas == 12
     assert (config.canal.n, config.canal.desplazamiento, config.canal.cuantil_t) == (5, 1, 0.025)
     assert config.validacion.primer_anio_entrenamiento == 2012
-    assert config.seguimiento.modo == "local"
+    assert config.seguimiento.modo == "servidor"   # since the pre-registration (F5b)
 
 
-# --------------------------------------------------------------------------- busqueda (U5.3; values come with the pre-registration)
+# --------------------------------------------------------------------------- busqueda (U5.3; values from the pre-registration)
 SEARCH = {
     "logistica": {"C": [0.1, 1.0], "max_iter": 2000},
     "lightgbm": {
@@ -132,8 +132,17 @@ SEARCH = {
 }
 
 
-def test_busqueda_is_absent_until_the_pre_registration():
-    assert load_config().busqueda is None
+def test_busqueda_holds_the_pre_registration():
+    search = load_config().busqueda
+    assert search.logistica.C == (0.01, 0.03, 0.1, 0.3, 1.0, 3.0) and search.logistica.max_iter == 5000
+    lgb = search.lightgbm
+    assert (lgb.n_candidatos, lgb.semilla_muestreo, lgb.semilla_modelo) == (25, 20261112, 20261112)
+    assert lgb.fijos == {"subsample_freq": 1}
+    assert {name: (space.escala, space.rango, space.tope_por_profundidad) for name, space in lgb.espacio.items()} == {
+        "max_depth": ("entera", (2, 5), False), "num_leaves": ("entera", (4, 31), True),
+        "learning_rate": ("log", (0.01, 0.1), False), "n_estimators": ("entera", (100, 600), False),
+        "min_child_samples": ("entera", (10, 50), False), "reg_lambda": ("real", (0.0, 10.0), False),
+        "subsample": ("real", (0.6, 1.0), False), "colsample_bytree": ("real", (0.6, 1.0), False)}
 
 
 def test_valid_busqueda_loads(tmp_path, base_data):

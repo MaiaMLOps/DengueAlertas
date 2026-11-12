@@ -311,7 +311,7 @@ Cifras de contrato §2.2, §5.4, §6.1, §7.4, §8.2 y `registro_decisiones.md` 
 
 **Convenciones de F5a [D, aprobadas por Jesús el 2026-11-11].**
 - **Desempate.** Si dos candidatos tienen la misma mejora promedio frente a B2, se elige el que aparece primero en la lista pre-registrada. La tabla única guarda esa posición en la columna `orden`.
-- **Familia y excepciones de hiperparámetros.** No está fijado si cada familia entra en la comparación de familias (contrato §8.3) con su configuración común fuera de año o con su excepción por municipio. Se fija en el pre-registro (§7). F5a solo entrega, para cada casilla, la configuración común y la propia, ambas elegidas sin el año puntuado.
+- **Familia y excepciones de hiperparámetros.** Resuelto en el pre-registro (§7, «Orden de selección para F6»): las familias se comparan con sus configuraciones comunes fuera de año. F5a solo entrega, para cada casilla, la configuración común y la propia, ambas elegidas sin el año puntuado.
 - **Predicciones por fila.** `run_search` también guarda en `data/processed/forecasting/` las predicciones por fila (`municipality_code`, `t`, `target_week`, `familia`, `candidato`, `anio`, `y`, `p`), para que F6 elija τ sin reentrenar.
 - **Aceptación añadida a la lista anterior.** Hay que reproducir lo siguiente:
   - las predicciones tienen 1.248 filas por (familia, candidato) y ninguna de 2023 o posterior;
@@ -319,6 +319,50 @@ Cifras de contrato §2.2, §5.4, §6.1, §7.4, §8.2 y `registro_decisiones.md` 
   - `logloss_b2` es el mismo para todos los candidatos de una casilla y coincide exactamente con `b2_predict` más `log_loss`;
   - hay un run terminado por (municipio, familia, candidato);
   - se cumplen los niveles de §8.4 y los de eventos.
+
+**Lo que se congeló en F5a [H].**
+- **Pruebas.** Archivos `tests/acceptance/test_f5a_comparison.py` (29 pruebas sintéticas) y `test_f5a_search.py` (8 pruebas con `--channel-parquet`), en el commit 6a2dd12, con su regla `Edit(...)` de denegación en 2d390c7.
+- **Validación previa.** Antes del congelamiento se validaron con una implementación de referencia desechable (37 de 37) y con cinco variantes erróneas, que fallan donde deben:
+  - umbral de dos colas;
+  - empate contado como victoria;
+  - elección que incluye el año puntuado;
+  - sin validación de la lista de candidatos;
+  - búsqueda que puntúa 2023.
+- **Implementación.**
+
+  | Unidad | Commit | Contenido |
+  |---|---|---|
+  | U5.2 | 5da5716 | `models.py` |
+  | U5.3 | c5128cb | `search.py`, esquema `busqueda` y `tracking.allow_file_store` |
+  | U5.4 | 9c2ffc7 | `comparison.py` y `comparacion.alfa` |
+
+  Al cierre de F5a pasa toda la aceptación con datos: 261 de 261.
+- **API.**
+  - `search`: `Candidate(name, params)`, `candidates_from_config(busqueda)`, `run_search(examples, candidates, *, config, output_dir, tracking_uri)`, `validate_score_table(table, *, municipalities, years)` y la línea de comandos `python -m src.forecasting.search [--config] [--salida] [--permitir-cambios]`.
+  - `comparison`: `chance_probability`, `win_threshold`, `count_wins`, `discordant_wins`, `out_of_year_scores`, `weekly_level`, `event_level` y `combined_level`.
+  - `models`: `make_model`, `fit_model` y `predict_positive`, con las familias `logistica` y `lightgbm`.
+- **Salidas de la búsqueda** en `data/processed/forecasting/`:
+  - `tabla_unica_desarrollo.parquet` y `predicciones_desarrollo.parquet`;
+  - `lineas_base_desarrollo.parquet` y `predicciones_lineas_base_desarrollo.parquet`;
+  - `busqueda_manifest.json`, `busqueda.log` y la carpeta `partes/`.
+- **Reanudación.**
+  - Cada unidad (municipio, familia, candidato) se escribe de forma atómica y se salta al relanzar.
+  - Un run FINISHED de una unidad sin carpeta se reutiliza si sus métricas coinciden (rel = 1e-12).
+  - Solo se marcan como FAILED los runs RUNNING con el mismo `busqueda_id`.
+  - El `busqueda_id` incluye el commit: una búsqueda no se reanuda después de un commit nuevo.
+  - La línea de comandos se niega a correr con cambios sin commit en `src/` o `configs/`, salvo con `--permitir-cambios`.
+
+**Humo de F5a (U5.5) [H, 2026-11-11].**
+- **Configuración.** Datos reales de desarrollo con 2 candidatos por familia: regresión logística con C ∈ {0,01; 3} y los dos primeros LightGBM del espacio de §7. Todo se guardó fuera del repositorio, con MLflow local.
+- **Corte forzado.** La línea de comandos se mató (TerminateProcess) tras 14 de 36 unidades. Al relanzarla:
+  - saltó las 14 unidades hechas;
+  - quedaron 36 runs FINISHED únicos y ninguna carpeta temporal;
+  - la tabla y las predicciones son idénticas (sin contar `segundos`) a las de una corrida sin corte.
+- **Tiempos.**
+  - Por ensayo, el ajuste y la predicción tardan 0,06 s en LightGBM y 0,01 s en la regresión logística.
+  - Por unidad (4 ensayos, métricas y run local), 0,25–0,37 s y 0,06–0,15 s.
+  - Los 25 LightGBM de §7, medidos sobre datos sintéticos del mismo tamaño, tardan 7,0 s por municipio (máximo 0,58 s por candidato).
+- **Estimación para F5b** (198 unidades): alrededor de 1 minuto de cálculo, más la latencia de unos 200 runs en el servidor (3 llamadas cada uno), es decir, entre 10 y 25 minutos en total. No hace falta paralelismo.
 
 **F5b**
 - La tabla única queda completa: 6 municipios × número de candidatos × 4 años, por familia, sin faltantes. Hay un run de MLflow (o del respaldo local) por municipio, familia y candidato.
@@ -336,22 +380,33 @@ Cifras de contrato §2.2, §5.4, §6.1, §7.4, §8.2 y `registro_decisiones.md` 
 **F8**
 - Las pruebas de contrato §10, punto 19.
 
-## 7. Pre-registro [P: se aprueba en el punto de control del jueves 12, antes de F5b]
+## 7. Pre-registro [D, aprobado por Jesús el 2026-11-11, antes de F5b]
 
-Contrato §6.3 exige fijarlo antes de correr el desarrollo. Esta propuesta inicial se discute con el arnés ya probado (F5a).
+Contrato §6.3 exige fijarlo antes de correr el desarrollo. Se discutió con el arnés ya probado (F5a) y quedó en la sección `busqueda` de `configs/forecasting.yaml`. `src/forecasting/search.py` lo expande en candidatos con `candidates_from_config`.
 
-| Familia | Propuesta inicial |
+| Familia | Pre-registro |
 |---|---|
-| Regresión logística (L2) | C ∈ {0,01; 0,03; 0,1; 0,3; 1; 3}; `class_weight=None`; `max_iter` suficiente para converger |
-| LightGBM | 25 candidatos aleatorios con semilla fija. Espacio orientado a regularizar: `num_leaves` 4–31, `max_depth` 2–5, `learning_rate` 0,01–0,1 (escala log), `n_estimators` 100–600, `min_child_samples` 10–50, `reg_lambda` 0–10, `subsample` y `colsample_bytree` 0,6–1,0 |
-| GRU (opcional) | 2–3 arquitecturas de una capa (16 o 32 unidades, dropout 0,2), parada temprana con el último año de cada entrenamiento, 5 semillas |
-| Semillas | Una semilla global documentada, la misma en los seis municipios |
+| Regresión logística (L2) | C ∈ {0,01; 0,03; 0,1; 0,3; 1; 3}, en ese orden; `max_iter` = 5000; `class_weight=None`. Si no converge, es un error (`models.py`); en el humo convergieron C = 0,01 y C = 3 |
+| LightGBM | 25 candidatos aleatorios. Espacio: `max_depth` entero 2–5; `num_leaves` entero 4–31 con tope 2^`max_depth`; `learning_rate` 0,01–0,1 en escala log; `n_estimators` entero 100–600; `min_child_samples` entero 10–50; `reg_lambda` real 0–10; `subsample` y `colsample_bytree` reales 0,6–1,0. Fijo: `subsample_freq` = 1. Sin pesos de clase ni parada temprana; un hilo y modo determinista |
+| GRU | **Fuera de F5b** (orden de recorte de §5). Si hay tiempo, se reporta después de F6 como análisis adicional, sin cambiar la familia elegida (contrato §4.3) |
+| Semillas | Semilla global 20261112, la misma en los seis municipios: `semilla_muestreo` (numpy `default_rng`, con los parámetros sorteados en orden alfabético) y `semilla_modelo` (`random_state` de todos los candidatos) |
 
-**GRU [D, F2].** La entrada de la GRU (`build_gru_input`, contrato §5.3) quedó construida y probada en F2. Si la GRU entra en la búsqueda de F5b se decide en este pre-registro.
+**Observaciones de LightGBM, resueltas** (documentación de LightGBM 4.6.0, la versión fijada en F0):
+- **`num_leaves`.** Con `max_depth` d, un árbol tiene como mucho 2^d hojas, y la documentación recomienda `num_leaves` ≤ 2^`max_depth`. Por eso `num_leaves` se sortea después de `max_depth`, con tope 2^`max_depth` (`tope_por_profundidad`). Consecuencia: con profundidad 2 el único valor posible es 4. Con la semilla 20261112, 8 de los 25 candidatos tienen profundidad 2 y 4 hojas.
+- **`subsample`.** Según la documentación, `subsample_freq` ≤ 0 desactiva el submuestreo. Por eso se fija `subsample_freq` = 1.
+- **Ajustes categóricos** (`min_data_per_group`, `cat_smooth`, `max_cat_to_onehot`). Quedan con los valores por defecto. Con 3 zonas se usa la partición uno contra el resto, y una zona con 30 filas sí se separa (prueba de U5.2; en los entrenamientos reales, la zona epidemia tiene entre 21 y 95 filas).
 
-**Puntos que hay que resolver en el punto de control [I]:**
-- Con `max_depth` d, un árbol tiene como mucho 2^d hojas. `num_leaves` > 2^`max_depth` no tiene efecto, así que conviene acotar `num_leaves` en función de `max_depth` o muestrear solo uno de los dos.
-- `subsample` < 1 solo tiene efecto en LightGBM si `subsample_freq` > 0 (verificar con la documentación de la versión fijada en F0).
+**Orden de selección para F6 [D].** Todo con puntajes fuera de año y las reglas de D9 (contrato §8.3, `comparison.py`):
+1. **Configuración común de cada familia:** el candidato con la mayor mejora promedio frente a B2, primero sobre los años y después sobre los municipios (contrato §6.2).
+2. **Comparación de familias con las configuraciones comunes fuera de año.** LightGBM reemplaza a la regresión logística solo si su mejora promedio fuera de año es mayor y además gana al menos 17 de las 24 casillas.
+3. **Excepción de familia por municipio, con configuraciones comunes:** la familia alternativa gana a la común en ese municipio en los 4 años.
+4. **Excepciones de hiperparámetros dentro de la familia final de cada municipio:** el mejor candidato propio, elegido sin y, gana a la configuración común, elegida sin y, en los 4 años. Si se cumple, el municipio usa su mejor candidato propio elegido con los 4 años.
+
+**Desempate:** ante una mejora promedio exactamente igual, se elige el candidato de menor `orden`, es decir, el primero en la lista pre-registrada.
+
+**Por qué este orden.** La regla de excepción necesita los 4 años, así que no puede calcularse fuera de año. Si las excepciones de hiperparámetros entraran en la comparación de familias, el año puntuado influiría en su propia elección. Por eso las familias se comparan con configuraciones comunes y las excepciones se aplican al final.
+
+**Seguimiento.** `seguimiento.modo` pasa a `servidor` en el mismo commit del pre-registro (§9). El experimento `dengue_h8_desarrollo` es compartido: el arnés solo marca o reutiliza runs con su propio `busqueda_id`.
 
 ## 8. Configuración [D]
 
@@ -368,7 +423,7 @@ Contrato §6.3 exige fijarlo antes de correr el desarrollo. Esta propuesta inici
 | `metricas` | Recorte del log-loss, ε = 1e-15 (contrato §10.16; F3) |
 | `comparacion` | α = 0,05, el umbral de azar de las reglas de conteo de D9 (contrato §8.2; F5a) |
 | `decision` | k = 2; W = 12; rejilla de τ (0,05 a 0,95, paso 0,05) |
-| `busqueda` | Vacía hasta el pre-registro (§7); después, espacios, presupuesto y semillas |
+| `busqueda` | Pre-registro (§7, aprobado el 2026-11-11): rejilla de C, espacio de LightGBM, presupuesto de 25 candidatos y semillas |
 | `seguimiento` | Nombres de experimentos y modo (servidor o respaldo local) |
 
 **`configs/receta_congelada.yaml`**, generado en F6:
@@ -405,7 +460,7 @@ Contrato §6.3 exige fijarlo antes de correr el desarrollo. Esta propuesta inici
 
 **Respaldo local [D, contingencia].** Si en F0 el servidor no responde o Jesús no tiene credenciales o un rol con permiso de escritura, los runs van a un almacén local dentro del repositorio, ignorado por git (`mlruns/` ya está en `.gitignore`), que se respalda aparte. Solo los modelos finales se registran en el servidor en F8. F0 elige el tipo de almacén según la versión de MLflow fijada.
 
-**Cliente y almacén fijados en F0 [D, U0.3].** El cliente es `mlflow-skinny`, primero 2.16.2 y, desde el cierre de F0, **3.17.0**, igual a la versión del servidor. Razón de usar skinny: el paquete `mlflow` completo 2.16.2 exige `pyarrow<18` y choca con `pyarrow==21.0.0` de `requirements/data.txt`; skinny trae el mismo cliente de seguimiento sin esa dependencia. Como skinny no incluye SQLAlchemy, el respaldo local es el almacén de archivos en `mlruns/`. `seguimiento.modo` queda en `local` hasta antes de F5b, porque los runs del servidor no se pueden borrar; el regreso a `servidor` va en un commit explícito.
+**Cliente y almacén fijados en F0 [D, U0.3].** El cliente es `mlflow-skinny`, primero 2.16.2 y, desde el cierre de F0, **3.17.0**, igual a la versión del servidor. Razón de usar skinny: el paquete `mlflow` completo 2.16.2 exige `pyarrow<18` y choca con `pyarrow==21.0.0` de `requirements/data.txt`; skinny trae el mismo cliente de seguimiento sin esa dependencia. Como skinny no incluye SQLAlchemy, el respaldo local es el almacén de archivos en `mlruns/`. `seguimiento.modo` queda en `local` hasta antes de F5b, porque los runs del servidor no se pueden borrar; el regreso a `servidor` va en un commit explícito. [H] Pasó a `servidor` en el commit del pre-registro (§7, 2026-11-11).
 
 **Almacén de archivos con MLflow 3.17 [H, F5a U5.1; D, aprobado por Jesús el 2026-11-11].** MLflow 3.17 rechaza el almacén de archivos (`mlruns/`) con una excepción, salvo que esté activada `MLFLOW_ALLOW_FILE_STORE=true`. En F0 no se detectó porque las pruebas de `tracking.py` simulan `set_tracking_uri` y nunca escribieron un run. El respaldo local de F0 necesita esa opción y se activa así:
 - en el entorno del propio proceso (`os.environ`), justo antes de apuntar MLflow a la URI;

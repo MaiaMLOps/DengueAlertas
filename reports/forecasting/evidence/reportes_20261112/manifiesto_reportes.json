@@ -1,0 +1,64 @@
+{
+  "unidad": "U7.5",
+  "fecha_hora": "2026-11-12T16:35:11-05:00",
+  "commit": "176f89de2771b31a161b6c69d0db7798e49d6cbc",
+  "cambios_sin_commit": false,
+  "receta_hash": "de74d4abd33537433ffc9d1572c6cdd8620a2608fcc2b67ee4a1752aa865fda5",
+  "ejecucion_prueba": 1,
+  "tau": 0.05,
+  "insumos_md5": {
+    "completo": {
+      "tabla_unica_desarrollo.parquet": "a38ab5ef1f925f46264a90bb13a4d80c",
+      "predicciones_desarrollo.parquet": "ac5a28f3cdd47273a4cb694b8dc942ca",
+      "busqueda_manifest.json": "48b930bfb3eaa4ac334fb47c680a9889"
+    },
+    "sin_clima": {
+      "tabla_unica_desarrollo.parquet": "8e18c06857c0b840d6c08dc8cef8320a",
+      "predicciones_desarrollo.parquet": "75d29d5396488b28f67908750cb7986e",
+      "busqueda_manifest.json": "8d1df8e3beb107e78864a2aa5bb14ba6"
+    },
+    "prueba": {
+      "predicciones_prueba.parquet": "72122f071ecca02c7629d0d6ec19f058"
+    }
+  },
+  "tablas": [
+    "casillas.csv",
+    "habilidad.csv",
+    "clasificacion_tau.csv",
+    "murphy.csv",
+    "confiabilidad.csv",
+    "calibracion_anual.csv",
+    "eventos_razon.csv",
+    "duracion_alertas.csv",
+    "curva_amoc.csv",
+    "desarrollo_vs_prueba.csv"
+  ],
+  "figuras": [
+    "reports/forecasting/figures/20261112/confiabilidad_desarrollo.png",
+    "reports/forecasting/figures/20261112/confiabilidad_desarrollo.svg",
+    "reports/forecasting/figures/20261112/amoc_desarrollo.png",
+    "reports/forecasting/figures/20261112/amoc_desarrollo.svg",
+    "reports/forecasting/figures/20261112/mapa_bss_desarrollo.png",
+    "reports/forecasting/figures/20261112/mapa_bss_desarrollo.svg",
+    "reports/forecasting/figures/20261112/confiabilidad_prueba.png",
+    "reports/forecasting/figures/20261112/confiabilidad_prueba.svg",
+    "reports/forecasting/figures/20261112/amoc_prueba.png",
+    "reports/forecasting/figures/20261112/amoc_prueba.svg",
+    "reports/forecasting/figures/20261112/mapa_bss_prueba.png",
+    "reports/forecasting/figures/20261112/mapa_bss_prueba.svg",
+    "reports/forecasting/figures/20261112/serie_08001.png",
+    "reports/forecasting/figures/20261112/serie_08001.svg",
+    "reports/forecasting/figures/20261112/serie_08758.png",
+    "reports/forecasting/figures/20261112/serie_08758.svg",
+    "reports/forecasting/figures/20261112/serie_41001.png",
+    "reports/forecasting/figures/20261112/serie_41001.svg",
+    "reports/forecasting/figures/20261112/serie_50001.png",
+    "reports/forecasting/figures/20261112/serie_50001.svg",
+    "reports/forecasting/figures/20261112/serie_54001.png",
+    "reports/forecasting/figures/20261112/serie_54001.svg",
+    "reports/forecasting/figures/20261112/serie_76001.png",
+    "reports/forecasting/figures/20261112/serie_76001.svg",
+    "reports/forecasting/figures/20261112/resumen_municipios.png",
+    "reports/forecasting/figures/20261112/resumen_municipios.svg"
+  ]
+}

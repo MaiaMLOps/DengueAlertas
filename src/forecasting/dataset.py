@@ -67,6 +67,10 @@ CLIMATE_VARIABLES = {
 CLIMATE_COLUMNS = tuple(column for column, _ in CLIMATE_VARIABLES.values())
 # The climate block of contrato §5.2 (the nine anomalies), removed by the climate ablation (contrato §4.4).
 CLIMATE_FEATURES = tuple(name for name in FEATURES if name.startswith("anom_"))
+# The two feature sets of contrato §6.6 (D7.2): "completo" (the 15 of §5.2) and "sin_clima" (the 6 without the
+# climate block), selected per family in step 0 of the selection. The simpler one is the default.
+FEATURE_SETS = {"completo": FEATURES, "sin_clima": tuple(name for name in FEATURES if name not in CLIMATE_FEATURES)}
+DEFAULT_FEATURE_SET = "sin_clima"
 # GRU input (contrato §5.3): per week, log(C_s + 1), pos_s, zona_s one-hot and the three anomalies.
 GRU_SEQUENCE_CHANNELS = ("log_c", "pos", "zona_seguridad", "zona_alerta", "zona_epidemia",
                          "anom_temp", "anom_prec", "anom_hum")

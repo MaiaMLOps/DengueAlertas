@@ -17,10 +17,11 @@ Flow (rows come from `build_examples`, trials from `splits.yearly_trials`; nothi
          A unit is complete or absent; an existing folder is skipped when the search is relaunched.
       4. consolidation in canonical order, validation and atomic writing of the final files.
 
-Climate ablation (contrato §4.4, decision D1 of F7): `variante="sin_clima"` fits the same candidates without the
-nine climate anomalies (dataset.CLIMATE_FEATURES). The variant enters the manifest (so the busqueda_id differs)
-and the run tags; the CLI option --variante sin_clima keeps only the family of the frozen recipe and writes to
-data/processed/forecasting/ablacion_clima/ by default. Without a variant, everything is as in F5b.
+Feature-set variant (contrato §6.6, D7.2): `variante="sin_clima"` fits the same pre-registered candidates of both
+families, with the same seeds, without the nine climate anomalies (dataset.FEATURE_SETS["sin_clima"]). The variant
+enters the manifest (so the busqueda_id differs) and the run tags; the CLI option --variante sin_clima writes to
+data/processed/forecasting/sin_clima/ by default and never into the F5b folder. Without a variant, everything is as
+in F5b (the full set). The earlier logistic-only search in ablacion_clima/ (D1 of F7, origin of D7.2) is a record.
 
 Runs are never duplicated. A unit whose run finished but whose folder was not written (a crash in between)
 reuses that run: the unit is recomputed and its metrics must match the logged ones (rel = 1e-12, because the
@@ -57,8 +58,8 @@ from src.epidemiology.validation import require
 from .baselines import b1_predict, b2_predict
 from .build_channel import code_state
 from .config import DEFAULT_CONFIG_PATH, ROOT, ForecastConfig, SearchSection, load_config
-from .dataset import CLIMATE_FEATURES, FEATURES, build_examples, load_channel_product
-from .guard import FROZEN_RECIPE_PATH, RecipeAccess, load_frozen_recipe
+from .dataset import FEATURE_SETS, FEATURES, build_examples, load_channel_product
+from .guard import RecipeAccess
 from .metrics import brier, improvement, log_loss
 from .models import FAMILIES, fit_model, make_model, predict_positive
 from .splits import yearly_trials
@@ -72,9 +73,8 @@ MANIFEST_FILENAME = "busqueda_manifest.json"
 LOG_FILENAME = "busqueda.log"
 PARTS_DIRNAME = "partes"
 DEFAULT_OUTPUT_DIR = ROOT / "data" / "processed" / "forecasting"
-ABLATION_DIRNAME = "ablacion_clima"
-# Feature sets of the variants of the search (contrato §4.4): name -> features of the models.
-VARIANTS = {"sin_clima": tuple(name for name in FEATURES if name not in CLIMATE_FEATURES)}
+# Variants of the search (contrato §6.6): name -> features of the models; each writes to the subfolder of its name.
+VARIANTS = {"sin_clima": FEATURE_SETS["sin_clima"]}
 BASELINE_FAMILIES = ("B2", "B1")
 REUSED_RUN_REL = 1e-12          # approved by Jesús for comparing a reused run with the recomputed unit
 _NAME_CHARACTERS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-")
@@ -581,11 +581,10 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Development search of the forecasting MVP (F5).")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     parser.add_argument("--salida", type=Path, default=None,
-                        help=f"Output folder (default {DEFAULT_OUTPUT_DIR}; with a variant, its {ABLATION_DIRNAME} "
-                             f"subfolder).")
+                        help=f"Output folder (default {DEFAULT_OUTPUT_DIR}; with a variant, its subfolder named "
+                             f"after the variant).")
     parser.add_argument("--variante", choices=sorted(VARIANTS), default=None,
-                        help="Climate ablation (contrato §4.4): the family of the frozen recipe without the climate "
-                             "anomalies.")
+                        help="Feature-set variant of contrato §6.6: both families without the climate anomalies.")
     parser.add_argument("--permitir-cambios", action="store_true",
                         help="Run with uncommitted changes in src/ or configs/ (smoke runs only).")
     args = parser.parse_args(argv)
@@ -607,11 +606,7 @@ def main(argv: list[str] | None = None) -> int:
         candidates = candidates_from_config(config.busqueda)
         output_dir = args.salida
         if args.variante is not None:
-            recipe = load_frozen_recipe(ROOT / FROZEN_RECIPE_PATH, channel_version=config.datos.version_dvc_canal)
-            family = recipe["familia_comun"]
-            require(family in candidates, f"The recipe family {family!r} has no pre-registered candidates.")
-            candidates = {family: candidates[family]}
-            output_dir = output_dir or DEFAULT_OUTPUT_DIR / ABLATION_DIRNAME
+            output_dir = output_dir or DEFAULT_OUTPUT_DIR / args.variante
             require(Path(output_dir).resolve() != DEFAULT_OUTPUT_DIR.resolve(),
                     "A variant never writes into the folder of the F5b search.")
         output_dir = output_dir or DEFAULT_OUTPUT_DIR

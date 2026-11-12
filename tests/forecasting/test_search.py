@@ -374,22 +374,31 @@ def test_unknown_variant_fails_before_any_fit(tmp_path):
     assert not (tmp_path / "x").exists()
 
 
-def test_cli_variant_keeps_the_recipe_family_and_its_own_folder(tmp_path, monkeypatch):
+def test_cli_variant_covers_both_families_in_its_own_folder(tmp_path, monkeypatch):
+    """D7.2: --variante sin_clima runs every pre-registered family (same candidates and seeds as F5b) into
+    data/processed/forecasting/sin_clima/ and never into the F5b folder; no recipe is read."""
+    import yaml
+
+    from src.forecasting.config import DEFAULT_CONFIG_PATH
+
     calls = {}
     monkeypatch.setattr(search, "_dirty_paths", lambda: [])
     monkeypatch.setattr(search, "load_channel_product", lambda path, *, expected_md5: "product")
     monkeypatch.setattr(search, "build_examples", lambda product, **kwargs: EXAMPLES)
     monkeypatch.setattr(search, "configure_tracking", lambda config: "file:///unused")
-    monkeypatch.setattr(search, "load_frozen_recipe", lambda path, *, channel_version: {"familia_comun": "logistica"})
 
     def fake_run(examples, candidates, *, config, output_dir, tracking_uri, variante=None):
         calls.update(candidates=candidates, output_dir=output_dir, variante=variante)
         return pd.DataFrame()
 
     monkeypatch.setattr(search, "run_search", fake_run)
-    config = _config_file(tmp_path)
+    config = tmp_path / "forecasting.yaml"
+    config.write_text(DEFAULT_CONFIG_PATH.read_text(encoding="utf-8"), encoding="utf-8")
     assert search.main(["--config", str(config), "--variante", "sin_clima"]) == 0
-    assert list(calls["candidates"]) == ["logistica"] and calls["variante"] == "sin_clima"
-    assert calls["output_dir"] == search.DEFAULT_OUTPUT_DIR / search.ABLATION_DIRNAME
+    expected = candidates_from_config(load_config(config).busqueda)
+    assert list(calls["candidates"]) == ["logistica", "lightgbm"] and calls["variante"] == "sin_clima"
+    assert calls["candidates"] == expected
+    assert len(calls["candidates"]["logistica"]) == 6 and len(calls["candidates"]["lightgbm"]) == 25
+    assert calls["output_dir"] == search.DEFAULT_OUTPUT_DIR / "sin_clima"
     assert search.main(["--config", str(config), "--variante", "sin_clima", "--salida",
                         str(search.DEFAULT_OUTPUT_DIR)]) == 1

@@ -61,6 +61,21 @@ def test_feature_block_after_t_is_rejected(tmp_path, base_data):
         load_config(_write(tmp_path, data))
 
 
+@pytest.mark.parametrize("value", [0, 26, "2", True, 2.0])
+def test_b1_half_window_must_be_an_integer_from_1_to_25(tmp_path, base_data, value):
+    data = copy.deepcopy(base_data)
+    data["lineas_base"]["b1_semiventana"] = value
+    with pytest.raises(ValidationError, match=r"lineas_base\.b1_semiventana"):
+        load_config(_write(tmp_path, data))
+
+
+def test_baselines_section_is_required(tmp_path, base_data):
+    data = copy.deepcopy(base_data)
+    del data["lineas_base"]
+    with pytest.raises(ValidationError, match="lineas_base"):
+        load_config(_write(tmp_path, data))
+
+
 def test_unknown_tracking_mode_is_rejected(tmp_path, base_data):
     data = copy.deepcopy(base_data)
     data["seguimiento"]["modo"] = "automatico"

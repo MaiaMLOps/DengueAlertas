@@ -29,6 +29,9 @@ validacion:                        # contrato D7 y §6.1
   prueba: [2023, 2025]
   primer_anio_entrenamiento: 2012
 
+lineas_base:                       # contrato §4.1
+  b1_semiventana: 2                # ventana circular de ±2 semanas del año de t + h
+
 decision:                          # contrato D8, §7.4 y §7.5
   k: 2
   W: 12

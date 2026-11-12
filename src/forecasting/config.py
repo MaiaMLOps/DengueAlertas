@@ -89,6 +89,12 @@ class ValidationSection(_Section):
         return self
 
 
+class BaselineSection(_Section):
+    # Half window of B1 (contrato §4.1). At most 25: a window of 2k + 1 >= 52 weeks would wrap the
+    # whole 52-week cycle and count weeks twice.
+    b1_semiventana: int = Field(ge=1, le=25, strict=True)
+
+
 class DecisionSection(_Section):
     k: int = Field(ge=1)
     W: int = Field(ge=1)
@@ -124,6 +130,7 @@ class ForecastConfig(_Section):
     horizonte: HorizonSection
     features: FeatureSection
     validacion: ValidationSection
+    lineas_base: BaselineSection
     decision: DecisionSection
     seguimiento: TrackingSection
 

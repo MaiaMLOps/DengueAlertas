@@ -1,0 +1,112 @@
+{
+  "ejecucion": {
+    "ejecucion": 1,
+    "fecha_hora": "2026-11-12T14:30:58-05:00",
+    "commit": "abf08c2a3e0dbb4d3d66efc40804b8224317a3cc",
+    "receta_hash": "de74d4abd33537433ffc9d1572c6cdd8620a2608fcc2b67ee4a1752aa865fda5",
+    "version_dvc_canal": "99fd12311a261264019645d906631cfc",
+    "razon": null,
+    "salida": "data\\processed\\forecasting\\prueba"
+  },
+  "tau": 0.05,
+  "k": 2,
+  "W": 12,
+  "filas": 936,
+  "estimacion": {
+    "brier": {
+      "modelo": 0.14132046966500125,
+      "ablacion": 0.14342256552353047,
+      "B2": 0.15369644319985482,
+      "B1": 0.2658452520673139
+    },
+    "logloss": {
+      "modelo": 0.44090010753370645,
+      "ablacion": 0.45005565742225884,
+      "B2": 0.47078473549370564,
+      "B1": 0.7809792743968073
+    },
+    "ap": {
+      "modelo": 0.7650645351078678,
+      "ablacion": 0.7572038350680165,
+      "B2": 0.6115064447569568,
+      "B1": 0.27122533388142644
+    },
+    "bss_vs_b2": 0.08052218566151736,
+    "bss_vs_b1": 0.46841078196417096,
+    "mejora_logloss_vs_b2": 0.06347832821864874,
+    "mejora_logloss_vs_b1": 0.4354522303114413,
+    "prevalencia": 0.344017094017094
+  },
+  "conclusiones": {
+    "vs_b2": {
+      "nivel_brier": "tendencia favorable",
+      "nivel_logloss": "tendencia favorable",
+      "nivel": "tendencia favorable",
+      "casillas_ganadas_brier": 12,
+      "casillas_ganadas_logloss": 12,
+      "casillas": 18
+    },
+    "vs_b1": {
+      "nivel_brier": "mejora consistente",
+      "nivel_logloss": "mejora consistente",
+      "nivel": "mejora consistente",
+      "casillas_ganadas_brier": 15,
+      "casillas_ganadas_logloss": 15,
+      "casillas": 18
+    },
+    "ablacion_clima": {
+      "nivel_brier": "sin mejora",
+      "nivel_logloss": "tendencia favorable",
+      "nivel": "sin mejora",
+      "casillas_ganadas_brier": 9,
+      "casillas_ganadas_logloss": 10,
+      "casillas": 18
+    }
+  },
+  "eventos": {
+    "inicios_evaluables": 10,
+    "avisados_modelo": 4,
+    "avisados_canal": 8,
+    "mcnemar": {
+      "discrepantes": 6,
+      "a_favor_modelo": 1,
+      "nivel": "sin mejora"
+    },
+    "falsas_alarmas": {
+      "modelo": 18,
+      "canal": 30
+    },
+    "falsas_alarmas_por_municipio_anio": {
+      "modelo": 1.0,
+      "canal": 1.6666666666666667
+    },
+    "municipio_anios": 18,
+    "anticipacion_mediana_semanas": {
+      "modelo": 4.5,
+      "canal": 1.5
+    },
+    "delta_w": [
+      {
+        "municipality_code": "41001",
+        "semana": "2023-07-17",
+        "delta_w": 0.0
+      },
+      {
+        "municipality_code": "41001",
+        "semana": "2023-08-28",
+        "delta_w": 7.0
+      },
+      {
+        "municipality_code": "54001",
+        "semana": "2024-01-15",
+        "delta_w": 5.0
+      }
+    ],
+    "alertas_continuidad_modelo": 4,
+    "entradas": {
+      "evaluables": 41,
+      "avisadas_modelo": 13,
+      "avisadas_canal": 19
+    }
+  }
+}

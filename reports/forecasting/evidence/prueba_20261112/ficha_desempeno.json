@@ -1,0 +1,2485 @@
+{
+  "version_esquema": "0.1",
+  "global": {
+    "municipio": null,
+    "periodo": "prueba",
+    "tau": 0.05,
+    "estimacion": {
+      "bss_vs_b2": 0.08052218566151736,
+      "bss_vs_b1": 0.46841078196417096,
+      "mejora_logloss_vs_b2": 0.06347832821864874,
+      "mejora_logloss_vs_b1": 0.4354522303114413,
+      "brier": {
+        "modelo": 0.14132046966500125,
+        "ablacion": 0.14342256552353047,
+        "B2": 0.15369644319985482,
+        "B1": 0.2658452520673139
+      },
+      "logloss": {
+        "modelo": 0.44090010753370645,
+        "ablacion": 0.45005565742225884,
+        "B2": 0.47078473549370564,
+        "B1": 0.7809792743968073
+      },
+      "ap": {
+        "modelo": 0.7650645351078678,
+        "ablacion": 0.7572038350680165,
+        "B2": 0.6115064447569568,
+        "B1": 0.27122533388142644
+      },
+      "prevalencia": 0.344017094017094,
+      "vs_b2": {
+        "conclusion": {
+          "casillas_ganadas": 12,
+          "casillas_ganadas_logloss": 12,
+          "casillas_total": 18,
+          "favorable_brier": true,
+          "favorable_logloss": true,
+          "nivel_conclusion": "tendencia_favorable",
+          "nivel_brier": "tendencia_favorable",
+          "nivel_logloss": "tendencia_favorable",
+          "nivel_descriptivo": null
+        }
+      },
+      "vs_b1": {
+        "conclusion": {
+          "casillas_ganadas": 15,
+          "casillas_ganadas_logloss": 15,
+          "casillas_total": 18,
+          "favorable_brier": true,
+          "favorable_logloss": true,
+          "nivel_conclusion": "mejora_consistente",
+          "nivel_brier": "mejora_consistente",
+          "nivel_logloss": "mejora_consistente",
+          "nivel_descriptivo": null
+        }
+      },
+      "ablacion_clima": {
+        "conclusion": {
+          "casillas_ganadas": 9,
+          "casillas_ganadas_logloss": 10,
+          "casillas_total": 18,
+          "favorable_brier": true,
+          "favorable_logloss": true,
+          "nivel_conclusion": "sin_mejora",
+          "nivel_brier": "sin_mejora",
+          "nivel_logloss": "tendencia_favorable",
+          "nivel_descriptivo": null
+        }
+      }
+    },
+    "eventos": {
+      "inicios_evaluables": 10,
+      "avisados_modelo": 4,
+      "avisados_canal": 8,
+      "municipio_anios": 18,
+      "mcnemar": {
+        "discrepantes": 6,
+        "a_favor_modelo": 1,
+        "nivel_conclusion": "sin_mejora"
+      },
+      "falsas_alarmas": {
+        "modelo": 18,
+        "canal": 30
+      },
+      "falsas_alarmas_por_municipio_anio": {
+        "modelo": 1.0,
+        "canal": 1.6666666666666667
+      },
+      "anticipacion_mediana_semanas": {
+        "modelo": 4.5,
+        "canal": 1.5
+      },
+      "delta_w": [
+        {
+          "municipality_code": "41001",
+          "semana": "2023-07-17",
+          "delta_w": 0.0
+        },
+        {
+          "municipality_code": "41001",
+          "semana": "2023-08-28",
+          "delta_w": 7.0
+        },
+        {
+          "municipality_code": "54001",
+          "semana": "2024-01-15",
+          "delta_w": 5.0
+        }
+      ],
+      "alertas_continuidad_modelo": 4,
+      "entradas": {
+        "evaluables": 41,
+        "avisadas_modelo": 13,
+        "avisadas_canal": 19
+      }
+    },
+    "calibracion": [
+      {
+        "probabilidad_media": 0.0012485939520197453,
+        "frecuencia_observada": 0.0,
+        "n": 94
+      },
+      {
+        "probabilidad_media": 0.008516196029594745,
+        "frecuencia_observada": 0.010638297872340425,
+        "n": 94
+      },
+      {
+        "probabilidad_media": 0.023484041027459223,
+        "frecuencia_observada": 0.06451612903225806,
+        "n": 93
+      },
+      {
+        "probabilidad_media": 0.05308295438448377,
+        "frecuencia_observada": 0.20212765957446807,
+        "n": 94
+      },
+      {
+        "probabilidad_media": 0.11049349745098777,
+        "frecuencia_observada": 0.17204301075268819,
+        "n": 93
+      },
+      {
+        "probabilidad_media": 0.20589545234392007,
+        "frecuencia_observada": 0.2765957446808511,
+        "n": 94
+      },
+      {
+        "probabilidad_media": 0.4197284460509725,
+        "frecuencia_observada": 0.5053763440860215,
+        "n": 93
+      },
+      {
+        "probabilidad_media": 0.6691489549332709,
+        "frecuencia_observada": 0.6382978723404256,
+        "n": 94
+      },
+      {
+        "probabilidad_media": 0.8235277201530551,
+        "frecuencia_observada": 0.7204301075268817,
+        "n": 93
+      },
+      {
+        "probabilidad_media": 0.9335485552009595,
+        "frecuencia_observada": 0.851063829787234,
+        "n": 94
+      }
+    ],
+    "curva_amoc": [
+      {
+        "tau": 0.05,
+        "deteccion": 0.4,
+        "falsas_alarmas_por_municipio_anio": 1.0,
+        "anticipacion_mediana_semanas": 4.5
+      },
+      {
+        "tau": 0.1,
+        "deteccion": 0.4,
+        "falsas_alarmas_por_municipio_anio": 0.7777777777777778,
+        "anticipacion_mediana_semanas": 6.5
+      },
+      {
+        "tau": 0.15,
+        "deteccion": 0.4,
+        "falsas_alarmas_por_municipio_anio": 0.6666666666666666,
+        "anticipacion_mediana_semanas": 6.0
+      },
+      {
+        "tau": 0.2,
+        "deteccion": 0.4,
+        "falsas_alarmas_por_municipio_anio": 0.5555555555555556,
+        "anticipacion_mediana_semanas": 5.0
+      },
+      {
+        "tau": 0.25,
+        "deteccion": 0.2,
+        "falsas_alarmas_por_municipio_anio": 0.5,
+        "anticipacion_mediana_semanas": 5.0
+      },
+      {
+        "tau": 0.3,
+        "deteccion": 0.2,
+        "falsas_alarmas_por_municipio_anio": 0.4444444444444444,
+        "anticipacion_mediana_semanas": 4.0
+      },
+      {
+        "tau": 0.35,
+        "deteccion": 0.2,
+        "falsas_alarmas_por_municipio_anio": 0.2777777777777778,
+        "anticipacion_mediana_semanas": 4.0
+      },
+      {
+        "tau": 0.4,
+        "deteccion": 0.2,
+        "falsas_alarmas_por_municipio_anio": 0.1111111111111111,
+        "anticipacion_mediana_semanas": 4.0
+      },
+      {
+        "tau": 0.45,
+        "deteccion": 0.1,
+        "falsas_alarmas_por_municipio_anio": 0.1111111111111111,
+        "anticipacion_mediana_semanas": 1.0
+      },
+      {
+        "tau": 0.5,
+        "deteccion": 0.1,
+        "falsas_alarmas_por_municipio_anio": 0.1111111111111111,
+        "anticipacion_mediana_semanas": 1.0
+      },
+      {
+        "tau": 0.55,
+        "deteccion": 0.0,
+        "falsas_alarmas_por_municipio_anio": 0.1111111111111111,
+        "anticipacion_mediana_semanas": null
+      },
+      {
+        "tau": 0.6,
+        "deteccion": 0.0,
+        "falsas_alarmas_por_municipio_anio": 0.16666666666666666,
+        "anticipacion_mediana_semanas": null
+      },
+      {
+        "tau": 0.65,
+        "deteccion": 0.0,
+        "falsas_alarmas_por_municipio_anio": 0.0,
+        "anticipacion_mediana_semanas": null
+      },
+      {
+        "tau": 0.7,
+        "deteccion": 0.0,
+        "falsas_alarmas_por_municipio_anio": 0.05555555555555555,
+        "anticipacion_mediana_semanas": null
+      },
+      {
+        "tau": 0.75,
+        "deteccion": 0.0,
+        "falsas_alarmas_por_municipio_anio": 0.05555555555555555,
+        "anticipacion_mediana_semanas": null
+      },
+      {
+        "tau": 0.8,
+        "deteccion": 0.0,
+        "falsas_alarmas_por_municipio_anio": 0.0,
+        "anticipacion_mediana_semanas": null
+      },
+      {
+        "tau": 0.85,
+        "deteccion": 0.0,
+        "falsas_alarmas_por_municipio_anio": 0.0,
+        "anticipacion_mediana_semanas": null
+      },
+      {
+        "tau": 0.9,
+        "deteccion": 0.0,
+        "falsas_alarmas_por_municipio_anio": 0.0,
+        "anticipacion_mediana_semanas": null
+      },
+      {
+        "tau": 0.95,
+        "deteccion": 0.0,
+        "falsas_alarmas_por_municipio_anio": 0.0,
+        "anticipacion_mediana_semanas": null
+      }
+    ],
+    "punto_canal": {
+      "deteccion": 0.8,
+      "falsas_alarmas_por_municipio_anio": 1.6666666666666667,
+      "anticipacion_mediana_semanas": 1.5
+    },
+    "casillas": [
+      {
+        "municipio": "08001",
+        "anio": 2023,
+        "brier_modelo": 0.09830573289416468,
+        "logloss_modelo": 0.3316440106998583,
+        "brier_ablacion": 0.08737465713712071,
+        "logloss_ablacion": 0.2770201480767977,
+        "brier_b2": 0.11380691390698698,
+        "logloss_b2": 0.3623856867933017,
+        "brier_b1": 0.25440402196818174,
+        "logloss_b1": 0.7324514398788402,
+        "gana_vs_b2": true
+      },
+      {
+        "municipio": "08001",
+        "anio": 2024,
+        "brier_modelo": 0.2586986370877939,
+        "logloss_modelo": 0.7515270980994895,
+        "brier_ablacion": 0.352979808855489,
+        "logloss_ablacion": 1.0315532834489451,
+        "brier_b2": 0.2238790359348388,
+        "logloss_b2": 0.6508990981406436,
+        "brier_b1": 0.33686383114733676,
+        "logloss_b1": 0.9143039886238569,
+        "gana_vs_b2": false
+      },
+      {
+        "municipio": "08001",
+        "anio": 2025,
+        "brier_modelo": 0.1411425575497575,
+        "logloss_modelo": 0.42513154985608037,
+        "brier_ablacion": 0.1438968594472705,
+        "logloss_ablacion": 0.4028463103919247,
+        "brier_b2": 0.1357379982081599,
+        "logloss_b2": 0.4041808137369555,
+        "brier_b1": 0.11460552909570275,
+        "logloss_b1": 0.4031884359668205,
+        "gana_vs_b2": false
+      },
+      {
+        "municipio": "08758",
+        "anio": 2023,
+        "brier_modelo": 0.12930097890791353,
+        "logloss_modelo": 0.3930839812178919,
+        "brier_ablacion": 0.11428013882203329,
+        "logloss_ablacion": 0.3496527919747398,
+        "brier_b2": 0.1634199870748526,
+        "logloss_b2": 0.4997910141719594,
+        "brier_b1": 0.33499654701061615,
+        "logloss_b1": 0.8992110468973566,
+        "gana_vs_b2": true
+      },
+      {
+        "municipio": "08758",
+        "anio": 2024,
+        "brier_modelo": 0.12527286456562803,
+        "logloss_modelo": 0.4113113248866724,
+        "brier_ablacion": 0.12065604797121972,
+        "logloss_ablacion": 0.3993157205437822,
+        "brier_b2": 0.13704290660746807,
+        "logloss_b2": 0.4350993550255565,
+        "brier_b1": 0.13846942784134503,
+        "logloss_b1": 0.45740681828519947,
+        "gana_vs_b2": true
+      },
+      {
+        "municipio": "08758",
+        "anio": 2025,
+        "brier_modelo": 0.27194479782772474,
+        "logloss_modelo": 0.8244616625746807,
+        "brier_ablacion": 0.2408862570459503,
+        "logloss_ablacion": 0.6767992286069605,
+        "brier_b2": 0.24079806246167557,
+        "logloss_b2": 0.6651317109090541,
+        "brier_b1": 0.23381340633895453,
+        "logloss_b1": 0.6678755122363608,
+        "gana_vs_b2": false
+      },
+      {
+        "municipio": "41001",
+        "anio": 2023,
+        "brier_modelo": 0.13308371533050709,
+        "logloss_modelo": 0.4190745338326337,
+        "brier_ablacion": 0.14400312784609695,
+        "logloss_ablacion": 0.4643527695719219,
+        "brier_b2": 0.1873156861198442,
+        "logloss_b2": 0.5680463854838359,
+        "brier_b1": 0.3237481885435235,
+        "logloss_b1": 0.9066387009911021,
+        "gana_vs_b2": true
+      },
+      {
+        "municipio": "41001",
+        "anio": 2024,
+        "brier_modelo": 0.21587032575688941,
+        "logloss_modelo": 0.6509363469067264,
+        "brier_ablacion": 0.1628737466023011,
+        "logloss_ablacion": 0.5158715974303242,
+        "brier_b2": 0.23780259826652095,
+        "logloss_b2": 0.6778149589229097,
+        "brier_b1": 0.4348996277095793,
+        "logloss_b1": 1.1902613056112015,
+        "gana_vs_b2": true
+      },
+      {
+        "municipio": "41001",
+        "anio": 2025,
+        "brier_modelo": 0.013623940022303474,
+        "logloss_modelo": 0.07605654762698083,
+        "brier_ablacion": 0.03109450583473983,
+        "logloss_ablacion": 0.13998854891066137,
+        "brier_b2": 0.02744120172883836,
+        "logloss_b2": 0.1661699120867274,
+        "brier_b1": 0.048828915697077896,
+        "logloss_b1": 0.2466681269677619,
+        "gana_vs_b2": true
+      },
+      {
+        "municipio": "50001",
+        "anio": 2023,
+        "brier_modelo": 0.1342361471514153,
+        "logloss_modelo": 0.4109498315950777,
+        "brier_ablacion": 0.12919318433247826,
+        "logloss_ablacion": 0.41819102588837154,
+        "brier_b2": 0.16487766568431747,
+        "logloss_b2": 0.5183671608275742,
+        "brier_b1": 0.5680512816805406,
+        "logloss_b1": 1.484557975985279,
+        "gana_vs_b2": true
+      },
+      {
+        "municipio": "50001",
+        "anio": 2024,
+        "brier_modelo": 0.013821998038832018,
+        "logloss_modelo": 0.06645221268635076,
+        "brier_ablacion": 0.020515284485359397,
+        "logloss_ablacion": 0.0939807507243513,
+        "brier_b2": 0.06496555598805462,
+        "logloss_b2": 0.2810075378249418,
+        "brier_b1": 0.06969194405097276,
+        "logloss_b1": 0.30011556877618506,
+        "gana_vs_b2": true
+      },
+      {
+        "municipio": "50001",
+        "anio": 2025,
+        "brier_modelo": 0.24242724792508172,
+        "logloss_modelo": 0.721627990469,
+        "brier_ablacion": 0.2645541644855904,
+        "logloss_ablacion": 0.779954628375209,
+        "brier_b2": 0.20458677269331996,
+        "logloss_b2": 0.5983666765625528,
+        "brier_b1": 0.14268420444466523,
+        "logloss_b1": 0.4579610470422633,
+        "gana_vs_b2": false
+      },
+      {
+        "municipio": "54001",
+        "anio": 2023,
+        "brier_modelo": 0.03045685102877911,
+        "logloss_modelo": 0.1177217432601249,
+        "brier_ablacion": 0.03104900177152555,
+        "logloss_ablacion": 0.14797761882979077,
+        "brier_b2": 0.026173649850350252,
+        "logloss_b2": 0.1353141258141442,
+        "brier_b1": 0.03697053317428195,
+        "logloss_b1": 0.1974813382665913,
+        "gana_vs_b2": false
+      },
+      {
+        "municipio": "54001",
+        "anio": 2024,
+        "brier_modelo": 0.20412212934040638,
+        "logloss_modelo": 0.6072007740959571,
+        "brier_ablacion": 0.2867066700370358,
+        "logloss_ablacion": 0.8295118435485445,
+        "brier_b2": 0.22489279028051357,
+        "logloss_b2": 0.6640036043577681,
+        "brier_b1": 0.36319706271115876,
+        "logloss_b1": 1.0506052443547165,
+        "gana_vs_b2": true
+      },
+      {
+        "municipio": "54001",
+        "anio": 2025,
+        "brier_modelo": 0.23436727377326003,
+        "logloss_modelo": 0.6751189664870206,
+        "brier_ablacion": 0.17568901151562577,
+        "logloss_ablacion": 0.5180933961519992,
+        "brier_b2": 0.22010360092983344,
+        "logloss_b2": 0.6465816725495043,
+        "brier_b1": 0.3432110565371744,
+        "logloss_b1": 0.9324174316011679,
+        "gana_vs_b2": false
+      },
+      {
+        "municipio": "76001",
+        "anio": 2023,
+        "brier_modelo": 0.22974844755611531,
+        "logloss_modelo": 0.8088736123120337,
+        "brier_ablacion": 0.2121737640319808,
+        "logloss_ablacion": 0.7788536971255173,
+        "brier_b2": 0.2321991243237564,
+        "logloss_b2": 0.686760474832411,
+        "brier_b1": 0.5144676615463005,
+        "logloss_b1": 1.7012248136582087,
+        "gana_vs_b2": true
+      },
+      {
+        "municipio": "76001",
+        "anio": 2024,
+        "brier_modelo": 0.06754033643296911,
+        "logloss_modelo": 0.23994631353713639,
+        "brier_ablacion": 0.060090111193911576,
+        "logloss_ablacion": 0.25138521475878256,
+        "brier_b2": 0.15616803944918092,
+        "logloss_b2": 0.48480522260931264,
+        "brier_b1": 0.4662429849555732,
+        "logloss_b1": 1.2474844364000914,
+        "gana_vs_b2": true
+      },
+      {
+        "municipio": "76001",
+        "anio": 2025,
+        "brier_modelo": 0.00015710020511085785,
+        "logloss_modelo": 0.0050855155074012465,
+        "brier_ablacion": 0.0007641314821659594,
+        "logloss_ablacion": 0.0143143761287814,
+        "brier_b2": 0.0011918605905241466,
+        "logloss_b2": 0.015992001516005116,
+        "brier_b1": 0.043084911708788025,
+        "logloss_b1": 0.22494443111644402,
+        "gana_vs_b2": true
+      }
+    ],
+    "notas": [
+      "76001: No hubo inicios de brote en 2023–2025: solo se miden falsas alarmas."
+    ]
+  },
+  "municipios": {
+    "08001": {
+      "municipio": "08001",
+      "periodo": "prueba",
+      "tau": 0.05,
+      "estimacion": {
+        "bss_vs_b2": -0.053225939323863214,
+        "bss_vs_b1": 0.2953470021848944,
+        "mejora_logloss_vs_b2": -0.06494772452642028,
+        "mejora_logloss_vs_b1": 0.26468621106325707,
+        "brier": {
+          "modelo": 0.1668025404563287,
+          "ablacion": 0.19609071713001275,
+          "B2": 0.15837298933542265,
+          "B1": 0.23671586010919965
+        },
+        "logloss": {
+          "modelo": 0.5048598320405492,
+          "ablacion": 0.5745034202101008,
+          "B2": 0.4740700603544265,
+          "B1": 0.6865910032376408
+        },
+        "ap": {
+          "modelo": 0.5891806473098655,
+          "ablacion": 0.6606681626929853,
+          "B2": 0.6026583374567047,
+          "B1": 0.19465111144824576
+        },
+        "prevalencia": 0.30128205128205127,
+        "vs_b2": {
+          "conclusion": {
+            "casillas_ganadas": 1,
+            "casillas_ganadas_logloss": 1,
+            "casillas_total": 3,
+            "favorable_brier": false,
+            "favorable_logloss": false,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "desfavorable",
+            "nivel_descriptivo_brier": "desfavorable",
+            "nivel_descriptivo_logloss": "desfavorable"
+          }
+        },
+        "vs_b1": {
+          "conclusion": {
+            "casillas_ganadas": 2,
+            "casillas_ganadas_logloss": 2,
+            "casillas_total": 3,
+            "favorable_brier": true,
+            "favorable_logloss": true,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "favorable",
+            "nivel_descriptivo_brier": "favorable",
+            "nivel_descriptivo_logloss": "favorable"
+          }
+        },
+        "ablacion_clima": {
+          "conclusion": {
+            "casillas_ganadas": 2,
+            "casillas_ganadas_logloss": 1,
+            "casillas_total": 3,
+            "favorable_brier": true,
+            "favorable_logloss": true,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "mixto",
+            "nivel_descriptivo_brier": "favorable",
+            "nivel_descriptivo_logloss": "mixto"
+          }
+        }
+      },
+      "eventos": {
+        "inicios_evaluables": 1,
+        "avisados_modelo": 0,
+        "avisados_canal": 1,
+        "municipio_anios": 3,
+        "mcnemar": {
+          "discrepantes": 1,
+          "a_favor_modelo": 0,
+          "nivel": "sin mejora",
+          "nivel_conclusion": null
+        },
+        "falsas_alarmas": {
+          "modelo": 2,
+          "canal": 5
+        },
+        "falsas_alarmas_por_municipio_anio": {
+          "modelo": 0.6666666666666666,
+          "canal": 1.6666666666666667
+        },
+        "anticipacion_mediana_semanas": {
+          "modelo": null,
+          "canal": 1.0
+        },
+        "delta_w": [],
+        "alertas_continuidad_modelo": 1,
+        "entradas": {
+          "evaluables": 7,
+          "avisadas_modelo": 2,
+          "avisadas_canal": 3
+        }
+      },
+      "calibracion": [
+        {
+          "probabilidad_media": 0.0015648000966597656,
+          "frecuencia_observada": 0.0,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.011129974678937608,
+          "frecuencia_observada": 0.0,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.059799967173515337,
+          "frecuencia_observada": 0.06666666666666667,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.11067425668127462,
+          "frecuencia_observada": 0.1875,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.16755855482724127,
+          "frecuencia_observada": 0.2,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.2564322273234545,
+          "frecuencia_observada": 0.3125,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.45337060734575163,
+          "frecuencia_observada": 0.4,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.6288604325103871,
+          "frecuencia_observada": 0.5625,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.7757034358351279,
+          "frecuencia_observada": 0.8666666666666667,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.8964596609560372,
+          "frecuencia_observada": 0.4375,
+          "n": 16
+        }
+      ],
+      "curva_amoc": [
+        {
+          "tau": 0.05,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.6666666666666666,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.1,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 1.6666666666666667,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.15,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 1.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.2,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.6666666666666666,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.25,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.6666666666666666,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.3,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.6666666666666666,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.35,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.4,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.45,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.5,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.55,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.6,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.65,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.7,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.75,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.8,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.85,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.9,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.95,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        }
+      ],
+      "punto_canal": {
+        "deteccion": 1.0,
+        "falsas_alarmas_por_municipio_anio": 1.6666666666666667,
+        "anticipacion_mediana_semanas": 1.0
+      },
+      "casillas": [
+        {
+          "municipio": "08001",
+          "anio": 2023,
+          "brier_modelo": 0.09830573289416468,
+          "logloss_modelo": 0.3316440106998583,
+          "brier_ablacion": 0.08737465713712071,
+          "logloss_ablacion": 0.2770201480767977,
+          "brier_b2": 0.11380691390698698,
+          "logloss_b2": 0.3623856867933017,
+          "brier_b1": 0.25440402196818174,
+          "logloss_b1": 0.7324514398788402,
+          "gana_vs_b2": true
+        },
+        {
+          "municipio": "08001",
+          "anio": 2024,
+          "brier_modelo": 0.2586986370877939,
+          "logloss_modelo": 0.7515270980994895,
+          "brier_ablacion": 0.352979808855489,
+          "logloss_ablacion": 1.0315532834489451,
+          "brier_b2": 0.2238790359348388,
+          "logloss_b2": 0.6508990981406436,
+          "brier_b1": 0.33686383114733676,
+          "logloss_b1": 0.9143039886238569,
+          "gana_vs_b2": false
+        },
+        {
+          "municipio": "08001",
+          "anio": 2025,
+          "brier_modelo": 0.1411425575497575,
+          "logloss_modelo": 0.42513154985608037,
+          "brier_ablacion": 0.1438968594472705,
+          "logloss_ablacion": 0.4028463103919247,
+          "brier_b2": 0.1357379982081599,
+          "logloss_b2": 0.4041808137369555,
+          "brier_b1": 0.11460552909570275,
+          "logloss_b1": 0.4031884359668205,
+          "gana_vs_b2": false
+        }
+      ],
+      "notas": []
+    },
+    "08758": {
+      "municipio": "08758",
+      "periodo": "prueba",
+      "tau": 0.05,
+      "estimacion": {
+        "bss_vs_b2": 0.028868215621098536,
+        "bss_vs_b1": 0.2576353914470516,
+        "mejora_logloss_vs_b2": -0.015864511536692882,
+        "mejora_logloss_vs_b1": 0.19774552347892893,
+        "brier": {
+          "modelo": 0.17456600906669073,
+          "ablacion": 0.1578367748113067,
+          "B2": 0.17975522156175378,
+          "B1": 0.23514861438096155
+        },
+        "logloss": {
+          "modelo": 0.5403039232925175,
+          "ablacion": 0.4734771732721917,
+          "B2": 0.531866126984988,
+          "B1": 0.6734819675117469
+        },
+        "ap": {
+          "modelo": 0.6909214044545322,
+          "ablacion": 0.751867213691119,
+          "B2": 0.4834868805201555,
+          "B1": 0.2986967990452166
+        },
+        "prevalencia": 0.3269230769230769,
+        "vs_b2": {
+          "conclusion": {
+            "casillas_ganadas": 2,
+            "casillas_ganadas_logloss": 2,
+            "casillas_total": 3,
+            "favorable_brier": true,
+            "favorable_logloss": false,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "mixto",
+            "nivel_descriptivo_brier": "favorable",
+            "nivel_descriptivo_logloss": "mixto"
+          }
+        },
+        "vs_b1": {
+          "conclusion": {
+            "casillas_ganadas": 2,
+            "casillas_ganadas_logloss": 2,
+            "casillas_total": 3,
+            "favorable_brier": true,
+            "favorable_logloss": true,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "favorable",
+            "nivel_descriptivo_brier": "favorable",
+            "nivel_descriptivo_logloss": "favorable"
+          }
+        },
+        "ablacion_clima": {
+          "conclusion": {
+            "casillas_ganadas": 0,
+            "casillas_ganadas_logloss": 0,
+            "casillas_total": 3,
+            "favorable_brier": false,
+            "favorable_logloss": false,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "desfavorable",
+            "nivel_descriptivo_brier": "desfavorable",
+            "nivel_descriptivo_logloss": "desfavorable"
+          }
+        }
+      },
+      "eventos": {
+        "inicios_evaluables": 3,
+        "avisados_modelo": 1,
+        "avisados_canal": 2,
+        "municipio_anios": 3,
+        "mcnemar": {
+          "discrepantes": 3,
+          "a_favor_modelo": 1,
+          "nivel": "sin mejora",
+          "nivel_conclusion": null
+        },
+        "falsas_alarmas": {
+          "modelo": 3,
+          "canal": 6
+        },
+        "falsas_alarmas_por_municipio_anio": {
+          "modelo": 1.0,
+          "canal": 2.0
+        },
+        "anticipacion_mediana_semanas": {
+          "modelo": 1.0,
+          "canal": 3.0
+        },
+        "delta_w": [],
+        "alertas_continuidad_modelo": 1,
+        "entradas": {
+          "evaluables": 10,
+          "avisadas_modelo": 2,
+          "avisadas_canal": 8
+        }
+      },
+      "calibracion": [
+        {
+          "probabilidad_media": 0.007627738059243732,
+          "frecuencia_observada": 0.0,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.02295078616368302,
+          "frecuencia_observada": 0.0625,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.04904830486072946,
+          "frecuencia_observada": 0.4,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.10750537465315076,
+          "frecuencia_observada": 0.125,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.16333768910872967,
+          "frecuencia_observada": 0.26666666666666666,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.24473630887688827,
+          "frecuencia_observada": 0.0625,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.46102727502688856,
+          "frecuencia_observada": 0.5333333333333333,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.6298733158200664,
+          "frecuencia_observada": 0.375,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.7668070147484445,
+          "frecuencia_observada": 0.6666666666666666,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.9230275610764775,
+          "frecuencia_observada": 0.8125,
+          "n": 16
+        }
+      ],
+      "curva_amoc": [
+        {
+          "tau": 0.05,
+          "deteccion": 0.3333333333333333,
+          "falsas_alarmas_por_municipio_anio": 1.0,
+          "anticipacion_mediana_semanas": 1.0
+        },
+        {
+          "tau": 0.1,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 1.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.15,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 1.6666666666666667,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.2,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 1.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.25,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 1.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.3,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 1.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.35,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.6666666666666666,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.4,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.45,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.5,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.55,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.6,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.65,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.7,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.75,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.8,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.85,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.9,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.95,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        }
+      ],
+      "punto_canal": {
+        "deteccion": 0.6666666666666666,
+        "falsas_alarmas_por_municipio_anio": 2.0,
+        "anticipacion_mediana_semanas": 3.0
+      },
+      "casillas": [
+        {
+          "municipio": "08758",
+          "anio": 2023,
+          "brier_modelo": 0.12930097890791353,
+          "logloss_modelo": 0.3930839812178919,
+          "brier_ablacion": 0.11428013882203329,
+          "logloss_ablacion": 0.3496527919747398,
+          "brier_b2": 0.1634199870748526,
+          "logloss_b2": 0.4997910141719594,
+          "brier_b1": 0.33499654701061615,
+          "logloss_b1": 0.8992110468973566,
+          "gana_vs_b2": true
+        },
+        {
+          "municipio": "08758",
+          "anio": 2024,
+          "brier_modelo": 0.12527286456562803,
+          "logloss_modelo": 0.4113113248866724,
+          "brier_ablacion": 0.12065604797121972,
+          "logloss_ablacion": 0.3993157205437822,
+          "brier_b2": 0.13704290660746807,
+          "logloss_b2": 0.4350993550255565,
+          "brier_b1": 0.13846942784134503,
+          "logloss_b1": 0.45740681828519947,
+          "gana_vs_b2": true
+        },
+        {
+          "municipio": "08758",
+          "anio": 2025,
+          "brier_modelo": 0.27194479782772474,
+          "logloss_modelo": 0.8244616625746807,
+          "brier_ablacion": 0.2408862570459503,
+          "logloss_ablacion": 0.6767992286069605,
+          "brier_b2": 0.24079806246167557,
+          "logloss_b2": 0.6651317109090541,
+          "brier_b1": 0.23381340633895453,
+          "logloss_b1": 0.6678755122363608,
+          "gana_vs_b2": false
+        }
+      ],
+      "notas": []
+    },
+    "41001": {
+      "municipio": "41001",
+      "periodo": "prueba",
+      "tau": 0.05,
+      "estimacion": {
+        "bss_vs_b2": 0.19740822619707532,
+        "bss_vs_b1": 0.5502922946382551,
+        "mejora_logloss_vs_b2": 0.18619681574090075,
+        "mejora_logloss_vs_b1": 0.5100495942465137,
+        "brier": {
+          "modelo": 0.12215577822717294,
+          "ablacion": 0.11350186548391496,
+          "B2": 0.1522016325290273,
+          "B1": 0.27163372290655063
+        },
+        "logloss": {
+          "modelo": 0.38570760304057355,
+          "ablacion": 0.37581381202558234,
+          "B2": 0.47395686143908194,
+          "B1": 0.7872380520787621
+        },
+        "ap": {
+          "modelo": 0.7804456486149868,
+          "ablacion": 0.8003889712536657,
+          "B2": 0.6215499724169304,
+          "B1": 0.2842056911247164
+        },
+        "prevalencia": 0.3525641025641026,
+        "vs_b2": {
+          "conclusion": {
+            "casillas_ganadas": 3,
+            "casillas_ganadas_logloss": 3,
+            "casillas_total": 3,
+            "favorable_brier": true,
+            "favorable_logloss": true,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "favorable",
+            "nivel_descriptivo_brier": "favorable",
+            "nivel_descriptivo_logloss": "favorable"
+          }
+        },
+        "vs_b1": {
+          "conclusion": {
+            "casillas_ganadas": 3,
+            "casillas_ganadas_logloss": 3,
+            "casillas_total": 3,
+            "favorable_brier": true,
+            "favorable_logloss": true,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "favorable",
+            "nivel_descriptivo_brier": "favorable",
+            "nivel_descriptivo_logloss": "favorable"
+          }
+        },
+        "ablacion_clima": {
+          "conclusion": {
+            "casillas_ganadas": 2,
+            "casillas_ganadas_logloss": 2,
+            "casillas_total": 3,
+            "favorable_brier": false,
+            "favorable_logloss": false,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "mixto",
+            "nivel_descriptivo_brier": "mixto",
+            "nivel_descriptivo_logloss": "mixto"
+          }
+        }
+      },
+      "eventos": {
+        "inicios_evaluables": 3,
+        "avisados_modelo": 2,
+        "avisados_canal": 3,
+        "municipio_anios": 3,
+        "mcnemar": {
+          "discrepantes": 1,
+          "a_favor_modelo": 0,
+          "nivel": "sin mejora",
+          "nivel_conclusion": null
+        },
+        "falsas_alarmas": {
+          "modelo": 5,
+          "canal": 6
+        },
+        "falsas_alarmas_por_municipio_anio": {
+          "modelo": 1.6666666666666667,
+          "canal": 2.0
+        },
+        "anticipacion_mediana_semanas": {
+          "modelo": 5.0,
+          "canal": 2.0
+        },
+        "delta_w": [
+          {
+            "municipality_code": "41001",
+            "semana": "2023-07-17",
+            "delta_w": 0.0
+          },
+          {
+            "municipality_code": "41001",
+            "semana": "2023-08-28",
+            "delta_w": 7.0
+          }
+        ],
+        "alertas_continuidad_modelo": 0,
+        "entradas": {
+          "evaluables": 7,
+          "avisadas_modelo": 3,
+          "avisadas_canal": 5
+        }
+      },
+      "calibracion": [
+        {
+          "probabilidad_media": 0.004892770777658033,
+          "frecuencia_observada": 0.0,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.016771262549612496,
+          "frecuencia_observada": 0.0,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.028335506296189094,
+          "frecuencia_observada": 0.06666666666666667,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.048212654449402294,
+          "frecuencia_observada": 0.0,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.09447899436747273,
+          "frecuencia_observada": 0.13333333333333333,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.19751987543234117,
+          "frecuencia_observada": 0.3125,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.3779128596159095,
+          "frecuencia_observada": 0.6,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.600804107531205,
+          "frecuencia_observada": 0.75,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.7746995366385991,
+          "frecuencia_observada": 0.9333333333333333,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.933269656920499,
+          "frecuencia_observada": 0.75,
+          "n": 16
+        }
+      ],
+      "curva_amoc": [
+        {
+          "tau": 0.05,
+          "deteccion": 0.6666666666666666,
+          "falsas_alarmas_por_municipio_anio": 1.6666666666666667,
+          "anticipacion_mediana_semanas": 5.0
+        },
+        {
+          "tau": 0.1,
+          "deteccion": 0.6666666666666666,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": 5.0
+        },
+        {
+          "tau": 0.15,
+          "deteccion": 0.6666666666666666,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": 5.0
+        },
+        {
+          "tau": 0.2,
+          "deteccion": 0.6666666666666666,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": 4.0
+        },
+        {
+          "tau": 0.25,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.3,
+          "deteccion": 0.3333333333333333,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": 1.0
+        },
+        {
+          "tau": 0.35,
+          "deteccion": 0.3333333333333333,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": 1.0
+        },
+        {
+          "tau": 0.4,
+          "deteccion": 0.3333333333333333,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": 1.0
+        },
+        {
+          "tau": 0.45,
+          "deteccion": 0.3333333333333333,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": 1.0
+        },
+        {
+          "tau": 0.5,
+          "deteccion": 0.3333333333333333,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": 1.0
+        },
+        {
+          "tau": 0.55,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.6,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.65,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.7,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.75,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.8,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.85,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.9,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.95,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        }
+      ],
+      "punto_canal": {
+        "deteccion": 1.0,
+        "falsas_alarmas_por_municipio_anio": 2.0,
+        "anticipacion_mediana_semanas": 2.0
+      },
+      "casillas": [
+        {
+          "municipio": "41001",
+          "anio": 2023,
+          "brier_modelo": 0.13308371533050709,
+          "logloss_modelo": 0.4190745338326337,
+          "brier_ablacion": 0.14400312784609695,
+          "logloss_ablacion": 0.4643527695719219,
+          "brier_b2": 0.1873156861198442,
+          "logloss_b2": 0.5680463854838359,
+          "brier_b1": 0.3237481885435235,
+          "logloss_b1": 0.9066387009911021,
+          "gana_vs_b2": true
+        },
+        {
+          "municipio": "41001",
+          "anio": 2024,
+          "brier_modelo": 0.21587032575688941,
+          "logloss_modelo": 0.6509363469067264,
+          "brier_ablacion": 0.1628737466023011,
+          "logloss_ablacion": 0.5158715974303242,
+          "brier_b2": 0.23780259826652095,
+          "logloss_b2": 0.6778149589229097,
+          "brier_b1": 0.4348996277095793,
+          "logloss_b1": 1.1902613056112015,
+          "gana_vs_b2": true
+        },
+        {
+          "municipio": "41001",
+          "anio": 2025,
+          "brier_modelo": 0.013623940022303474,
+          "logloss_modelo": 0.07605654762698083,
+          "brier_ablacion": 0.03109450583473983,
+          "logloss_ablacion": 0.13998854891066137,
+          "brier_b2": 0.02744120172883836,
+          "logloss_b2": 0.1661699120867274,
+          "brier_b1": 0.048828915697077896,
+          "logloss_b1": 0.2466681269677619,
+          "gana_vs_b2": true
+        }
+      ],
+      "notas": []
+    },
+    "50001": {
+      "municipio": "50001",
+      "periodo": "prueba",
+      "tau": 0.05,
+      "estimacion": {
+        "bss_vs_b2": 0.10574722516252544,
+        "bss_vs_b1": 0.5043936121279179,
+        "mejora_logloss_vs_b2": 0.14745772094802567,
+        "mejora_logloss_vs_b1": 0.4702487156790207,
+        "brier": {
+          "modelo": 0.12869637943660805,
+          "ablacion": 0.13652319263960272,
+          "B2": 0.14391499032250463,
+          "B1": 0.25967457762030516
+        },
+        "logloss": {
+          "modelo": 0.39547683352076685,
+          "ablacion": 0.4263115332161641,
+          "B2": 0.46387943828491,
+          "B1": 0.7465330339456906
+        },
+        "ap": {
+          "modelo": 0.8201259068168775,
+          "ablacion": 0.7006243021119279,
+          "B2": 0.6675337455418342,
+          "B1": 0.23639850044609492
+        },
+        "prevalencia": 0.33974358974358976,
+        "vs_b2": {
+          "conclusion": {
+            "casillas_ganadas": 2,
+            "casillas_ganadas_logloss": 2,
+            "casillas_total": 3,
+            "favorable_brier": true,
+            "favorable_logloss": true,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "favorable",
+            "nivel_descriptivo_brier": "favorable",
+            "nivel_descriptivo_logloss": "favorable"
+          }
+        },
+        "vs_b1": {
+          "conclusion": {
+            "casillas_ganadas": 2,
+            "casillas_ganadas_logloss": 2,
+            "casillas_total": 3,
+            "favorable_brier": true,
+            "favorable_logloss": true,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "favorable",
+            "nivel_descriptivo_brier": "favorable",
+            "nivel_descriptivo_logloss": "favorable"
+          }
+        },
+        "ablacion_clima": {
+          "conclusion": {
+            "casillas_ganadas": 2,
+            "casillas_ganadas_logloss": 3,
+            "casillas_total": 3,
+            "favorable_brier": true,
+            "favorable_logloss": true,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "favorable",
+            "nivel_descriptivo_brier": "favorable",
+            "nivel_descriptivo_logloss": "favorable"
+          }
+        }
+      },
+      "eventos": {
+        "inicios_evaluables": 1,
+        "avisados_modelo": 0,
+        "avisados_canal": 0,
+        "municipio_anios": 3,
+        "mcnemar": {
+          "discrepantes": 0,
+          "a_favor_modelo": 0,
+          "nivel": "sin mejora",
+          "nivel_conclusion": null
+        },
+        "falsas_alarmas": {
+          "modelo": 5,
+          "canal": 4
+        },
+        "falsas_alarmas_por_municipio_anio": {
+          "modelo": 1.6666666666666667,
+          "canal": 1.3333333333333333
+        },
+        "anticipacion_mediana_semanas": {
+          "modelo": null,
+          "canal": null
+        },
+        "delta_w": [],
+        "alertas_continuidad_modelo": 2,
+        "entradas": {
+          "evaluables": 6,
+          "avisadas_modelo": 0,
+          "avisadas_canal": 1
+        }
+      },
+      "calibracion": [
+        {
+          "probabilidad_media": 0.0014432035545640408,
+          "frecuencia_observada": 0.0,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.006445141192574586,
+          "frecuencia_observada": 0.0,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.019221892131522193,
+          "frecuencia_observada": 0.0,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.048100795497749885,
+          "frecuencia_observada": 0.1875,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.08598752186452557,
+          "frecuencia_observada": 0.06666666666666667,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.15841286452451186,
+          "frecuencia_observada": 0.375,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.4810776037561298,
+          "frecuencia_observada": 0.4666666666666667,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.7389727605292018,
+          "frecuencia_observada": 0.5625,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.8725993694059074,
+          "frecuencia_observada": 0.8666666666666667,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.9498722376828864,
+          "frecuencia_observada": 0.875,
+          "n": 16
+        }
+      ],
+      "curva_amoc": [
+        {
+          "tau": 0.05,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 1.6666666666666667,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.1,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.6666666666666666,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.15,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.2,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.25,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.3,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.35,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.4,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.45,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.5,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.55,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.6,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.65,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.7,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.75,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.8,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.85,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.9,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.95,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        }
+      ],
+      "punto_canal": {
+        "deteccion": 0.0,
+        "falsas_alarmas_por_municipio_anio": 1.3333333333333333,
+        "anticipacion_mediana_semanas": null
+      },
+      "casillas": [
+        {
+          "municipio": "50001",
+          "anio": 2023,
+          "brier_modelo": 0.1342361471514153,
+          "logloss_modelo": 0.4109498315950777,
+          "brier_ablacion": 0.12919318433247826,
+          "logloss_ablacion": 0.41819102588837154,
+          "brier_b2": 0.16487766568431747,
+          "logloss_b2": 0.5183671608275742,
+          "brier_b1": 0.5680512816805406,
+          "logloss_b1": 1.484557975985279,
+          "gana_vs_b2": true
+        },
+        {
+          "municipio": "50001",
+          "anio": 2024,
+          "brier_modelo": 0.013821998038832018,
+          "logloss_modelo": 0.06645221268635076,
+          "brier_ablacion": 0.020515284485359397,
+          "logloss_ablacion": 0.0939807507243513,
+          "brier_b2": 0.06496555598805462,
+          "logloss_b2": 0.2810075378249418,
+          "brier_b1": 0.06969194405097276,
+          "logloss_b1": 0.30011556877618506,
+          "gana_vs_b2": true
+        },
+        {
+          "municipio": "50001",
+          "anio": 2025,
+          "brier_modelo": 0.24242724792508172,
+          "logloss_modelo": 0.721627990469,
+          "brier_ablacion": 0.2645541644855904,
+          "logloss_ablacion": 0.779954628375209,
+          "brier_b2": 0.20458677269331996,
+          "logloss_b2": 0.5983666765625528,
+          "brier_b1": 0.14268420444466523,
+          "logloss_b1": 0.4579610470422633,
+          "gana_vs_b2": false
+        }
+      ],
+      "notas": []
+    },
+    "54001": {
+      "municipio": "54001",
+      "periodo": "prueba",
+      "tau": 0.05,
+      "estimacion": {
+        "bss_vs_b2": 0.006148433865564185,
+        "bss_vs_b1": 0.37027706733035437,
+        "mejora_logloss_vs_b2": 0.032843274785472554,
+        "mejora_logloss_vs_b1": 0.3591945230604183,
+        "brier": {
+          "modelo": 0.156121538916502,
+          "ablacion": 0.16519321276525092,
+          "B2": 0.1570873802853009,
+          "B1": 0.24792099956506392
+        },
+        "logloss": {
+          "modelo": 0.4662451215862197,
+          "ablacion": 0.5005238916088073,
+          "B2": 0.48207814662385845,
+          "B1": 0.7275922855918093
+        },
+        "ap": {
+          "modelo": 0.6627061887148247,
+          "ablacion": 0.6483694902721806,
+          "B2": 0.5860745656374942,
+          "B1": 0.33610459077957006
+        },
+        "prevalencia": 0.32051282051282054,
+        "vs_b2": {
+          "conclusion": {
+            "casillas_ganadas": 1,
+            "casillas_ganadas_logloss": 2,
+            "casillas_total": 3,
+            "favorable_brier": true,
+            "favorable_logloss": true,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "mixto",
+            "nivel_descriptivo_brier": "mixto",
+            "nivel_descriptivo_logloss": "favorable"
+          }
+        },
+        "vs_b1": {
+          "conclusion": {
+            "casillas_ganadas": 3,
+            "casillas_ganadas_logloss": 3,
+            "casillas_total": 3,
+            "favorable_brier": true,
+            "favorable_logloss": true,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "favorable",
+            "nivel_descriptivo_brier": "favorable",
+            "nivel_descriptivo_logloss": "favorable"
+          }
+        },
+        "ablacion_clima": {
+          "conclusion": {
+            "casillas_ganadas": 2,
+            "casillas_ganadas_logloss": 2,
+            "casillas_total": 3,
+            "favorable_brier": true,
+            "favorable_logloss": true,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "favorable",
+            "nivel_descriptivo_brier": "favorable",
+            "nivel_descriptivo_logloss": "favorable"
+          }
+        }
+      },
+      "eventos": {
+        "inicios_evaluables": 2,
+        "avisados_modelo": 1,
+        "avisados_canal": 2,
+        "municipio_anios": 3,
+        "mcnemar": {
+          "discrepantes": 1,
+          "a_favor_modelo": 0,
+          "nivel": "sin mejora",
+          "nivel_conclusion": null
+        },
+        "falsas_alarmas": {
+          "modelo": 2,
+          "canal": 6
+        },
+        "falsas_alarmas_por_municipio_anio": {
+          "modelo": 0.6666666666666666,
+          "canal": 2.0
+        },
+        "anticipacion_mediana_semanas": {
+          "modelo": 7.0,
+          "canal": 1.5
+        },
+        "delta_w": [
+          {
+            "municipality_code": "54001",
+            "semana": "2024-01-15",
+            "delta_w": 5.0
+          }
+        ],
+        "alertas_continuidad_modelo": 0,
+        "entradas": {
+          "evaluables": 8,
+          "avisadas_modelo": 5,
+          "avisadas_canal": 2
+        }
+      },
+      "calibracion": [
+        {
+          "probabilidad_media": 0.0043245143857391175,
+          "frecuencia_observada": 0.0,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.013806083568319761,
+          "frecuencia_observada": 0.0,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.025631304554397452,
+          "frecuencia_observada": 0.0,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.05044267432728594,
+          "frecuencia_observada": 0.1875,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.10999000890000432,
+          "frecuencia_observada": 0.2,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.195256782964218,
+          "frecuencia_observada": 0.25,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.3270350325731172,
+          "frecuencia_observada": 0.5333333333333333,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.5691812694901568,
+          "frecuencia_observada": 0.6875,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.7536698196211078,
+          "frecuencia_observada": 0.7333333333333333,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.8524113175103861,
+          "frecuencia_observada": 0.625,
+          "n": 16
+        }
+      ],
+      "curva_amoc": [
+        {
+          "tau": 0.05,
+          "deteccion": 0.5,
+          "falsas_alarmas_por_municipio_anio": 0.6666666666666666,
+          "anticipacion_mediana_semanas": 7.0
+        },
+        {
+          "tau": 0.1,
+          "deteccion": 1.0,
+          "falsas_alarmas_por_municipio_anio": 0.6666666666666666,
+          "anticipacion_mediana_semanas": 7.0
+        },
+        {
+          "tau": 0.15,
+          "deteccion": 1.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": 6.0
+        },
+        {
+          "tau": 0.2,
+          "deteccion": 1.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": 5.0
+        },
+        {
+          "tau": 0.25,
+          "deteccion": 1.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": 5.0
+        },
+        {
+          "tau": 0.3,
+          "deteccion": 0.5,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": 7.0
+        },
+        {
+          "tau": 0.35,
+          "deteccion": 0.5,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": 7.0
+        },
+        {
+          "tau": 0.4,
+          "deteccion": 0.5,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": 7.0
+        },
+        {
+          "tau": 0.45,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.5,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.55,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.6,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.65,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.7,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.75,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.8,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.85,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.9,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.95,
+          "deteccion": 0.0,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        }
+      ],
+      "punto_canal": {
+        "deteccion": 1.0,
+        "falsas_alarmas_por_municipio_anio": 2.0,
+        "anticipacion_mediana_semanas": 1.5
+      },
+      "casillas": [
+        {
+          "municipio": "54001",
+          "anio": 2023,
+          "brier_modelo": 0.03045685102877911,
+          "logloss_modelo": 0.1177217432601249,
+          "brier_ablacion": 0.03104900177152555,
+          "logloss_ablacion": 0.14797761882979077,
+          "brier_b2": 0.026173649850350252,
+          "logloss_b2": 0.1353141258141442,
+          "brier_b1": 0.03697053317428195,
+          "logloss_b1": 0.1974813382665913,
+          "gana_vs_b2": false
+        },
+        {
+          "municipio": "54001",
+          "anio": 2024,
+          "brier_modelo": 0.20412212934040638,
+          "logloss_modelo": 0.6072007740959571,
+          "brier_ablacion": 0.2867066700370358,
+          "logloss_ablacion": 0.8295118435485445,
+          "brier_b2": 0.22489279028051357,
+          "logloss_b2": 0.6640036043577681,
+          "brier_b1": 0.36319706271115876,
+          "logloss_b1": 1.0506052443547165,
+          "gana_vs_b2": true
+        },
+        {
+          "municipio": "54001",
+          "anio": 2025,
+          "brier_modelo": 0.23436727377326003,
+          "logloss_modelo": 0.6751189664870206,
+          "brier_ablacion": 0.17568901151562577,
+          "logloss_ablacion": 0.5180933961519992,
+          "brier_b2": 0.22010360092983344,
+          "logloss_b2": 0.6465816725495043,
+          "brier_b1": 0.3432110565371744,
+          "logloss_b1": 0.9324174316011679,
+          "gana_vs_b2": false
+        }
+      ],
+      "notas": []
+    },
+    "76001": {
+      "municipio": "76001",
+      "periodo": "prueba",
+      "tau": 0.05,
+      "estimacion": {
+        "bss_vs_b2": 0.23895088046877333,
+        "bss_vs_b1": 0.7105028583614535,
+        "mejora_logloss_vs_b2": 0.1154558089278499,
+        "mejora_logloss_vs_b1": 0.6685510104796208,
+        "brier": {
+          "modelo": 0.0995805718867052,
+          "ablacion": 0.09138963031109473,
+          "B2": 0.1308464451651196,
+          "B1": 0.34397773782180263
+        },
+        "logloss": {
+          "modelo": 0.3528073317216118,
+          "ablacion": 0.3497041142007066,
+          "B2": 0.3988577792749692,
+          "B1": 1.0644393040151943
+        },
+        "ap": {
+          "modelo": 0.9468632348024774,
+          "ablacion": 0.9490932815386814,
+          "B2": 0.8133579603123662,
+          "B1": 0.3208076760150714
+        },
+        "prevalencia": 0.4230769230769231,
+        "vs_b2": {
+          "conclusion": {
+            "casillas_ganadas": 3,
+            "casillas_ganadas_logloss": 2,
+            "casillas_total": 3,
+            "favorable_brier": true,
+            "favorable_logloss": true,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "favorable",
+            "nivel_descriptivo_brier": "favorable",
+            "nivel_descriptivo_logloss": "favorable"
+          }
+        },
+        "vs_b1": {
+          "conclusion": {
+            "casillas_ganadas": 3,
+            "casillas_ganadas_logloss": 3,
+            "casillas_total": 3,
+            "favorable_brier": true,
+            "favorable_logloss": true,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "favorable",
+            "nivel_descriptivo_brier": "favorable",
+            "nivel_descriptivo_logloss": "favorable"
+          }
+        },
+        "ablacion_clima": {
+          "conclusion": {
+            "casillas_ganadas": 1,
+            "casillas_ganadas_logloss": 2,
+            "casillas_total": 3,
+            "favorable_brier": false,
+            "favorable_logloss": false,
+            "nivel_conclusion": null,
+            "nivel_brier": null,
+            "nivel_logloss": null,
+            "nivel_descriptivo": "desfavorable",
+            "nivel_descriptivo_brier": "desfavorable",
+            "nivel_descriptivo_logloss": "mixto"
+          }
+        }
+      },
+      "eventos": {
+        "inicios_evaluables": 0,
+        "avisados_modelo": 0,
+        "avisados_canal": 0,
+        "municipio_anios": 3,
+        "mcnemar": {
+          "discrepantes": 0,
+          "a_favor_modelo": 0,
+          "nivel": "sin mejora",
+          "nivel_conclusion": null
+        },
+        "falsas_alarmas": {
+          "modelo": 1,
+          "canal": 3
+        },
+        "falsas_alarmas_por_municipio_anio": {
+          "modelo": 0.3333333333333333,
+          "canal": 1.0
+        },
+        "anticipacion_mediana_semanas": {
+          "modelo": null,
+          "canal": null
+        },
+        "delta_w": [],
+        "alertas_continuidad_modelo": 0,
+        "entradas": {
+          "evaluables": 3,
+          "avisadas_modelo": 1,
+          "avisadas_canal": 0
+        }
+      },
+      "calibracion": [
+        {
+          "probabilidad_media": 7.276542034890815e-05,
+          "frecuencia_observada": 0.0,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.0003898173596977837,
+          "frecuencia_observada": 0.0,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.0023322631083523646,
+          "frecuencia_observada": 0.0,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.01111850594511837,
+          "frecuencia_observada": 0.125,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.03022566707826712,
+          "frecuencia_observada": 0.2,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.11676158761678773,
+          "frecuencia_observada": 0.4375,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.5637674356325364,
+          "frecuencia_observada": 0.5333333333333333,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.8517799415955991,
+          "frecuencia_observada": 0.9375,
+          "n": 16
+        },
+        {
+          "probabilidad_media": 0.9191035549933875,
+          "frecuencia_observada": 1.0,
+          "n": 15
+        },
+        {
+          "probabilidad_media": 0.9487288902073574,
+          "frecuencia_observada": 1.0,
+          "n": 16
+        }
+      ],
+      "curva_amoc": [
+        {
+          "tau": 0.05,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.1,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.15,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.2,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.25,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.3333333333333333,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.3,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.35,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.4,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.45,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.5,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.55,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.6,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.65,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.7,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.75,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.8,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.85,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.9,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        },
+        {
+          "tau": 0.95,
+          "deteccion": null,
+          "falsas_alarmas_por_municipio_anio": 0.0,
+          "anticipacion_mediana_semanas": null
+        }
+      ],
+      "punto_canal": {
+        "deteccion": null,
+        "falsas_alarmas_por_municipio_anio": 1.0,
+        "anticipacion_mediana_semanas": null
+      },
+      "casillas": [
+        {
+          "municipio": "76001",
+          "anio": 2023,
+          "brier_modelo": 0.22974844755611531,
+          "logloss_modelo": 0.8088736123120337,
+          "brier_ablacion": 0.2121737640319808,
+          "logloss_ablacion": 0.7788536971255173,
+          "brier_b2": 0.2321991243237564,
+          "logloss_b2": 0.686760474832411,
+          "brier_b1": 0.5144676615463005,
+          "logloss_b1": 1.7012248136582087,
+          "gana_vs_b2": true
+        },
+        {
+          "municipio": "76001",
+          "anio": 2024,
+          "brier_modelo": 0.06754033643296911,
+          "logloss_modelo": 0.23994631353713639,
+          "brier_ablacion": 0.060090111193911576,
+          "logloss_ablacion": 0.25138521475878256,
+          "brier_b2": 0.15616803944918092,
+          "logloss_b2": 0.48480522260931264,
+          "brier_b1": 0.4662429849555732,
+          "logloss_b1": 1.2474844364000914,
+          "gana_vs_b2": true
+        },
+        {
+          "municipio": "76001",
+          "anio": 2025,
+          "brier_modelo": 0.00015710020511085785,
+          "logloss_modelo": 0.0050855155074012465,
+          "brier_ablacion": 0.0007641314821659594,
+          "logloss_ablacion": 0.0143143761287814,
+          "brier_b2": 0.0011918605905241466,
+          "logloss_b2": 0.015992001516005116,
+          "brier_b1": 0.043084911708788025,
+          "logloss_b1": 0.22494443111644402,
+          "gana_vs_b2": true
+        }
+      ],
+      "notas": [
+        "76001: No hubo inicios de brote en 2023–2025: solo se miden falsas alarmas."
+      ]
+    }
+  },
+  "receta": {
+    "hash_sha256": "de74d4abd33537433ffc9d1572c6cdd8620a2608fcc2b67ee4a1752aa865fda5",
+    "familia_comun": "logistica",
+    "tau": 0.05,
+    "k": 2,
+    "W": 12,
+    "ejecucion_prueba": 1
+  }
+}

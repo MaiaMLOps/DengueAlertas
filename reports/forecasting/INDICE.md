@@ -26,6 +26,21 @@ Mapa de las carpetas de resultados del MVP de pronóstico (`feature/forecasting-
 | `prueba_20261112/` | Copia en git de las tablas pequeñas de `prueba/`: `resumen_prueba.json`, `casillas_prueba.csv`, `ficha_desempeno.json`, los seis `diag_*.csv` de prueba y `manifiesto_modelos_finales.json` (idénticos byte a byte) | Receta de D7.2 | Ver la fila de `prueba/` | Contrato §8.4, §8.8 y §9.4 | **Vigente** |
 | `diagnostico_desarrollo_20261112/` | Seis insumos de §8.8 en desarrollo: logística completa con la configuración común fuera de año, τ = 0,10 | Completo | a3b274b (código caae344); regresión en `test_f7_diagnostico_desarrollo.py` | D9.1, contrato §8.8 | **Registro**: corresponde a la receta sustituida (DV-02) |
 | `diagnostico_desarrollo_sin_clima_20261112/` | Seis insumos de §8.8 en desarrollo para la receta vigente: logística sin clima con la configuración común fuera de año (2019, 2021 y 2022 `logistica_04`; 2020 `logistica_05`), τ = 0,05, rótulo «usado para elegir»; reproducido por `caso_f7_diagnostico.py` | Sin clima | a1d1cc0 (generado desde 2a1ab0b); regresión congelada en 043c8ad (`test_f7b_diagnostico_desarrollo.py`) | D9.1 y D7.2, contrato §8.8 y §6.6 | **Vigente** |
+| `reportes_20261112/` | Reportes derivables de U7.5, desarrollo («usado para elegir») y prueba, todos desde predicciones guardadas: `clasificacion_tau.csv` (§7.3, modelo y B2 en τ = 0,05), `murphy.csv` y `confiabilidad.csv` (§7.2, receta y ablación, 10 intervalos de igual frecuencia, global y por año), `calibracion_anual.csv`, `eventos_razon.csv` (§7.4, modelo y canal, global y por municipio), `duracion_alertas.csv` (descriptivo, fuera del contrato), `habilidad.csv`, `casillas.csv`, `desarrollo_vs_prueba.csv`, `curva_amoc.csv` y `manifiesto_reportes.json` | Receta sin clima; ablación completa | 7c2267c (generado desde 176f89d, árbol limpio); fórmulas e identidades congeladas en 37406f7, cifras en fbb51d8 | Contrato §7.2–§7.4 y §8.4 | **Vigente** |
+
+**Notas de `reportes_20261112/` (convenciones, sin interpretación):**
+- **Insumos.** En desarrollo, la receta usa la configuración común fuera de año de la búsqueda sin clima y la ablación la de la búsqueda completa (2019, 2021 y 2022 `logistica_03`; 2020 `logistica_04`). B2 y B1 son las líneas base guardadas. En prueba se usan los cuatro sistemas de `predicciones_prueba.parquet`.
+- **Curva AMOC de desarrollo.** Tiene dos configuraciones: `eleccion_tau_receta`, con `logistica_05` en los cuatro años (la curva que eligió τ: 22 falsas alarmas en 0,05), y `comun_fuera_de_anio`, que es la de las demás tablas (24). La de prueba es descriptiva y no cambia τ (§7.5).
+- **Razón de alertas.** Es la de `events._summarize`: inicios evaluables avisados por alertas juzgables, divididos por las alertas juzgables. Cuenta inicios, así que puede superar 1. `alertas_que_avisan` y `proporcion_falsas_alarmas` son informativas.
+- **Los dos agregados de casillas pueden diferir en signo.** En desarrollo, el BSS de la ablación frente a B2 es −0,084 como promedio de casillas y +0,070 con las filas juntas.
+- **Clasificación en τ.** Sensibilidad, especificidad, VPP y MCC son NaN cuando su denominador es 0.
+- **Residuo de Murphy.** Es WBV − 2·WBC (Stephenson, Coelho y Jolliffe, 2008).
+
+## Figuras (`reports/forecasting/figures/`, git)
+
+| Carpeta | Contenido | Commit | Estado |
+|---|---|---|---|
+| `20261112/` | PNG y SVG de U7.5: `confiabilidad_*`, `amoc_*` y `mapa_bss_*` de desarrollo («usado para elegir») y de prueba; `serie_<código>` 2019–2025 por municipio (p̂ y alertas en la semana de emisión t, referidos a t + 8); `resumen_municipios` | 7c2267c (desde 176f89d) | **Vigente** |
 
 ## Configuración
 

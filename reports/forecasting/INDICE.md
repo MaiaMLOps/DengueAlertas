@@ -40,7 +40,7 @@ Mapa de las carpetas de resultados del MVP de pronóstico (`feature/forecasting-
 
 | Carpeta | Contenido | Commit | Estado |
 |---|---|---|---|
-| `20261112/` | PNG y SVG de U7.5: `confiabilidad_*`, `amoc_*` y `mapa_bss_*` de desarrollo («usado para elegir») y de prueba; `serie_<código>` 2019–2025 por municipio (p̂ y alertas en la semana de emisión t, referidos a t + 8); `resumen_municipios` | 7c2267c (desde 176f89d) | **Vigente** |
+| `20261112/` | PNG y SVG de U7.5: `confiabilidad_*`, `amoc_*` y `mapa_bss_*` de desarrollo («usado para elegir») y de prueba; `serie_<código>` 2019–2025 por municipio (p̂ y alertas en la semana de emisión t, referidos a t + 8, con las alertas en una franja propia); `resumen_municipios` (sin punto de detección donde no hay inicios evaluables) | Regeneradas desde 300cb08 (primera versión en 7c2267c, desde 176f89d); las tablas son idénticas byte a byte y el manifiesto registra 300cb08 | **Vigente** |
 
 ## Configuración
 

@@ -1,0 +1,6 @@
+outs:
+- md5: eb158dde65e71b362436724034e7bf9f.dir
+  size: 185449
+  nfiles: 6
+  hash: md5
+  path: diagnostico_prueba

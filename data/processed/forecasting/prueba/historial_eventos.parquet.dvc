@@ -1,0 +1,5 @@
+outs:
+- md5: 1bf7e854a24b5f4dc016324060785d03
+  size: 6128
+  hash: md5
+  path: historial_eventos.parquet

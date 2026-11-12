@@ -63,6 +63,10 @@ env/
 !/data/processed/forecasting/ablacion_clima/
 /data/processed/forecasting/ablacion_clima/?*
 !/data/processed/forecasting/ablacion_clima/*.dvc
+# Single test run of F7 (prueba/): descriptors only; small tables are copied to reports/forecasting/evidence/.
+!/data/processed/forecasting/prueba/
+/data/processed/forecasting/prueba/?*
+!/data/processed/forecasting/prueba/*.dvc
 
 # DVC local cache
 .dvc/cache/

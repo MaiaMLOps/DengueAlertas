@@ -1,0 +1,6 @@
+outs:
+- md5: fca43e9e6b335ef5ea69535d113ba03f.dir
+  size: 27928
+  nfiles: 7
+  hash: md5
+  path: modelos_finales

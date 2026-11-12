@@ -1,0 +1,5 @@
+outs:
+- md5: 72122f071ecca02c7629d0d6ec19f058
+  size: 30509
+  hash: md5
+  path: predicciones_prueba.parquet

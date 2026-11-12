@@ -1,0 +1,5 @@
+outs:
+- md5: 3ce426ba844eb1fadd16a231071274a5
+  size: 2979
+  hash: md5
+  path: resumen_prueba.json

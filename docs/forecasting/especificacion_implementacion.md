@@ -120,10 +120,10 @@ Un commit por unidad.
 | `src/forecasting/dataset.py` | Ejemplos supervisados (t, t + h) y las 15 features; entrada de la GRU | 5, 7 |
 | `src/forecasting/splits.py` | Cortes por año de la semana objetivo | 11 |
 | `src/forecasting/guard.py` | **Barrera de prueba:** toda función que puntúe filas con semana objetivo en los años de prueba exige una receta congelada válida, con hash y aprobación; si no existe, lanza un error | §1, regla 1 |
-| `src/forecasting/baselines.py` | B1 y B2 (Laplace, por pliegue) y alerta descriptiva del canal | 8 |
+| `src/forecasting/baselines.py` | B1 y B2 (Laplace, por pliegue). La alerta descriptiva del canal está en `events.py` (F4) | 8 |
 | `src/forecasting/models.py` | Pipelines de regresión logística, LightGBM y GRU opcional | 9, 10 |
 | `src/forecasting/metrics.py` | Métricas de estimación y de clasificación | 16 |
-| `src/forecasting/events.py` | Alertas, alertas de continuidad, inicios, emparejamiento, censura y métricas de eventos | 13, 14, 15 |
+| `src/forecasting/events.py` | Alertas, alertas de continuidad, inicios, emparejamiento, censura y métricas de eventos; emisiones positivas del modelo (`model_positive`) y del canal (`channel_positive`), que pasan por el mismo código | 8, 13, 14, 15 |
 | `src/forecasting/search.py` | Arnés de búsqueda y tabla única de puntajes | 12 |
 | `src/forecasting/comparison.py` | Puntajes fuera de año, conteo de victorias, binomial y niveles (D9) | 17 |
 | `src/forecasting/selection.py` | Hiperparámetros → familia → τ → receta congelada | §6.2, §8.3, §7.5 |
@@ -276,6 +276,31 @@ Cifras de contrato §2.2, §5.4, §6.1, §7.4, §8.2 y `registro_decisiones.md` 
   - la censura excluye todo objeto que use semanas fuera del periodo.
 - Con datos reales: 10 inicios evaluables de 11 en desarrollo (se censura Villavicencio 2019-01-28) y 10 de 10 en prueba.
 - El módulo de eventos cuenta inicios en prueba, pero no calcula detección ni falsas alarmas de ningún sistema sobre la prueba: eso pasa por la barrera.
+
+**Lo que se congeló en F4 [H].** Archivos `tests/acceptance/test_f4_events.py` (series sintéticas) y `test_f4_periods.py` (datos reales, `--channel-parquet`), commit 332a2f6, con su regla `Edit(...)` de denegación (c770e1a). Se validaron antes del congelamiento con una implementación de referencia desechable (46 de 46) y tres variantes erróneas que fallan: alerta fechada en la primera semana, W = 13 y sin censura por ventana. Implementación: U4.2 en 15583fc y U4.3 en 89ef8f9. Además de las cifras anteriores:
+- **Serie elegible completa:** 31 inicios y 174 entradas por municipio (§6.F1), con `outbreak_onsets` y `zone_entries`.
+- **Por periodo:** 11 inicios en desarrollo (5 de los 10 evaluables son de 2019) y 10 en prueba, con las fechas de `eventos_d8.py`; 45 y 41 entradas; 24 y 18 municipio-años. Las entradas evaluables (44 y 41) no se congelaron, porque el contrato no las reporta.
+- **API:** `alerts(weeks, positive, zones, *, k)`, `model_positive(p, *, tau)`, `channel_positive(zones)`, `outbreak_onsets`, `zone_entries`, `period_onsets(rows, observed, *, window)` (sin barrera), `municipality_years(rows)` y `evaluate_period(rows, positive, observed, *, k, window, access) -> PeriodEvents` (barrera primero). Las emisiones de un periodo son las filas evaluadas de `splits.yearly_trials`.
+
+**Convenciones de F4 [D, aprobadas por Jesús el 2026-11-11].**
+- **Pertenencia y censura.** Por municipio, F es la primera emisión y L la última semana objetivo del periodo. Un inicio o una entrada pertenece al periodo si s ∈ [primer objetivo, L]. Los inicios se identifican en la serie elegible completa y después se censuran:
+  - por `"ventana"` si s − (W + 1) < F;
+  - solo los inicios, por `"confirmacion"` si s + 2 > L.
+
+  Las entradas se conocen en s y solo se censuran por ventana. Una alerta es juzgable si t_c + W + 2 ≤ L.
+- **Aviso y razón de alertas.** Una alerta no juzgable puede avisar un inicio evaluable y cuenta en la detección. La razón de alertas solo cuenta en el numerador los inicios avisados por alguna alerta juzgable, para que numerador y denominador sean la misma población. Caso real: Villavicencio 2022-10-31 en desarrollo, avisado por el canal solo con t_c = 2022-10-03.
+- **Inicios en semanas de emisión anteriores al primer objetivo** (nov–dic del año previo). No entran en la detección, pero evitan una falsa alarma. Con los datos reales no hay ninguno.
+- **Constantes.** 3 y 2 de la definición de inicio son constantes de módulo (`ONSET_MIN_RUN` y `ONSET_PRIOR_BELOW`). W + 1 y W + 2 se derivan de W, y k y W no tienen valor por defecto.
+- **Desglose por año.** El inicio cuenta en el año de s y la alerta en el año de la semana objetivo de su fila t_c.
+- **Alineación.** `positive` como `pd.Series` debe tener exactamente el índice de `rows`; como array es posicional.
+- **Nota para F7.** Una alerta juzgable seguida de un inicio censurado no es falsa alarma: entra en el denominador de la razón de alertas sin sumar en el numerador.
+
+**Canal en desarrollo [C, solo informado; primer cálculo con la regla de contrato §7.4, §10.15].**
+- Detección 10/10, con anticipación mediana de 3 semanas (rango 1–7).
+- 63 alertas juzgables y 48 falsas alarmas, es decir, 2,0 por municipio-año; 12 de ellas seguidas de alguna semana en zona epidémica.
+- Razón de alertas 9/63; 0 alertas de continuidad.
+- Detección de entradas 36/44.
+- Ninguna cifra se congeló ni se usó para decidir. No se calculó nada del canal sobre la prueba.
 
 **F5a**
 - Umbrales: 13 de 18 (azar 0,048), 17 de 24 (azar 0,032), McNemar de una cola {d < 5: imposible; 5→5, 6→6, 7→7, 8→7, 9→8, 10→9} y 4 de 4 = 0,0625.

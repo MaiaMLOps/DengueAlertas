@@ -8,7 +8,7 @@ Este archivo añade a `AGENTS.md` las reglas para implementar el MVP de pronóst
 
 | Documento | Uso |
 |---|---|
-| `docs/forecasting/contrato_predictivo.md` | Qué se construye. Es vinculante. En §10 están los 21 requisitos con sus pruebas |
+| `docs/forecasting/contrato_predictivo.md` | Qué se construye. Es vinculante. En §10 están los 22 requisitos con sus pruebas |
 | `docs/forecasting/especificacion_implementacion.md` | Cómo se construye: modo de trabajo, módulos, fases, pruebas de aceptación y configuración |
 | `docs/forecasting/api_salida_d10.md` | Esquema de salida de la API |
 | `docs/forecasting/registro_decisiones.md` | Solo cuando haga falta el porqué de una decisión |

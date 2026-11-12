@@ -1,6 +1,6 @@
 # 02 — Contrato predictivo
  
-**Creado:** 2026-11-09, chat de metodología. **Última actualización:** 2026-11-11 (enmienda D7.1: el entrenamiento de cada ensayo se cierra en su primera emisión, §6.1). Versión anterior: 2026-11-10 (D1.1 y D3–D10 cerrados: contrato completo).
+**Creado:** 2026-11-09, chat de metodología. **Última actualización:** 2026-11-12 (enmienda D9.1: análisis diagnóstico integrado, §8.8 y §10.22; solo reporte). Versiones anteriores: 2026-11-11 (enmienda D7.1: el entrenamiento de cada ensayo se cierra en su primera emisión, §6.1) y 2026-11-10 (D1.1 y D3–D10 cerrados: contrato completo).
 **Propósito:** especificación vinculante de qué se predice, con qué información, contra qué referencias y cómo se evalúa. Es la fuente de verdad para la implementación en la rama `feature/forecasting-mvp`. Las alternativas descartadas y su justificación detallada están en `01_registro_decisiones.md`.
  
 Convención: **[H]** hecho verificado; **[C]** cálculo reproducible con el script indicado; **[D]** decisión; **[I]** inferencia; **[R]** recomendación; **[P]** pendiente.
@@ -22,6 +22,7 @@ Convención: **[H]** hecho verificado; **[C]** cálculo reproducible con el scri
 | D7 | Validación y selección | [D] Origen móvil con reentrenamiento anual y corte por fecha de la semana objetivo, con el entrenamiento cerrado en la primera emisión de cada ensayo (D7.1); desarrollo 2019–2022, prueba 2023–2025; hiperparámetros con esquema híbrido (configuración común + excepción por municipio) | §6 |
 | D8 | Métricas y regla de decisión | [D] Estimación: la mejora de log-loss frente a B2 decide hiperparámetros y familia; BSS frente a B2 es la principal de reporte. Decisión: regla de alerta con k = 2, fechada en la confirmación y ventana de 12 semanas; τ común que maximiza la detección de inicios con falsas alarmas ≤ las del canal, en desarrollo | §7 |
 | D9 | Incertidumbre y reglas de comparación | [D] Conteo de victorias pareadas con prueba binomial exacta de una cola (5 %). Desarrollo, con puntajes fuera de año: excepción por municipio si gana 4 de 4 años; familia más compleja si gana ≥ 17 de 24 casillas. Prueba: tres niveles de conclusión (≥ 13 de 18 casillas) y McNemar exacto para los inicios | §8 |
+| D9.1 | Análisis diagnóstico integrado | [D] Solo reporte: régimen de cada casilla (epidémica, post-epidémica, tranquila), seis insumos para desarrollo y prueba, hipótesis secundarias H-R y H-E contrastadas solo en prueba, limitaciones de las métricas | §8.8 |
 | D10 | Salida para el usuario final | [D] Vista principal con probabilidad, referencias B1 y B2, estado de alerta (§7.4), canal hasta t + 8 y ficha de prueba; cuatro vistas (pronóstico vigente, historial fuera de muestra, carga de datos, desempeño); API FastAPI ampliada | §9 |
  
 ## 1. Canal endémico de referencia (D1.1)
@@ -597,6 +598,58 @@ En cada casilla gana la opción con menor Brier. La conclusión tiene tres nivel
 - `claude/verificacion/umbrales_d9.py`: umbrales, probabilidades por azar y potencia. Ejecución: `python -I umbrales_d9.py`.
 - McNemar, Q. (1947). Note on the sampling error of the difference between correlated proportions or percentages. *Psychometrika, 12*(2), 153–157. **Verificar los datos bibliográficos antes de citarla.**
 - La auditoría del avance (I9e) y la propuesta (§10) recomendaban bootstrap y McNemar; la desviación se justifica en `01`, D9.
+### 8.8 Análisis diagnóstico integrado (D9.1, 2026-11-12) [D]
+
+**Propósito.** Además de las conclusiones de §8.4, el reporte incluye un análisis descriptivo, año por año y municipio por municipio: dónde aporta el modelo frente a B2, B1 y el canal, dónde no, qué patrones de los datos acompañan cada caso y cómo influyen en la lectura las propiedades de las métricas. No cambia ninguna decisión ni conclusión: la receta, los criterios de §8.3 y §8.4 y la regla de alerta quedan iguales. Se fija antes de abrir la prueba (motivo en `01`, D9.1).
+
+**Régimen de cada casilla municipio-año.** Se clasifica con la serie observada y la noción de racha de §2.4, sin umbrales nuevos. Un *episodio* es una racha de ≥ 3 semanas consecutivas en zona epidémica (C > U1e) en la serie elegible completa. La clasificación se hace sobre el año calendario de esa serie, con los episodios identificados en toda ella, no solo sobre las filas evaluadas. El año de una casilla es el de sus semanas objetivo. Para 2019 y 2023, el año anterior (2018, 2022) se clasifica con la misma regla.
+- *Epidémica:* al menos una semana del año calendario pertenece a un episodio.
+- *Post-epidémica:* no es epidémica y el año anterior sí lo es, con la misma regla.
+- *Tranquila:* el resto.
+
+La clasificación usa semanas posteriores a la emisión, así que es solo un estrato de diagnóstico: no es variable, no decide nada y no se presenta como información disponible al emitir.
+
+**Insumos obligatorios.** Se generan con el mismo código para desarrollo y para prueba. En desarrollo se usa, en cada casilla, la configuración común fuera de año (elegida sin y, §8.3) de la familia elegida; si hubiera excepciones, la que §8.3 compara en cada caso. Se rotula «usado para elegir»; en prueba, la receta congelada.
+1. *Tabla de casillas:* municipio, año, régimen, filas, positivas, prevalencia; p̂ medio del modelo, de B2 y de B1, y su calibración en grande (p̂ medio − prevalencia); log-loss y Brier de los tres; diferencias absolutas y relativas frente a B2 y frente a B1; victoria por log-loss y por Brier.
+2. *Resúmenes* de esa tabla por municipio, por año y por régimen, con cada métrica agregada de dos formas: promedio de las mejoras relativas por casilla y métrica calculada sobre las filas juntas.
+3. *Estratos de transición* (§7.2), también por año.
+4. *Inicios y entradas evaluables:* municipio, semana, régimen, aviso del modelo y del canal, anticipación de cada uno y Δw.
+5. *Alertas juzgables* del modelo y del canal: t_c, continuidad, falsa alarma, si fue seguida de alguna semana en zona epidémica y régimen.
+6. *Serie semanal* por municipio, para figuras: semana de emisión y objetivo, C, central y U1e de la semana objetivo, zona en t, y, p̂, B1, B2 y alertas del modelo y del canal.
+
+**Hipótesis secundarias.** Se formularon con los resultados de desarrollo y se contrastan solo en prueba, de forma descriptiva y sin pruebas estadísticas adicionales (§8.5). La comparación frente a B1 ya es una conclusión principal de §8.4.
+- *H-R, régimen:* (a) en las casillas epidémicas, el modelo gana a B2 por log-loss en más de la mitad; (b) en las post-epidémicas, pierde en más de la mitad; (c) en las post-epidémicas, la calibración en grande del modelo (p̂ medio − prevalencia, con signo) es mayor que la de B2 en más de la mitad, es decir, el modelo sobreestima más que B2.
+- *H-E, eventos frente al canal:* (a) el modelo avisa menos inicios; (b) tiene menos falsas alarmas por municipio-año; (c) en los inicios avisados por ambos, Δw > 0 en más de la mitad.
+
+Cada parte se declara sostenida, no sostenida o no evaluable (estrato con menos de 2 casillas o de 2 inicios). El análisis reporta también lo que contradiga estas hipótesis.
+
+**Nivel descriptivo por municipio.** Cada municipio tiene su propio modelo, así que el análisis empieza por él. En prueba, cada municipio recibe un nivel descriptivo frente a B2, con la misma lógica de §8.4 aplicada a sus 3 casillas:
+- *favorable:* BSS del municipio > 0 y gana en al menos 2 de sus 3 años;
+- *mixto:* solo una de las dos condiciones;
+- *desfavorable:* ninguna.
+
+Se calcula con Brier y con log-loss y se adopta el menor, como en §8.4. Se reporta igual frente a B1 y para los eventos (inicios avisados y falsas alarmas frente al canal). No es una conclusión estadística: con 3 casillas, un modelo equivalente a B2 gana al menos 2 de 3 años la mitad de las veces. Por eso se acompaña de las casillas de desarrollo fuera de año del mismo municipio, como contexto de consistencia.
+
+**Análisis cualitativo.** Estructura fija, de lo particular a lo general:
+1. Perfil por municipio, uno por uno: nivel descriptivo, casillas de desarrollo y de prueba, episodios disponibles en su entrenamiento, dónde aporta y dónde no.
+2. Relato por año (2019–2025): qué ocurrió en la serie observada de cada municipio (régimen, episodios, inicios) y cómo se comportaron el modelo, B2, B1 y el canal.
+3. Síntesis de los seis municipios: conclusiones globales de §8.4 y qué patrones son comunes y cuáles son propios de cada municipio.
+4. Contraste de H-R y H-E.
+5. Efecto de las métricas en la lectura (lista siguiente).
+6. Conclusiones integradas, separando hechos, inferencias e hipótesis.
+
+**Comunicación por municipio.** Los municipios con nivel favorable se destacan como tales en el artículo y en la ficha de desempeño (§9.4, vista 4), porque es donde el sistema puede aportar más; los desfavorables se reportan con la misma visibilidad. Ningún municipio se omite ni se presenta solo en el agregado.
+
+**Qué puede afirmar.** Puede asociar un resultado con patrones verificables en los datos: calibración en grande, régimen, número de episodios en el entrenamiento, desplazamiento del canal tras una epidemia y tamaño de la casilla. No atribuye resultados a variables concretas ni a causas epidemiológicas (inmunidad, serotipos, notificación); si se mencionan, es como hipótesis con referencia verificada. No modifica las conclusiones de §8.4.
+
+**Limitaciones de las métricas que el análisis discute:**
+- el promedio de mejoras relativas es inestable cuando el log-loss de B2 es pequeño (años sin positivas) y puede tener otro signo que la diferencia absoluta;
+- la AP no está definida en casillas sin positivas;
+- la detección se mueve en saltos de un inicio (10 puntos con 10 evaluables);
+- las casillas de un mismo año están correlacionadas (§8.6);
+- la restricción de falsas alarmas de τ puede no estar activa;
+- la etiqueta U1e se mueve con su línea base: tras una epidemia, los años epidémicos entran en la referencia del canal.
+
 ## 9. D10 — Salida para el usuario final (2026-11-10)
  
 ### 9.1 Alcance y principio [D]
@@ -730,3 +783,4 @@ Se conserva la API FastAPI existente (`/municipios`, `/schema`, `/health`) y se 
     - `/predict/upload` rechaza con mensajes claros los archivos que violan §3.3 y, con datos idénticos a la base, reproduce la salida de `/predict`.
 20. **Frontend (§9.3–9.5):** las cuatro vistas, las referencias B1 y B2, los estados de alerta y las advertencias permanentes. El esquema JSON de `/predict` se fija antes de entrenar, para que el frontend avance con valores simulados.
 21. **README (rúbrica: 15 puntos):** ejemplos de entrada y salida (plantilla CSV y respuesta JSON), variables de entorno y gestión del modelo en MLflow.
+22. **Análisis diagnóstico integrado (§8.8).** Los seis insumos de §8.8 se generan para desarrollo y para prueba con el mismo código y se versionan con la evidencia. La clasificación de régimen tiene pruebas con series sintéticas (episodio de 3 semanas que cruza el cambio de año, año post-epidémico, año con racha de 2 semanas). En desarrollo, las cifras se comparan con un cálculo independiente antes de congelar sus literales.

@@ -362,6 +362,25 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 - El 5 % es una convención.
 **Evidencia:** `claude/verificacion/umbrales_d9.py` (umbrales, probabilidades por azar y potencia).
  
+## D9.1 — Análisis diagnóstico integrado (2026-11-12; enmienda de reporte a D9)
+
+**Decisión:** el reporte incluye un análisis descriptivo municipio por municipio y año por año, con un nivel descriptivo por municipio (favorable, mixto o desfavorable, sin valor de conclusión estadística), una clasificación de régimen de cada casilla, seis insumos obligatorios para desarrollo y prueba, dos hipótesis secundarias que se contrastan solo en prueba y una lista de limitaciones de las métricas. Texto vinculante en `02` §8.8 y §10, punto 22. No cambia ninguna decisión: receta, criterios de §8.3 y §8.4, regla de alerta y τ quedan iguales.
+
+**Origen.** Se propuso el 2026-11-12, después de ejecutar la selección de F6 en desarrollo y antes de congelar la receta y de abrir la prueba. Una lectura por casilla de los resultados de desarrollo (chat de desarrollo guiado) mostró tres cosas que las conclusiones agregadas no muestran:
+- qué municipio parece fallar frente a B2 depende de la métrica: el promedio de mejoras relativas y la diferencia absoluta de log-loss señalan municipios distintos, porque el cociente se dispara en años sin positivas, cuando el log-loss de B2 es pequeño;
+- la ventaja del modelo frente a B2 se concentra en años epidémicos y se pierde en años tranquilos que siguen a una epidemia, con probabilidades medias por encima de la prevalencia;
+- ese patrón afecta a varios municipios a la vez, en el mismo año.
+
+**Por qué no viola el principio rector.** El principio prohíbe modificar cláusulas por cómo harían lucir los resultados. D9.1 no cambia ninguna cláusula que decida o concluya; añade obligaciones de reporte, fijadas antes de ver la prueba, que tienen que mostrar también lo que no favorezca al modelo. Las hipótesis se formulan con desarrollo y se contrastan con datos que nadie ha visto. Se declara que se motivaron en desarrollo.
+
+**Alternativas consideradas:**
+- **Solo las conclusiones de §8.4.** Esconden la heterogeneidad por año y por municipio, que es lo que un epidemiólogo necesita saber para confiar o no en el sistema.
+- **Régimen por un umbral de prevalencia anual.** Introduce un número nuevo elegido después de ver desarrollo. La definición por episodios reutiliza §2.4.
+- **Ajustes por municipio con lo observado** (otra familia en un municipio, B2 donde el modelo pierde). Sería elegir con los datos que ya se usaron para elegir; para eso existía la regla de 4 de 4 (§8.3), y ningún municipio la cumplió.
+- **Atribuciones por variable** (por ejemplo, SHAP). Fuera del alcance (§9.7) y no responden la pregunta: el análisis es descriptivo del desempeño, no explicativo del modelo.
+
+**Declarar en el artículo:** el análisis por régimen y las hipótesis H-R y H-E se definieron tras la selección en desarrollo y antes de la prueba; el régimen se clasifica con información posterior a la emisión y solo sirve para diagnosticar.
+
 ## D10 — Salida para el usuario final (2026-11-10)
  
 **Decisión:** detalle en `02` §9. Es una primera versión; el equipo de frontend puede complementarla dentro de las reglas de §9.4 y §9.5.

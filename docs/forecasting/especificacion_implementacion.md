@@ -129,6 +129,7 @@ Un commit por unidad.
 | `src/forecasting/selection.py` | Hiperparámetros → familia → τ → receta congelada | §6.2, §8.3, §7.5 |
 | `src/forecasting/evaluate.py` | Prueba única, ablación y ficha de desempeño | §8.4 |
 | `src/forecasting/artifacts.py` | Historial fuera de muestra, ficha, modelo final y registro | 18 |
+| `src/forecasting/diagnostics.py` (F7) | Análisis diagnóstico integrado (D9.1): régimen de cada casilla y los seis insumos de contrato §8.8, para desarrollo y prueba, desde predicciones guardadas | 22 |
 | `src/forecasting/tracking.py` | Conexión a MLflow con los encabezados de Cloudflare Access (§9) y respaldo local | 9 |
 | `configs/forecasting.yaml` | Parámetros (§8) | 5, 14 |
 | `configs/receta_congelada.yaml` | Se genera en F6 y lo aprueba Jesús (§8) | §6.1 |
@@ -401,6 +402,14 @@ Cifras de contrato §2.2, §5.4, §6.1, §7.4, §8.2 y `registro_decisiones.md` 
 
 **F7**
 - La bitácora registra una ejecución de la prueba.
+- **Análisis diagnóstico integrado (contrato §8.8 y §10.22, D9.1).**
+  - Un módulo genera los seis insumos de §8.8 a partir de predicciones guardadas, sin reentrenar: tabla de casillas, resúmenes por municipio, año y régimen (con las dos agregaciones), estratos de transición por año, inicios y entradas, alertas juzgables y serie semanal.
+  - Desarrollo: se calcula con las predicciones de F5b y las configuraciones fuera de año de la familia elegida; no pasa por la barrera. Prueba: solo después de la receta, con la barrera.
+    - La configuración diagnosticada en cada casilla de desarrollo es la común fuera de año (elegida sin y) de la familia elegida, es decir, `candidato_comun` de `comparison.out_of_year_scores`. Si hubiera excepciones, se usa la que §8.3 compara en cada caso.
+    - El régimen se clasifica sobre el año calendario de la serie elegible completa, con los episodios identificados en toda la serie, no solo sobre las filas evaluadas. El año de una casilla es el de sus semanas objetivo. Para 2019 y 2023, el año anterior (2018, 2022) se clasifica con la misma regla.
+  - Pruebas sintéticas de la clasificación de régimen: episodio de 3 semanas que cruza el cambio de año (ambos años epidémicos), año sin episodio tras uno epidémico (post-epidémico), año con una racha de 2 semanas (no epidémico).
+  - Las cifras de desarrollo (victorias y diferencias por casilla, conteos por régimen) se comparan con un cálculo independiente de este chat antes de congelarlas, como en F1–F6.
+  - Los insumos son parte del mínimo obligatorio de F7 (§5, orden de recorte): sin ellos el análisis no se puede reconstruir. La redacción cualitativa puede pasar a la semana 7.
 - `/historial` solo contiene predicciones del origen móvil y ninguna del modelo final con t ≤ 2025-10-27.
 - La ficha contiene todos los campos de `api_salida_d10.md` §7 y la tabla de 18 casillas.
 
@@ -523,7 +532,7 @@ En modo servidor no se activa.
 
 ## 11. Definición de terminado
 
-- Los 21 requisitos de contrato §10 están cumplidos o tienen su desviación registrada.
+- Los 22 requisitos de contrato §10 están cumplidos o tienen su desviación registrada.
 - Las pruebas están en verde: las del legado, las de `tests/forecasting/` y todas las de aceptación ejecutadas con datos.
 - La ficha de desempeño se generó desde la prueba única registrada en la bitácora.
 - La API y el frontend sirven las cuatro vistas.

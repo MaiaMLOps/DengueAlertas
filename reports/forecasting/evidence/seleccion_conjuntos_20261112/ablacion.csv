@@ -1,0 +1,7 @@
+municipality_code,familia,conjunto_variables,candidato,orden,parametros,excepcion_hiperparametros,excepcion_hiperparametros_nominal
+08001,logistica,completo,logistica_03,3,"{""C"": 0.3, ""max_iter"": 5000}",False,False
+08758,logistica,completo,logistica_03,3,"{""C"": 0.3, ""max_iter"": 5000}",False,False
+41001,logistica,completo,logistica_03,3,"{""C"": 0.3, ""max_iter"": 5000}",False,False
+50001,logistica,completo,logistica_03,3,"{""C"": 0.3, ""max_iter"": 5000}",False,False
+54001,logistica,completo,logistica_03,3,"{""C"": 0.3, ""max_iter"": 5000}",False,False
+76001,logistica,completo,logistica_03,3,"{""C"": 0.3, ""max_iter"": 5000}",False,False

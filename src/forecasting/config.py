@@ -100,6 +100,11 @@ class MetricsSection(_Section):
     recorte_log_loss: float = Field(gt=0, lt=0.5, strict=True)
 
 
+class ComparisonSection(_Section):
+    # Chance threshold of the D9 counting rules (contrato §8.2): one-sided exact binomial and McNemar.
+    alfa: float = Field(gt=0, lt=1, strict=True)
+
+
 class DecisionSection(_Section):
     k: int = Field(ge=1)
     W: int = Field(ge=1)
@@ -205,6 +210,7 @@ class ForecastConfig(_Section):
     validacion: ValidationSection
     lineas_base: BaselineSection
     metricas: MetricsSection
+    comparacion: ComparisonSection
     decision: DecisionSection
     seguimiento: TrackingSection
     busqueda: SearchSection | None = None

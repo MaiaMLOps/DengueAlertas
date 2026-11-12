@@ -35,6 +35,9 @@ lineas_base:                       # contrato §4.1
 metricas:                          # contrato §10.16
   recorte_log_loss: 1.0e-15        # p se recorta a [ε, 1 − ε], el mismo para todos los sistemas
 
+comparacion:                       # contrato D9, §8.2
+  alfa: 0.05                       # umbral de azar < 5 % (binomial exacta y McNemar, una cola)
+
 decision:                          # contrato D8, §7.4 y §7.5
   k: 2
   W: 12

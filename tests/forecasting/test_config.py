@@ -162,3 +162,11 @@ def test_invalid_busqueda_is_rejected(tmp_path, base_data, change, message):
     data["busqueda"] = search
     with pytest.raises(ValidationError, match=message):
         load_config(_write(tmp_path, data))
+
+
+@pytest.mark.parametrize("alpha", [0, 1, 1.5, "0.05"])
+def test_comparison_alpha_must_be_a_float_in_the_unit_interval(tmp_path, base_data, alpha):
+    data = copy.deepcopy(base_data)
+    data["comparacion"]["alfa"] = alpha
+    with pytest.raises(ValidationError, match="comparacion"):
+        load_config(_write(tmp_path, data))

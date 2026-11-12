@@ -366,6 +366,7 @@ Contrato §6.3 exige fijarlo antes de correr el desarrollo. Esta propuesta inici
 | `validacion` | Años de desarrollo [2019, 2022] y de prueba [2023, 2025]; primer año de entrenamiento 2012 |
 | `lineas_base` | Semiventana de B1, k = 2 (contrato §4.1; F3) |
 | `metricas` | Recorte del log-loss, ε = 1e-15 (contrato §10.16; F3) |
+| `comparacion` | α = 0,05, el umbral de azar de las reglas de conteo de D9 (contrato §8.2; F5a) |
 | `decision` | k = 2; W = 12; rejilla de τ (0,05 a 0,95, paso 0,05) |
 | `busqueda` | Vacía hasta el pre-registro (§7); después, espacios, presupuesto y semillas |
 | `seguimiento` | Nombres de experimentos y modo (servidor o respaldo local) |

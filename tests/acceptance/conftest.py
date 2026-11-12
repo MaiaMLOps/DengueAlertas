@@ -14,6 +14,7 @@ def pytest_addoption(parser):
     parser.addoption("--panel-parquet", default=None, help="Six-pilot weekly panel for acceptance tests.")
     parser.addoption("--channel-parquet", default=None, help="Channel product (F1) for acceptance tests.")
     parser.addoption("--legacy-labels-parquet", default=None, help="Legacy labels Parquet, read only by tests.")
+    parser.addoption("--search-dir", default=None, help="Folder with the development search outputs (F5b).")
 
 
 def _explicit_path(request, option, purpose):
@@ -39,3 +40,15 @@ def channel_path(request):
 @pytest.fixture
 def legacy_labels_path(request):
     return _explicit_path(request, "--legacy-labels-parquet", "Legacy labels comparison")
+
+
+@pytest.fixture
+def search_dir(request):
+    value = request.config.getoption("--search-dir")
+    if value is None:
+        pytest.skip("Development search acceptance not requested (--search-dir).")
+    path = Path(value).resolve()
+    required = ("tabla_unica_desarrollo.parquet", "predicciones_desarrollo.parquet")
+    if not path.is_dir() or not all((path / name).is_file() for name in required):
+        pytest.fail("Explicit --search-dir folder or its search outputs are unavailable.")
+    return path

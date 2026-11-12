@@ -246,6 +246,7 @@ Cifras de contrato §2.2, §5.4, §6.1, §7.4, §8.2 y `registro_decisiones.md` 
 **La GRU en la búsqueda.** Su entrada está construida y probada, pero su inclusión en la búsqueda se decide en el pre-registro (§7).
 
 **F3**
+- **Corte de entrenamiento (DV-01, contrato §6.1 enmendado por D7.1):** en cada ensayo Y y municipio, t0 es la emisión más temprana entre las filas evaluadas, y ninguna fila de entrenamiento tiene t + h > t0. Las filas evaluadas son exactamente las del año Y.
 - Desarrollo: 208 filas evaluadas por municipio, 1.248 en total, 319 positivas.
 - Prueba: 156 por municipio, 936 en total, 322 positivas.
 - En cada ensayo Y, ninguna fila de entrenamiento tiene la semana objetivo en Y ni después, y las filas evaluadas son exactamente las del año Y.

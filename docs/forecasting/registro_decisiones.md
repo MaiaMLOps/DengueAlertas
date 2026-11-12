@@ -227,7 +227,7 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 **Justificación:**
 - *Coherencia con la propuesta.* La propuesta comprometía una evaluación «rolling-origin, con reentrenamiento».
 - *Realismo.* El sistema operaría reentrenándose cada año con todo lo conocido.
-- *Hueco automático.* El corte por la fecha de la semana objetivo elimina la fuga del avance (I9).
+- *Hueco automático.* El corte por la fecha de la semana objetivo elimina la fuga del avance (I9). **Precisado en D7.1 (2026-11-11):** el hueco respecto a la fecha de emisión exige además cerrar el entrenamiento en la primera emisión de cada ensayo.
 - *Esquema híbrido.* El sesgo del ganador al elegir entre k candidatos ruidosos es E[máx]·σ: 1,97σ con k = 25. Si se promedia sobre seis municipios, baja a unos 0,80σ bajo independencia. La evidencia por municipio es desigual: en desarrollo, Neiva solo tiene positivas en 2019 y Cali 20 en total. Con la misma lista de candidatos, la excepción por municipio se puede comprobar en lugar de afirmarse.
 **Alternativas descartadas [C]:**
 - **Una sola partición fija** (tipo 70/15/15). Deja un solo año para decidir, y los modelos de los años tardíos no ven la historia reciente.
@@ -251,6 +251,29 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 - Pocos años para medir la variación entre ellos.
 **Evidencia:** los conteos de eventos por año y municipio de cada partición candidata, y los valores de E[máx de k normales], se calcularon en el chat de metodología. Son descriptivos de la etiqueta: no se entrenó ningún modelo.
  
+## D7.1 — Entrenamiento cerrado en la primera emisión de cada ensayo (2026-11-11; enmienda a D7)
+
+**Decisión:** en el ensayo del año Y, el entrenamiento usa solo las filas cuya semana objetivo es anterior o igual a t0, la emisión más temprana entre las filas evaluadas de Y (t + h ≤ t0). La evaluación no cambia: las filas cuya semana objetivo cae en Y. Se aplica a todos los candidatos, a B1 y B2, a la ablación y a los ensayos de desarrollo y de prueba. Texto vinculante en `02` §6.1. En el repositorio se registra como DV-01.
+
+**Problema que corrige.** D7 afirmaba que, con el corte por la fecha de la semana objetivo, «el hueco de h semanas aparece solo». Es cierto respecto a las semanas objetivo: ninguna semana evaluada entra al entrenamiento. No lo es respecto a la fecha de emisión. Con h = 8, el ensayo 2019 entrenaba con las etiquetas de hasta el 2018-12-31, pero su primera emisión es del 2018-11-12. Las 7 primeras emisiones evaluadas de cada año (del t0 al t0 + 6 semanas) usaban un modelo que conocía las etiquetas de las semanas entre su emisión y su objetivo, que en esa fecha no existían. Como el estado está muy autocorrelacionado (kappa de 0,68 a 4 semanas), esas etiquetas informan sobre el objetivo: saber que diciembre fue epidémico es casi saber que la primera semana de enero también lo será. La información entra por los parámetros del modelo, no por las variables, así que la prueba de truncamiento no la detecta.
+
+**Origen.** La observación se identificó al redactar el documento de metodología (sección «Observación sobre el corte», marcada [I][P]) y no se trasladó a este registro. Se retomó al iniciar F3, antes de congelar las pruebas del constructor de cortes y antes de entrenar cualquier modelo, así que el cambio no viola el principio rector.
+
+**Alternativas consideradas:**
+- **Mantener D7 y declararlo como limitación.** Sin costo de implementación, pero el sistema evaluado no se podía operar: emite en noviembre con un modelo que solo existe en enero.
+- **Reentrenar en cada emisión** con las etiquetas existentes en esa fecha. Es la versión más exacta, pero multiplica por 52 los entrenamientos de la búsqueda, con una ganancia mínima sobre D7.1.
+- **Ensayos por año de la fecha de emisión** (entrenar hasta el 31 de diciembre y evaluar las emisiones del año). Coherente en sí misma, pero el último ensayo de desarrollo evaluaría objetivos de 2023 (periodo de prueba), cambian todas las cifras verificadas de §6.1 y los eventos de un año quedan partidos entre dos ensayos.
+
+**Justificación de D7.1:**
+- Simula un sistema operable: se reentrena una vez al año, el día de su primera emisión, con lo que se sabía ese día.
+- Costo pequeño [C]: h − 1 = 7 filas por ensayo y municipio. Las filas evaluadas (1.248 y 936), las positivas, los inicios y las entradas de §6.1 no cambian.
+- Las filas excluidas no son neutras: 83 de las 294 excluidas en los 42 ensayos municipio-año son positivas, y en Villavicencio 2019 son 5 de 7, el despegue de la epidemia que sigue en enero.
+- Conserva todo el diseño de D7: cortes por año de la semana objetivo, desarrollo 2019–2022, prueba 2023–2025 y comparaciones pareadas.
+
+**Cifras [C]:** `claude/verificacion/tamanos_d71.py` (t0 y filas de entrenamiento de cada ensayo y municipio) y `caso_f3_hueco.py` (B1 y B2 de Villavicencio, ensayo 2019, t = 2018-12-03). Se copian a `docs/forecasting/verificacion/` después de compararlos con la explicación independiente de la implementación, como en F1 y F2.
+
+**Declarar en el artículo:** el entrenamiento de cada ensayo usa solo información disponible en su primera emisión; el sistema evaluado se reentrena una vez al año.
+
 ## D8 — Métricas y regla de decisión (2026-11-10)
  
 **Decisión:** detalle en `02` §7.

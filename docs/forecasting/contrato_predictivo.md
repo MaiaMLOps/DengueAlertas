@@ -1,6 +1,6 @@
 # 02 — Contrato predictivo
  
-**Creado:** 2026-11-09, chat de metodología. **Última actualización:** 2026-11-10 (D1.1 y D3–D10 cerrados: contrato completo).
+**Creado:** 2026-11-09, chat de metodología. **Última actualización:** 2026-11-11 (enmienda D7.1: el entrenamiento de cada ensayo se cierra en su primera emisión, §6.1). Versión anterior: 2026-11-10 (D1.1 y D3–D10 cerrados: contrato completo).
 **Propósito:** especificación vinculante de qué se predice, con qué información, contra qué referencias y cómo se evalúa. Es la fuente de verdad para la implementación en la rama `feature/forecasting-mvp`. Las alternativas descartadas y su justificación detallada están en `01_registro_decisiones.md`.
  
 Convención: **[H]** hecho verificado; **[C]** cálculo reproducible con el script indicado; **[D]** decisión; **[I]** inferencia; **[R]** recomendación; **[P]** pendiente.
@@ -19,7 +19,7 @@ Convención: **[H]** hecho verificado; **[C]** cálculo reproducible con el scri
 | D4 | Emisión, información disponible y horizontes | [D] t = última semana completa; información de la base hasta t; horizonte principal h = 8; sensibilidad h ∈ {2, 4, 12} | §3 |
 | D5 | Líneas base y modelos | [D] B2 estado del canal (principal), B1 climatología estacional (secundaria); regresión logística, LightGBM y GRU opcional con todas las features; familia común; una ablación del clima | §4 |
 | D6 | Features | [D] 15 variables (estado y dinámica frente al canal, semana objetivo, anomalías climáticas en bloques mensuales); ventana de 12 semanas; sin variables demográficas | §5 |
-| D7 | Validación y selección | [D] Origen móvil con reentrenamiento anual y corte por fecha de la semana objetivo; desarrollo 2019–2022, prueba 2023–2025; hiperparámetros con esquema híbrido (configuración común + excepción por municipio) | §6 |
+| D7 | Validación y selección | [D] Origen móvil con reentrenamiento anual y corte por fecha de la semana objetivo, con el entrenamiento cerrado en la primera emisión de cada ensayo (D7.1); desarrollo 2019–2022, prueba 2023–2025; hiperparámetros con esquema híbrido (configuración común + excepción por municipio) | §6 |
 | D8 | Métricas y regla de decisión | [D] Estimación: la mejora de log-loss frente a B2 decide hiperparámetros y familia; BSS frente a B2 es la principal de reporte. Decisión: regla de alerta con k = 2, fechada en la confirmación y ventana de 12 semanas; τ común que maximiza la detección de inicios con falsas alarmas ≤ las del canal, en desarrollo | §7 |
 | D9 | Incertidumbre y reglas de comparación | [D] Conteo de victorias pareadas con prueba binomial exacta de una cola (5 %). Desarrollo, con puntajes fuera de año: excepción por municipio si gana 4 de 4 años; familia más compleja si gana ≥ 17 de 24 casillas. Prueba: tres niveles de conclusión (≥ 13 de 18 casillas) y McNemar exacto para los inicios | §8 |
 | D10 | Salida para el usuario final | [D] Vista principal con probabilidad, referencias B1 y B2, estado de alerta (§7.4), canal hasta t + 8 y ficha de prueba; cuatro vistas (pronóstico vigente, historial fuera de muestra, carga de datos, desempeño); API FastAPI ampliada | §9 |
@@ -299,15 +299,21 @@ Es la misma información de la que se derivan las 15 variables: la GRU aprende s
  
 Se evalúa **la receta**, no un modelo ajustado una sola vez. La receta son las features, la familia, los hiperparámetros, el preprocesamiento y la regla de decisión. Lo único que cambia entre ensayos son los datos que ve.
  
-- **Corte por la fecha de la semana objetivo.** Para evaluar el año Y:
-  - el entrenamiento usa las filas cuya semana objetivo t + h cae antes de Y (desde 2012);
-  - la evaluación usa las filas cuya semana objetivo cae en Y.
-  Así el hueco de h semanas entre la última etiqueta de entrenamiento y la primera evaluada aparece solo. Ejemplo: el pronóstico emitido el 2018-11-26 apunta a la semana del 2019-01-21, así que pertenece al ensayo de 2019 y no a su entrenamiento.
+- **Corte por la fecha de la semana objetivo, con el entrenamiento cerrado en la primera emisión (enmendado por D7.1, 2026-11-11).** Para evaluar el año Y en cada municipio:
+  - la evaluación usa las filas cuya semana objetivo t + h cae en Y (año calendario del lunes de t + h);
+  - t0 es la emisión más temprana entre esas filas: la primera emisión del ensayo;
+  - el entrenamiento usa las filas, desde 2012, cuya semana objetivo es anterior o igual a t0 (t + h ≤ t0). Son las únicas cuya etiqueta ya existía en t0.
+
+  El modelo de cada ensayo es el que se habría entrenado el día de su primera emisión, y se usa sin cambios en todas las emisiones del ensayo. Entre la última etiqueta de entrenamiento (t0) y la primera evaluada (t0 + h) quedan h semanas.
+
+  Ejemplo (h = 8): la primera semana objetivo de 2019 es la del 2019-01-07, así que t0 = 2018-11-12. El entrenamiento llega hasta la fila emitida el 2018-09-17, cuyo objetivo es el 2018-11-12. Las filas emitidas del 2018-09-24 al 2018-11-05 (objetivos del 2018-11-19 al 2018-12-31) no entran en el entrenamiento de 2019, porque sus etiquetas no existían en t0; sí entran en el de 2020. El pronóstico emitido el 2018-11-26 apunta a la semana del 2019-01-21 y pertenece a la evaluación de 2019.
+
+  **Motivo (D7.1).** La versión del 2026-11-10 cortaba el entrenamiento al final de Y − 1. Garantizaba que ninguna semana objetivo evaluada entrara al entrenamiento, pero no que el entrenamiento usara solo etiquetas existentes al emitir: las primeras h − 1 emisiones evaluadas de cada año (del t0 al t0 + h − 2) se hacían con un modelo que conocía las etiquetas de las semanas entre su emisión y su objetivo. Por la autocorrelación del estado (§2.2), esas etiquetas informan sobre el objetivo. La información entra por los parámetros del modelo, no por las variables, así que la prueba de truncamiento (§10, punto 7) no la detecta. Costo [C]: h − 1 = 7 filas de entrenamiento por ensayo y municipio (83 positivas de 294 filas en los 42 ensayos municipio-año). Las filas evaluadas y los tamaños de la tabla siguiente no cambian.
 - **Desarrollo, para decidir:** cuatro ensayos, Y ∈ {2019, 2020, 2021, 2022}. Ahí se eligen los hiperparámetros, la familia y la regla de decisión (D8).
 - **Prueba, se mira una sola vez:** Y ∈ {2023, 2024, 2025}.
-  - La receta queda congelada; cada año se reentrena con todo lo anterior.
+  - La receta queda congelada; cada año se reentrena con todo lo conocido en su t0.
   - Las métricas se calculan sobre las predicciones de los tres años juntas, y también por año.
-- **Modelo del producto:** se entrena al final con todas las filas (objetivos de 2012 a 2025) y la receta congelada.
+- **Modelo del producto:** se entrena al final con todas las filas (objetivos de 2012 a 2025) y la receta congelada. Su emisión es la última semana completa de la base (2025-12-22) y todas sus etiquetas existen en esa fecha (t ≤ 2025-10-27), así que cumple la misma regla.
 - **Mismas condiciones para todos.** Todos los candidatos, la ablación y las líneas base usan exactamente las mismas filas de entrenamiento y evaluación en cada ensayo. Las líneas base se estiman con el entrenamiento de cada ensayo, así que las comparaciones son pareadas.
 **Tamaños [C]:**
  
@@ -350,7 +356,7 @@ En cada ensayo, el año evaluado equivale a entre el 10 % y el 14 % del entrenam
  
 | | Avance | Este contrato |
 |---|---|---|
-| Partición | `TimeSeriesSplit(n_splits=3)` por filas, sin hueco; el «OOT» es el último pliegue de la misma validación | Corte por año de la semana objetivo con hueco automático; prueba separada que no se usa para decidir |
+| Partición | `TimeSeriesSplit(n_splits=3)` por filas, sin hueco; el «OOT» es el último pliegue de la misma validación | Corte por año de la semana objetivo, con el entrenamiento cerrado en la primera emisión de cada ensayo (hueco de h semanas, D7.1); prueba separada que no se usa para decidir |
 | Hiperparámetros | Fijos y sin validar, iguales para todos (por ejemplo, 200 árboles, tasa 0,03, profundidad 5) | Elegidos en desarrollo con una regla de puntuación propia; común por defecto, excepción por municipio con evidencia |
 | Elección del modelo | El «mejor ensamble» por municipio se eligió mirando el mismo pliegue que se reporta | Familia común elegida en desarrollo; el desempeño se reporta en una prueba no usada para elegir |
 | Métrica de selección | AUC-PR y F1 | Log-loss expresado como mejora frente a B2 |
@@ -682,6 +688,7 @@ Se conserva la API FastAPI existente (`/municipios`, `/schema`, `/health`) y se 
 10. **Despliegue.** Si la familia elegida fuera la GRU, la API necesitaría PyTorch para inferencia; hay que evaluar el tamaño y el tiempo de respuesta (rúbrica del despliegue).
 11. **Constructor de cortes por año (§6.1).** Pruebas mínimas:
     - ninguna fila de entrenamiento tiene la semana objetivo en el año evaluado ni después;
+    - ninguna fila de entrenamiento tiene la semana objetivo posterior a t0, la primera emisión evaluada del ensayo (D7.1);
     - las filas evaluadas son exactamente las del año;
     - el número de filas coincide con 208 por municipio en desarrollo y 156 en prueba.
 12. **Arnés de búsqueda (§6.2–6.3).** Debe:

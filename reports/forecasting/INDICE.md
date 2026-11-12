@@ -6,7 +6,7 @@ Mapa de las carpetas de resultados del MVP de pronóstico (`feature/forecasting-
 
 **Conjuntos de variables (contrato §6.6, D7.2):** *completo*, las 15 variables de §5.2; *sin clima*, las 6 que no son anomalías climáticas (`zona_t`, `posicion_4s`, `crecimiento_4s`, `cambio_umbral`, `sem_sin`, `sem_cos`).
 
-**Prueba 2023–2025:** sin ejecutar. `reports/forecasting/bitacora_prueba.jsonl` no existe. La receta vigente es la de D7.2 (`configs/receta_congelada.yaml`, hash `de74d4ab…fda5`), así que la barrera ya permite puntuar 2023–2025; la ejecución única se revisa con Jesús antes de lanzarla.
+**Prueba 2023–2025:** ejecutada una vez (`reports/forecasting/bitacora_prueba.jsonl`, ejecución 1, 2026-11-12, código abf08c2, receta `de74d4ab…fda5`), verificada de forma independiente por Jesús. Cualquier otra ejecución exige una razón registrada.
 
 ## Datos (`data/processed/forecasting/`, DVC)
 
@@ -15,7 +15,7 @@ Mapa de las carpetas de resultados del MVP de pronóstico (`feature/forecasting-
 | raíz `data/processed/forecasting/` | Búsqueda de F5b: tabla única, predicciones, líneas base y manifiesto (con `.dvc`); `partes/` y `busqueda.log` solo locales | **Completo**, logística (6) y LightGBM (25) | `7f34b69832eea69407c6`; código cd9d702; `.dvc` en 1a1ad2d | Pre-registro (especificación §7), D5–D7 | **Vigente** como conjunto completo del paso 0 (D7.2) |
 | `ablacion_clima/` | Búsqueda de la logística sin clima (6 candidatos); tabla, predicciones, líneas base y manifiesto con `.dvc` (`partes/` y `busqueda.log` solo locales) | Sin clima, solo logística | `26dc1af622fb5966e56e`; código a3b274b | Ablación de F7, decisión D1 (contrato §4.4) | **Registro**: origen de D7.2; no alimenta la selección |
 | `sin_clima/` | Búsqueda sin clima de las dos familias (`--variante sin_clima`), 198 de 198 unidades; tabla, predicciones, líneas base y manifiesto con `.dvc` (`partes/` y `busqueda.log` solo locales) | Sin clima, logística (6) y LightGBM (25), mismos candidatos y semillas que F5b | `ae6225180d37d025224b`; código 1f45514 | D7.2 (contrato §6.6) | **Vigente** como conjunto sin clima del paso 0; su logística es idéntica a `ablacion_clima/` |
-| `prueba/` | Prueba única de F7 (`python -m src.forecasting.evaluate`): predicciones de modelo, ablación, B2 y B1, ensayos, casillas, resumen de §7 y §8.4 e insumos de §8.8 | Receta de D7.2 | Pendiente: se ejecuta una sola vez, revisada con Jesús | Contrato §6.1, §7, §8.4 y §8.8 | **Pendiente** |
+| `prueba/` | Prueba única de F7: predicciones de modelo, ablación, B2 y B1, ensayos, casillas, resumen de §7 y §8.4 e insumos de §8.8 (`evaluate`); ficha, historial y modelos finales pendientes (`artifacts`, U7.4) | Receta de D7.2 | Ejecución 1 de la bitácora, código abf08c2, receta `de74d4ab…`; sin `.dvc` todavía | Contrato §6.1, §7, §8.4 y §8.8 | **Vigente**; artefactos de U7.4 pendientes |
 
 ## Evidencia (`reports/forecasting/evidence/`, git)
 

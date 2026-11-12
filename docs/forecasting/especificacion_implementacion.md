@@ -400,6 +400,13 @@ Cifras de contrato §2.2, §5.4, §6.1, §7.4, §8.2 y `registro_decisiones.md` 
 - Volver a ejecutar la selección a partir de la tabla única guardada produce la misma receta.
 - τ pertenece a la rejilla y la restricción de falsas alarmas se cumple, o se reporta que no se cumple (contrato §7.5).
 
+**F6b (D7.2, conjunto de variables)**
+- La búsqueda sin clima cubre las dos familias con los candidatos pre-registrados; su tabla tiene la misma estructura que la de F5b.
+- El paso 0 aplica la parsimonia de §6.6: con datos sintéticos, completo con mejor media y 16 de 24 no reemplaza; con 17 de 24 y media mayor, sí; con media igual, no.
+- Los pasos 1–4 y τ reciben el conjunto elegido de cada familia; con el conjunto completo forzado, la selección reproduce la de F6.
+- La receta nueva incluye el conjunto de variables y la definición de la ablación; volver a ejecutar la selección produce la misma receta.
+- Las pruebas congeladas que citan la receta anterior no se editan: lo que cambia va a archivos con patrón propio y se registra en `desviaciones.md` (DV-02).
+
 **F7**
 - La bitácora registra una ejecución de la prueba.
 - **Análisis diagnóstico integrado (contrato §8.8 y §10.22, D9.1).**

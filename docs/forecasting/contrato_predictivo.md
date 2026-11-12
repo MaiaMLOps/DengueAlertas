@@ -1,6 +1,6 @@
 # 02 — Contrato predictivo
  
-**Creado:** 2026-11-09, chat de metodología. **Última actualización:** 2026-11-12 (enmienda D9.1: análisis diagnóstico integrado, §8.8 y §10.22; solo reporte). Versiones anteriores: 2026-11-11 (enmienda D7.1: el entrenamiento de cada ensayo se cierra en su primera emisión, §6.1) y 2026-11-10 (D1.1 y D3–D10 cerrados: contrato completo).
+**Creado:** 2026-11-09, chat de metodología. **Última actualización:** 2026-11-12 (enmienda D7.2: el conjunto de variables pasa a ser un paso de selección, §6.6; y enmienda D9.1: análisis diagnóstico integrado, §8.8 y §10.22; solo reporte). Versiones anteriores: 2026-11-11 (enmienda D7.1: el entrenamiento de cada ensayo se cierra en su primera emisión, §6.1) y 2026-11-10 (D1.1 y D3–D10 cerrados: contrato completo).
 **Propósito:** especificación vinculante de qué se predice, con qué información, contra qué referencias y cómo se evalúa. Es la fuente de verdad para la implementación en la rama `feature/forecasting-mvp`. Las alternativas descartadas y su justificación detallada están en `01_registro_decisiones.md`.
  
 Convención: **[H]** hecho verificado; **[C]** cálculo reproducible con el script indicado; **[D]** decisión; **[I]** inferencia; **[R]** recomendación; **[P]** pendiente.
@@ -20,6 +20,7 @@ Convención: **[H]** hecho verificado; **[C]** cálculo reproducible con el scri
 | D5 | Líneas base y modelos | [D] B2 estado del canal (principal), B1 climatología estacional (secundaria); regresión logística, LightGBM y GRU opcional con todas las features; familia común; una ablación del clima | §4 |
 | D6 | Features | [D] 15 variables (estado y dinámica frente al canal, semana objetivo, anomalías climáticas en bloques mensuales); ventana de 12 semanas; sin variables demográficas | §5 |
 | D7 | Validación y selección | [D] Origen móvil con reentrenamiento anual y corte por fecha de la semana objetivo, con el entrenamiento cerrado en la primera emisión de cada ensayo (D7.1); desarrollo 2019–2022, prueba 2023–2025; hiperparámetros con esquema híbrido (configuración común + excepción por municipio) | §6 |
+| D7.2 | Conjunto de variables | [D] Paso 0 de la selección: sin clima por defecto; completo solo con mayor mejora media fuera de año y ≥ 17 de 24 casillas; la ablación es la familia final con el otro conjunto | §6.6 |
 | D8 | Métricas y regla de decisión | [D] Estimación: la mejora de log-loss frente a B2 decide hiperparámetros y familia; BSS frente a B2 es la principal de reporte. Decisión: regla de alerta con k = 2, fechada en la confirmación y ventana de 12 semanas; τ común que maximiza la detección de inicios con falsas alarmas ≤ las del canal, en desarrollo | §7 |
 | D9 | Incertidumbre y reglas de comparación | [D] Conteo de victorias pareadas con prueba binomial exacta de una cola (5 %). Desarrollo, con puntajes fuera de año: excepción por municipio si gana 4 de 4 años; familia más compleja si gana ≥ 17 de 24 casillas. Prueba: tres niveles de conclusión (≥ 13 de 18 casillas) y McNemar exacto para los inicios | §8 |
 | D9.1 | Análisis diagnóstico integrado | [D] Solo reporte: régimen de cada casilla (epidémica, post-epidémica, tranquila), seis insumos para desarrollo y prueba, hipótesis secundarias H-R y H-E contrastadas solo en prueba, limitaciones de las métricas | §8.8 |
@@ -202,7 +203,7 @@ Hay tres candidatos:
 2. LightGBM.
 3. GRU: opcional, pero con intención de ejecutarse, después de los dos anteriores.
 **Comunes a los tres:**
-- Usan todas las features de D6.
+- Usan el conjunto de variables elegido en desarrollo (§6.6, D7.2): las 15 de D6 o las 6 sin el bloque climático.
 - Un modelo por municipio (D0), con estrategia directa a h = 8.
 - Las mismas filas y los mismos pliegues (D7).
 - Salida probabilística, entrenada con log-loss y sin pesos de clase. La sensibilidad operativa se ajusta con τ en la capa de decisión (§2.4).
@@ -223,7 +224,7 @@ Hay tres candidatos:
  
 ### 4.4 Ablación del clima [D]
  
-- **Diseño:** la familia elegida se reentrena sin el bloque climático (definido en D6). Todo lo demás es idéntico, incluido el protocolo de selección de hiperparámetros.
+- **Diseño:** la familia elegida se reentrena con el otro conjunto de variables (§6.6, D7.2): sin el bloque climático si la receta usa el completo, o con él si la receta usa el sin clima. Todo lo demás es idéntico, incluido el protocolo de selección de hiperparámetros.
 - **Medida:** diferencia de log-loss y de Brier en prueba, y BSS frente a B2, por municipio y global, con su incertidumbre (D9).
 - **Interpretación:** es el aporte predictivo incremental del clima dado el resto de la información. No es un efecto causal.
 - **Objetivo:** responde el objetivo específico 3 de la propuesta. Si se ejecuta la sensibilidad de §3.6, la ablación se repite en cada horizonte (pregunta 2 de §3.6).
@@ -368,6 +369,24 @@ En cada ensayo, el año evaluado equivale a entre el 10 % y el 14 % del entrenam
 - **Prevalencia distinta entre periodos:** 25,6 % en desarrollo frente a 34,4 % en prueba, por el ciclo epidémico de 2023–2024. La calibración se revisa por año (D8 y D9).
 - **Cambio de régimen.** Entre 2015 y 2018 hubo un periodo tranquilo en casi todos los municipios; desde 2019 el régimen es más activo. El primer ensayo de desarrollo entrena con 2012–2018.
 - **Pocos años para medir la variación entre ellos.** Con cuatro años de desarrollo, la variación de un año a otro se estima con pocos puntos. Por eso la regla de excepción de D9 exige ganar los 4 años (§8.3).
+### 6.6 Conjunto de variables (D7.2, 2026-11-12) [D]
+
+**Dos conjuntos.** *Completo:* las 15 variables de §5.2. *Sin clima:* las 6 que no pertenecen al bloque climático (`zona_t`, `posicion_4s`, `crecimiento_4s`, `cambio_umbral`, `sem_sin`, `sem_cos`).
+
+**Búsqueda.** Para cada familia y cada conjunto se corre la misma búsqueda: candidatos y semillas pre-registrados, cortes de §6.1 (D7.1) y tabla única con la misma estructura. La selección de hiperparámetros de §6.2 se aplica igual a cada combinación de familia y conjunto.
+
+**Paso 0 de la selección, por familia.** El conjunto por defecto es *sin clima*, el más simple. *Completo* lo reemplaza solo si, con las configuraciones comunes fuera de año de cada conjunto (§8.3):
+1. su mejora media fuera de año frente a B2 es mayor, y
+2. gana al menos 17 de las 24 casillas de desarrollo por log-loss (un empate no cuenta).
+
+No hay excepciones por municipio para el conjunto de variables.
+
+**Después, en el orden de siempre y con el conjunto elegido de cada familia:** comparación de familias (§4.3 y §8.3); excepción de familia por municipio; excepción de hiperparámetros por municipio dentro de la familia y el conjunto finales; τ (§7.5) con las predicciones de desarrollo de la configuración elegida.
+
+**Ablación (§4.4).** En cada municipio, la familia final con el otro conjunto de variables, con su configuración elegida por el mismo protocolo (configuración común y excepción de hiperparámetros). No compite con la receta: mide el aporte del clima.
+
+**Motivo y origen:** `01`, D7.2. Se adoptó antes de abrir la prueba; la receta congelada anterior (hash `d2135a39…da98`, conjunto completo) queda sustituida sin haber puntuado 2023–2025.
+
 ## 7. D8 — Métricas y regla de decisión (2026-11-10)
  
 ### 7.1 Qué se mide: estimación y decisión [D]
@@ -385,7 +404,7 @@ Las métricas se dividen en dos grupos. **Las que deciden** son pocas, se fijan 
 | Familia (§4.3) | Estimación | La misma | Desarrollo | Mayor mejora promedio; parsimonia y excepción según D9 |
 | τ (§7.5) | Decisión | Capacidad de detección de inicios de brote, con falsas alarmas por municipio-año ≤ las del canal | Desarrollo, predicciones fuera de muestra concatenadas | §7.5 |
  
-**Orden:** hiperparámetros → familia → τ → receta congelada (configuración y registro de experimentos) → prueba, una sola vez → modelo final.
+**Orden:** hiperparámetros → conjunto de variables (§6.6) → familia → τ → receta congelada (configuración y registro de experimentos) → prueba, una sola vez → modelo final.
  
 **Por qué decide el log-loss y no otras métricas:**
 - [H] El log-loss y el Brier son reglas de puntuación estrictamente propias: su valor esperado solo es óptimo si la probabilidad emitida es la verdadera (Gneiting y Raftery, 2007). Premian a la vez la discriminación y la calibración.
@@ -560,7 +579,7 @@ La configuración común sin y se elige con los seis municipios, como en §6.2. 
 **Comparaciones semanales:**
 - el modelo frente a B2 (principal);
 - el modelo frente a B1;
-- la ablación: el modelo completo frente al mismo modelo sin clima.
+- la ablación: la receta frente a la misma familia con el otro conjunto de variables (§6.6); se reporta como el aporte del bloque climático.
 En cada casilla gana la opción con menor Brier. La conclusión tiene tres niveles:
  
 | Nivel | Condición |

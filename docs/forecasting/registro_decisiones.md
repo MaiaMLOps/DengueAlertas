@@ -274,6 +274,23 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 
 **Declarar en el artículo:** el entrenamiento de cada ensayo usa solo información disponible en su primera emisión; el sistema evaluado se reentrena una vez al año.
 
+## D7.2 — Conjunto de variables como paso de selección (2026-11-12; enmienda a D5, D6, D7 y D9)
+
+**Decisión:** el conjunto de variables (completo, 15 variables; sin clima, 6) pasa a ser un paso de la selección en desarrollo, con la regla de parsimonia de §8.3: sin clima por defecto; completo solo si tiene mayor mejora media fuera de año frente a B2 y gana al menos 17 de 24 casillas. Se aplica a cada familia antes de compararlas, sin excepciones por municipio. La ablación de §4.4 pasa a ser la familia final con el conjunto no elegido. Texto vinculante en `02` §6.6, con ajustes en §4.2, §4.4, §7.1 y §8.4.
+
+**Origen.** El 2026-11-12, al preparar la ablación de F7, se ejecutó en desarrollo la selección de hiperparámetros de la logística sin el bloque climático, como exige §4.4 (búsqueda `26dc1af622fb5966e56e`). Comparada con la logística completa, con configuraciones comunes fuera de año, la versión sin clima tuvo una mejora media frente a B2 de +0,211 frente a −0,024 y menor log-loss en 15 de las 24 casillas. D6 había fijado las variables a priori (§5.7) para no añadir grados de libertad; con eso, la selección no podía considerar una opción más simple y, en desarrollo, mejor.
+
+**Por qué es legítima.** La prueba sigue sin abrirse: la bitácora de prueba está vacía y ninguna métrica se calculó sobre 2023–2025. El cambio añade una sola opción binaria, interpretable, y la decide con una regla que ya existía (la parsimonia de §8.3, la misma que eligió la familia), escrita antes de ver la búsqueda de LightGBM sin clima. El costo es un sesgo de selección en desarrollo, que la prueba corrige.
+
+**Alternativas consideradas:**
+- **Mantener la receta completa y reportar la ablación.** Habría desplegado un modelo que en desarrollo no supera a su versión más simple, por una decisión de diseño previa, no por evidencia.
+- **Tomar la logística sin clima directamente.** Se salta la comparación de familias con el mismo conjunto y la elección de τ; no se aplica la misma regla a todas las opciones.
+- **Elegir el conjunto por municipio.** Multiplica los grados de libertad con 4 años por municipio; se descarta, como las excepciones de la GRU.
+
+**Lectura.** Si gana sin clima, la evidencia de desarrollo no justifica incluir el bloque climático; no prueba que sin clima sea significativamente mejor (15 de 24 no alcanza 17). El aporte del clima se juzga en prueba con la ablación y el criterio de §8.4.
+
+**Declarar en el artículo:** el conjunto de variables se eligió en desarrollo tras observar la ablación, antes de abrir la prueba, con la regla de parsimonia pre-existente; la receta anterior quedó sustituida sin evaluarse.
+
 ## D8 — Métricas y regla de decisión (2026-11-10)
  
 **Decisión:** detalle en `02` §7.

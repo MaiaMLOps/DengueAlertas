@@ -367,6 +367,33 @@ Cifras de contrato §2.2, §5.4, §6.1, §7.4, §8.2 y `registro_decisiones.md` 
 **F5b**
 - La tabla única queda completa: 6 municipios × número de candidatos × 4 años, por familia, sin faltantes. Hay un run de MLflow (o del respaldo local) por municipio, familia y candidato.
 
+**Cierre de F5b [H, 2026-11-11].**
+- **Ejecución.** Búsqueda `7f34b69832eea69407c6`, lanzada por Jesús desde Git Bash con `python -B -m src.forecasting.search`:
+  - código en el commit cd9d702 (pre-registro de §7);
+  - servidor MLflow, experimento `dengue_h8_desarrollo`;
+  - de 23:43:40 a 23:47:11 (hora de Colombia), es decir, **3 min 31 s**;
+  - 198 de 198 unidades: 6 municipios × (B2, B1, 6 de regresión logística y 25 de LightGBM);
+  - salida 0, sin unidades saltadas, reutilizadas ni fallidas.
+- **Tiempo por unidad.** Media de 1,04 s en LightGBM, 1,13 s en regresión logística y 0,8 s en las líneas base. Casi todo el tiempo es la latencia del registro en el servidor: en local, una unidad de LightGBM tardaba 0,25–0,37 s.
+- **Conteos** (comprobados por Jesús):
+  - tabla única con 600 filas de LightGBM (6 × 25 × 4) y 144 de regresión logística (6 × 6 × 4);
+  - años 2019–2022;
+  - última semana objetivo 2022-12-26;
+  - predicciones por fila: 31.200 de LightGBM y 7.488 de regresión logística, es decir, 1.248 por candidato.
+- **Runs.** Según el log, se registró un run por unidad: 198 en total (186 de modelos y 12 de líneas base). Claude no consultó el servidor.
+- **Versionado con DVC.** Cinco archivos, cada uno con su `.dvc` en git:
+
+  | Archivo | md5 |
+  |---|---|
+  | `tabla_unica_desarrollo.parquet` | `a38ab5ef…0c` |
+  | `predicciones_desarrollo.parquet` | `ac5a28f3…ca` |
+  | `lineas_base_desarrollo.parquet` | `a826f366…2a` |
+  | `predicciones_lineas_base_desarrollo.parquet` | `7fb8390c…c5` |
+  | `busqueda_manifest.json` | `48b930bf…89` |
+
+  `partes/` y `busqueda.log` quedan solo en local, ignorados por las reglas existentes de `.gitignore`.
+- **Resultados.** Ningún resultado de la búsqueda (qué candidato o qué familia gana) se miró ni se reportó al cerrar F5b. Las decisiones son de F6, con el orden de §7.
+
 **F6**
 - `receta_congelada.yaml` tiene todos los campos de §8.
 - Volver a ejecutar la selección a partir de la tabla única guardada produce la misma receta.

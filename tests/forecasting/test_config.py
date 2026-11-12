@@ -76,6 +76,21 @@ def test_baselines_section_is_required(tmp_path, base_data):
         load_config(_write(tmp_path, data))
 
 
+@pytest.mark.parametrize("value", [0, 0.0, 0.5, "1e-15", True])
+def test_log_loss_clip_must_be_a_float_in_open_interval(tmp_path, base_data, value):
+    data = copy.deepcopy(base_data)
+    data["metricas"]["recorte_log_loss"] = value
+    with pytest.raises(ValidationError, match=r"metricas\.recorte_log_loss"):
+        load_config(_write(tmp_path, data))
+
+
+def test_metrics_section_is_required(tmp_path, base_data):
+    data = copy.deepcopy(base_data)
+    del data["metricas"]
+    with pytest.raises(ValidationError, match="metricas"):
+        load_config(_write(tmp_path, data))
+
+
 def test_unknown_tracking_mode_is_rejected(tmp_path, base_data):
     data = copy.deepcopy(base_data)
     data["seguimiento"]["modo"] = "automatico"

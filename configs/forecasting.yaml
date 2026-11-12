@@ -32,6 +32,9 @@ validacion:                        # contrato D7 y §6.1
 lineas_base:                       # contrato §4.1
   b1_semiventana: 2                # ventana circular de ±2 semanas del año de t + h
 
+metricas:                          # contrato §10.16
+  recorte_log_loss: 1.0e-15        # p se recorta a [ε, 1 − ε], el mismo para todos los sistemas
+
 decision:                          # contrato D8, §7.4 y §7.5
   k: 2
   W: 12

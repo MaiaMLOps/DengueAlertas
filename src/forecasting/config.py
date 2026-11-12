@@ -95,6 +95,11 @@ class BaselineSection(_Section):
     b1_semiventana: int = Field(ge=1, le=25, strict=True)
 
 
+class MetricsSection(_Section):
+    # Log-loss clip ε (contrato §10.16): p is clipped to [ε, 1 − ε] for every system.
+    recorte_log_loss: float = Field(gt=0, lt=0.5, strict=True)
+
+
 class DecisionSection(_Section):
     k: int = Field(ge=1)
     W: int = Field(ge=1)
@@ -131,6 +136,7 @@ class ForecastConfig(_Section):
     features: FeatureSection
     validacion: ValidationSection
     lineas_base: BaselineSection
+    metricas: MetricsSection
     decision: DecisionSection
     seguimiento: TrackingSection
 

@@ -30,7 +30,8 @@
       "Edit(/tests/acceptance/test_f7b_artefactos.py)",
       "Edit(/tests/acceptance/test_f7b_diagnostico_desarrollo.py)",
       "Edit(/tests/acceptance/test_f7c_formulas.py)",
-      "Edit(/tests/acceptance/test_f7c_identidades_real.py)"
+      "Edit(/tests/acceptance/test_f7c_identidades_real.py)",
+      "Edit(/tests/acceptance/test_f7c_reportes_real.py)"
     ],
     "ask": [
       "Bash(git commit *)",

@@ -1,20 +1,20 @@
-# 02 — Contrato predictivo
+# Contrato predictivo
  
-**Creado:** 2026-11-09, chat de metodología. **Última actualización:** 2026-11-12 (enmienda D7.2: el conjunto de variables pasa a ser un paso de selección, §6.6; y enmienda D9.1: análisis diagnóstico integrado, §8.8 y §10.22; solo reporte). Versiones anteriores: 2026-11-11 (enmienda D7.1: el entrenamiento de cada ensayo se cierra en su primera emisión, §6.1) y 2026-11-10 (D1.1 y D3–D10 cerrados: contrato completo).
-**Propósito:** especificación vinculante de qué se predice, con qué información, contra qué referencias y cómo se evalúa. Es la fuente de verdad para la implementación en la rama `feature/forecasting-mvp`. Las alternativas descartadas y su justificación detallada están en `01_registro_decisiones.md`.
+**Creado:** 2026-11-09. **Última actualización:** 2026-11-12 (enmienda D7.2: el conjunto de variables pasa a ser un paso de selección, §6.6; y enmienda D9.1: análisis diagnóstico integrado, §8.8 y §10.22; solo reporte). Versiones anteriores: 2026-11-11 (enmienda D7.1: el entrenamiento de cada ensayo se cierra en su primera emisión, §6.1) y 2026-11-10 (D1.1 y D3–D10 cerrados: contrato completo).
+**Propósito:** especificación vinculante de qué se predice, con qué información, contra qué referencias y cómo se evalúa. Es la fuente de verdad para la implementación en la rama `feature/forecasting-mvp`. Las alternativas descartadas y su justificación detallada están en `registro_decisiones.md`.
  
 Convención: **[H]** hecho verificado; **[C]** cálculo reproducible con el script indicado; **[D]** decisión; **[I]** inferencia; **[R]** recomendación; **[P]** pendiente.
  
-**Principio rector [D]:** target, información disponible, referencias, métricas y criterios se fijan **antes** de observar el desempeño de cualquier modelo. Ninguna cláusula se modifica por cómo harían lucir los resultados. Un cambio posterior se registra en `01` con su motivo.
+**Principio rector [D]:** target, información disponible, referencias, métricas y criterios se fijan **antes** de observar el desempeño de cualquier modelo. Ninguna cláusula se modifica por cómo harían lucir los resultados. Un cambio posterior se registra en `registro_decisiones.md` con su motivo.
  
 ## 0. Estado de las decisiones
  
 | # | Tema | Estado | Dónde |
 |---|---|---|---|
-| D0 | Alcance territorial | [D] Seis pilotos, un modelo independiente por municipio | `01` |
-| D1 | Conteo, calendario e historia del canal | [D] Contrato del 2026-10-21, enmendado por D1.1 | `01` |
-| D1.1 | Parametrización del canal | [D] epiCo con desplazamiento 1 para la línea central y el límite superior | §1 y `01` |
-| D2 | Umbral de exceso | [D] U1e | `01` |
+| D0 | Alcance territorial | [D] Seis pilotos, un modelo independiente por municipio | `registro_decisiones.md` |
+| D1 | Conteo, calendario e historia del canal | [D] Contrato del 2026-10-21, enmendado por D1.1 | `registro_decisiones.md` |
+| D1.1 | Parametrización del canal | [D] epiCo con desplazamiento 1 para la línea central y el límite superior | §1 y `registro_decisiones.md` |
+| D2 | Umbral de exceso | [D] U1e | `registro_decisiones.md` |
 | D3 | Variable objetivo | [D] y_{t,h} = 1[C_{t+h} > U1e_{t+h}]; solo clasificación binaria | §2 |
 | D4 | Emisión, información disponible y horizontes | [D] t = última semana completa; información de la base hasta t; horizonte principal h = 8; sensibilidad h ∈ {2, 4, 12} | §3 |
 | D5 | Líneas base y modelos | [D] B2 estado del canal (principal), B1 climatología estacional (secundaria); regresión logística, LightGBM y GRU opcional con todas las features; familia común; una ablación del clima | §4 |
@@ -108,7 +108,7 @@ donde x son los conteos de la misma semana ordinal en los cinco años anteriores
 - Pocos eventos: 31 inicios en total, entre 3 y 7 por municipio. La evaluación por eventos será sobre todo descriptiva.
 ### 2.6 Evidencia
  
-`claude/verificacion/descriptivos_d3.py` (entrada `pilot_weekly_labels.parquet`, SHA-256 `b3b151a5…2c7f`). Reproduce el conteo del estudio de umbrales (945 positivas, 175 rachas) y todas las cifras de §1, §2 y de D1.1 y D3 en `01`. Ejecución: `python -I descriptivos_d3.py <parquet>`.
+`docs/forecasting/verificacion/descriptivos_d3.py` (entrada `pilot_weekly_labels.parquet`, SHA-256 `b3b151a5…2c7f`). Reproduce el conteo del estudio de umbrales (945 positivas, 175 rachas) y todas las cifras de §1, §2 y de D1.1 y D3 en `registro_decisiones.md`. Ejecución: `python -I descriptivos_d3.py <parquet>`.
  
 ## 3. D4 — Emisión, información disponible y horizontes (2026-11-09)
  
@@ -177,9 +177,9 @@ donde x son los conteos de la misma semana ordinal en los cinco años anteriores
 - **Varios horizontes:** si se producen (sensibilidad), la forma de hacerlo, con un modelo por horizonte o un modelo multisalida, se decide en D5. La evaluación es siempre por horizonte.
 ### 3.8 Evidencia
  
-- `claude/verificacion/descriptivos_d3.py`, sección 6.
+- `docs/forecasting/verificacion/descriptivos_d3.py`, sección 6.
 - Hii, Y. L., et al. (2012). Optimal lead time for dengue forecast. *PLoS Neglected Tropical Diseases, 6*(10), e1848.
-- El estudio de Sri Lanka (IJERPH, 2016) y la revisión de rezagos de temperatura citados en el chat de metodología. **Verificar sus datos bibliográficos completos antes de citarlos en el artículo.**
+- El estudio de Sri Lanka (IJERPH, 2016) y la revisión de rezagos de temperatura (referencia sin verificar). **Verificar sus datos bibliográficos completos antes de citarlos en el artículo.**
 ## 4. D5 — Líneas base y modelos (2026-11-09)
  
 ### 4.1 Líneas base [D]
@@ -220,7 +220,7 @@ Hay tres candidatos:
 - **Excepción por municipio** (precisada en D9, §8.3) solo si la familia alternativa gana a la común en ese municipio en los 4 años de desarrollo, con puntajes fuera de año.
 - **Momento de la GRU.** La GRU compite solo si está lista antes de la selección. Si se ejecuta después, se reporta como análisis adicional sin cambiar la familia elegida.
 - **Reporte.** El artículo reporta todas las familias en cada municipio; el producto usa la familia elegida. «Justificar con los resultados» significa reportar esa comparación completa, no modificar la regla después de verlos.
-**Motivo [H, resultado matemático].** Elegir la mejor entre k candidatas con igual desempeño verdadero sesga su puntaje de validación hacia arriba. El sesgo esperado es E[máx de k normales estándar] · σ: 0,56σ con k = 2, 0,85σ con k = 3 y 1,16σ con k = 5. Repetir esa elección en cada municipio, con validaciones cortas y autocorrelacionadas, multiplica las elecciones ruidosas (sesgo del ganador; auditoría, I9).
+**Motivo [H, resultado matemático].** Elegir la mejor entre k candidatas con igual desempeño verdadero sesga su puntaje de validación hacia arriba. El sesgo esperado es E[máx de k normales estándar] · σ: 0,56σ con k = 2, 0,85σ con k = 3 y 1,16σ con k = 5. Repetir esa elección en cada municipio, con validaciones cortas y autocorrelacionadas, multiplica las elecciones ruidosas (sesgo del ganador; auditoría del informe de avance).
  
 ### 4.4 Ablación del clima [D]
  
@@ -284,7 +284,7 @@ Es la misma información de la que se derivan las 15 variables: la GRU aprende s
 - **Imputación:** no se imputa nada. Los datos subidos con faltantes se rechazan por el contrato de entrada (§3.3).
 ### 5.6 Variables excluidas [D]
  
-- **Población y densidad.** Dentro de cada municipio solo cambian de un año a otro, así que funcionan como reloj: su correlación con el año es de 0,957 a 0,995 (auditoría, I11). En una validación cronológica, sus valores de prueba quedan fuera del rango de entrenamiento.
+- **Población y densidad.** Dentro de cada municipio solo cambian de un año a otro, así que funcionan como reloj: su correlación con el año es de 0,957 a 0,995 (auditoría del informe de avance). En una validación cronológica, sus valores de prueba quedan fuera del rango de entrenamiento.
 - **Área.** Es constante por municipio.
 - **Índice de tiempo o año.**
 - **`ewt` y `excess_label`:** legado (D1.1).
@@ -385,7 +385,7 @@ No hay excepciones por municipio para el conjunto de variables.
 
 **Ablación (§4.4).** En cada municipio, la familia final con el otro conjunto de variables, con su configuración elegida por el mismo protocolo (configuración común y excepción de hiperparámetros). No compite con la receta: mide el aporte del clima.
 
-**Motivo y origen:** `01`, D7.2. Se adoptó antes de abrir la prueba; la receta congelada anterior (hash `d2135a39…da98`, conjunto completo) queda sustituida sin haber puntuado 2023–2025.
+**Motivo y origen:** `registro_decisiones.md`, D7.2. Se adoptó antes de abrir la prueba; la receta congelada anterior (hash `d2135a39…da98`, conjunto completo) queda sustituida sin haber puntuado 2023–2025.
 
 ## 7. D8 — Métricas y regla de decisión (2026-11-10)
  
@@ -439,7 +439,7 @@ Estratificar es legítimo porque el estado en t es información disponible al em
 **Origen [H].**
 - Las definiciones de alerta, inicio de brote, ventana de oportunidad, capacidad de detección y razón de alertas vienen de Umaña et al. (2026). Allí describen el comportamiento del canal; los autores aclaran que no lo evaluaron como herramienta de pronóstico.
 - La propuesta del grupo trasladó la alerta al modelo, con el EWT como umbral, y añadió la comparación Δw frente al canal.
-- El informe de avance no implementó la regla (auditoría, I12 y M15).
+- El informe de avance no implementó la regla (auditoría del informe de avance).
 Este contrato adopta esas definiciones con cuatro precisiones, necesarias para comparar un predictor con el canal: la fecha de confirmación, la ventana explícita, las alertas de continuidad y las falsas alarmas como tasa.
  
 **Definiciones:**
@@ -515,11 +515,11 @@ Los objetos censurados se reportan.
 - **Cambio de prevalencia.** τ se elige con π = 25,6 % y se aplica con π = 34,4 %. La calibración en grande por año lo hace visible.
 - **Definición estricta de falsa alarma.** Cuenta como falsa una alerta seguida de un exceso corto; el desglose de §7.4 lo muestra.
 - **Alertas repetidas.** Dos alertas separadas por una semana sin emisión positiva cuentan como dos, aunque un funcionario probablemente ignoraría la segunda (Jiang, Cooper y Neill, 2009). Se aplica igual a ambos sistemas y no se corrige para no añadir parámetros.
-- **No es una réplica de Umaña et al.** La regla exacta de su Tabla S1 no está verificada (pregunta 3 para Carlos, `01` D2). La ventana W = 12 y las alertas de continuidad son convenciones de este contrato, con el precedente indicado.
+- **No es una réplica de Umaña et al.** La regla exacta de su Tabla S1 no está verificada (pregunta 3 al experto de dominio, `registro_decisiones.md` D2). La ventana W = 12 y las alertas de continuidad son convenciones de este contrato, con el precedente indicado.
 - **Cifras del canal vistas antes.** El estudio de umbrales y D3 reportaron cifras descriptivas de la alerta del canal con otras reglas: precede un inicio el 12 % de las veces, con una anticipación mediana de 3 semanas. k y W se tomaron de la literatura, no de esas cifras. El desempeño del canal bajo esta regla se calcula por primera vez en la implementación, después de congelar esta sección.
 ### 7.9 Evidencia y referencias
  
-- `claude/verificacion/eventos_d8.py` (inicios evaluables por periodo; depende de `descriptivos_d3.py`). Ejecución: `python -I eventos_d8.py <parquet>`.
+- `docs/forecasting/verificacion/eventos_d8.py` (inicios evaluables por periodo; depende de `descriptivos_d3.py`). Ejecución: `python -I eventos_d8.py <parquet>`.
 - Umaña et al. (2026), *JMIR Public Health and Surveillance*, 12, e79914: definiciones, Figura 3 y métricas.
 - Propuesta del proyecto de grado, grupo 5, §10: ventana de oportunidad, Δw, McNemar y bootstrap.
 - Cardenas, R., et al. (2022). EWARS-TDR para dengue, chikungunya y Zika. *BMC Infectious Diseases, 22*. doi:10.1186/s12879-022-07197-6. En Cúcuta, dengue: sensibilidad 92 %, VPP 68 %, distancia de predicción de 3 a 5 semanas.
@@ -614,12 +614,12 @@ En cada casilla gana la opción con menor Brier. La conclusión tiene tres nivel
 - **El 5 % es una convención,** fijada antes de ver resultados.
 ### 8.7 Evidencia y referencias
  
-- `claude/verificacion/umbrales_d9.py`: umbrales, probabilidades por azar y potencia. Ejecución: `python -I umbrales_d9.py`.
+- `docs/forecasting/verificacion/umbrales_d9.py`: umbrales, probabilidades por azar y potencia. Ejecución: `python -I umbrales_d9.py`.
 - McNemar, Q. (1947). Note on the sampling error of the difference between correlated proportions or percentages. *Psychometrika, 12*(2), 153–157. **Verificar los datos bibliográficos antes de citarla.**
-- La auditoría del avance (I9e) y la propuesta (§10) recomendaban bootstrap y McNemar; la desviación se justifica en `01`, D9.
+- La auditoría del informe de avance y la propuesta (§10) recomendaban bootstrap y McNemar; la desviación se justifica en `registro_decisiones.md`, D9.
 ### 8.8 Análisis diagnóstico integrado (D9.1, 2026-11-12) [D]
 
-**Propósito.** Además de las conclusiones de §8.4, el reporte incluye un análisis descriptivo, año por año y municipio por municipio: dónde aporta el modelo frente a B2, B1 y el canal, dónde no, qué patrones de los datos acompañan cada caso y cómo influyen en la lectura las propiedades de las métricas. No cambia ninguna decisión ni conclusión: la receta, los criterios de §8.3 y §8.4 y la regla de alerta quedan iguales. Se fija antes de abrir la prueba (motivo en `01`, D9.1).
+**Propósito.** Además de las conclusiones de §8.4, el reporte incluye un análisis descriptivo, año por año y municipio por municipio: dónde aporta el modelo frente a B2, B1 y el canal, dónde no, qué patrones de los datos acompañan cada caso y cómo influyen en la lectura las propiedades de las métricas. No cambia ninguna decisión ni conclusión: la receta, los criterios de §8.3 y §8.4 y la regla de alerta quedan iguales. Se fija antes de abrir la prueba (motivo en `registro_decisiones.md`, D9.1).
 
 **Régimen de cada casilla municipio-año.** Se clasifica con la serie observada y la noción de racha de §2.4, sin umbrales nuevos. Un *episodio* es una racha de ≥ 3 semanas consecutivas en zona epidémica (C > U1e) en la serie elegible completa. La clasificación se hace sobre el año calendario de esa serie, con los episodios identificados en toda ella, no solo sobre las filas evaluadas. El año de una casilla es el de sus semanas objetivo. Para 2019 y 2023, el año anterior (2018, 2022) se clasifica con la misma regla.
 - *Epidémica:* al menos una semana del año calendario pertenece a un episodio.
@@ -674,7 +674,7 @@ Se calcula con Brier y con log-loss y se adopta el menor, como en §8.4. Se repo
 ### 9.1 Alcance y principio [D]
  
 - **Qué fija:** qué dice el sistema, a quién, con qué datos y con qué lenguaje, y el contrato de la API que lo entrega.
-- **Qué no fija:** el diseño visual. Lo define el equipo de frontend sobre la infraestructura existente (API FastAPI y frontend React en Cloudflare Pages); la maqueta del chat de metodología es orientativa.
+- **Qué no fija:** el diseño visual. Lo define el equipo de frontend sobre la infraestructura existente (API FastAPI y frontend React en Cloudflare Pages).
 - **Primera versión.** El equipo puede añadir elementos que aporten valor, sean ilustrativos o muestren el trabajo realizado, siempre que usen las fuentes de datos de §9.4 y las reglas de §9.5.
 - **Principio:** el usuario ve exactamente lo que se evaluó: la misma probabilidad, las mismas referencias, la misma regla de alerta (§7.4) y el desempeño medido en prueba.
 ### 9.2 Usuario y pregunta [D]

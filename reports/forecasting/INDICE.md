@@ -6,7 +6,7 @@ Mapa de las carpetas de resultados del MVP de pronóstico (`feature/forecasting-
 
 **Conjuntos de variables (contrato §6.6, D7.2):** *completo*, las 15 variables de §5.2; *sin clima*, las 6 que no son anomalías climáticas (`zona_t`, `posicion_4s`, `crecimiento_4s`, `cambio_umbral`, `sem_sin`, `sem_cos`).
 
-**Prueba 2023–2025:** ejecutada una vez (`reports/forecasting/bitacora_prueba.jsonl`, ejecución 1, 2026-11-12, código abf08c2, receta `de74d4ab…fda5`), verificada de forma independiente por Jesús. Cualquier otra ejecución exige una razón registrada.
+**Prueba 2023–2025:** ejecutada una vez (`reports/forecasting/bitacora_prueba.jsonl`, ejecución 1, 2026-11-12, código abf08c2, receta `de74d4ab…fda5`), verificada de forma independiente por el responsable de la implementación. Cualquier otra ejecución exige una razón registrada.
 
 ## Datos (`data/processed/forecasting/`, DVC)
 
@@ -46,5 +46,5 @@ Mapa de las carpetas de resultados del MVP de pronóstico (`feature/forecasting-
 
 | Archivo | Contenido | Estado |
 |---|---|---|
-| `configs/receta_congelada.yaml` | Receta de D7.2 aprobada por Jesús Sierra el 2026-11-12: bytes del borrador de `seleccion_conjuntos_20261112/` más aprobación y hash `de74d4abd33537433ffc9d1572c6cdd8620a2608fcc2b67ee4a1752aa865fda5`. Logística sin clima `logistica_05` (C = 3) en los seis municipios, τ = 0,05, k = 2, W = 12; ablación: logística completa `logistica_03` (C = 0,3) | **Vigente** |
+| `configs/receta_congelada.yaml` | Receta de D7.2 aprobada por el responsable de la implementación el 2026-11-12: bytes del borrador de `seleccion_conjuntos_20261112/` más aprobación y hash `de74d4abd33537433ffc9d1572c6cdd8620a2608fcc2b67ee4a1752aa865fda5`. Logística sin clima `logistica_05` (C = 3) en los seis municipios, τ = 0,05, k = 2, W = 12; ablación: logística completa `logistica_03` (C = 0,3) | **Vigente** |
 | `seleccion_20261112/receta_congelada_sustituida_d2135a39.yaml` | Receta anterior (logística completa, `logistica_03`, τ = 0,10), retirada antes de abrir la prueba (DV-02) | **Sustituida**; registro |

@@ -1,18 +1,18 @@
 # Especificación de la salida de la API — DengueAlertas (v0.1)
  
-**Estado:** borrador del 2026-11-10, derivado de `02_contrato_predictivo.md` §9 (D10). Sirve para que el frontend avance con datos simulados mientras se entrenan los modelos.
-**Para:** frontend y API (Santiago) y la sesión de implementación.
+**Estado:** borrador del 2026-11-10, derivado de `contrato_predictivo.md` §9 (D10). Sirve para que el frontend avance con datos simulados mientras se entrenan los modelos.
+**Para:** el equipo de frontend, el responsable de infraestructura y API, y la implementación del pipeline.
 **Regla de cambios:** ver §10. Los nombres de campo, los tipos y los valores permitidos son estables; los valores numéricos, τ, la familia del modelo y las versiones se llenan cuando la receta se congele.
  
 ## 1. Para qué sirve
  
-La API entrega lo que muestra la interfaz (`02` §9.3) y nada más. El frontend no calcula probabilidades, estados de alerta ni zonas: los recibe ya calculados, para que lo que ve el usuario sea exactamente lo que se evaluó.
+La API entrega lo que muestra la interfaz (`contrato_predictivo.md` §9.3) y nada más. El frontend no calcula probabilidades, estados de alerta ni zonas: los recibe ya calculados, para que lo que ve el usuario sea exactamente lo que se evaluó.
  
 ## 2. Convenciones
  
 - **Fechas:** texto `YYYY-MM-DD` con el lunes que inicia la semana (lunes a domingo, W-SUN), igual que `week_start` en los datos.
 - **Municipios:** código DIVIPOLA como texto de 5 caracteres, con el cero inicial (`"08001"`). Pilotos: `08001` Barranquilla, `08758` Soledad, `41001` Neiva, `50001` Villavicencio, `54001` San José de Cúcuta, `76001` Cali.
-- **Probabilidades:** número entre 0 y 1, con 4 decimales. El frontend las muestra como porcentaje entero (`02` §9.5).
+- **Probabilidades:** número entre 0 y 1, con 4 decimales. El frontend las muestra como porcentaje entero (`contrato_predictivo.md` §9.5).
 - **Casos:** entero (`confirmed_records_screening`).
 - **Central y U1e del canal:** número con hasta 5 decimales (redondeo de epiCo). El frontend redondea al mostrar.
 - **Ausencias:** `null`; nunca se omite un campo.
@@ -21,12 +21,12 @@ La API entrega lo que muestra la interfaz (`02` §9.3) y nada más. El frontend 
  
 | Campo | Valores | Significado |
 |---|---|---|
-| `zona` | `seguridad`, `alerta`, `epidemia` | Zona del canal (`02` §1) |
-| `estado_alerta` | `sin_alerta`, `senal_en_observacion`, `alerta_confirmada`, `continuidad_epidemica` | Regla de alerta (`02` §7.4 y §9.3) |
-| `origen` | `modelo_final`, `prueba_origen_movil`, `desarrollo_origen_movil`, `carga_usuario` | De dónde sale cada predicción (`02` §9.4) |
-| `periodo` | `desarrollo`, `prueba` | Partición de `02` §6.1 |
-| `nivel_conclusion` | `mejora_consistente`, `tendencia_favorable`, `sin_mejora` | `02` §8.4 |
-| `tipo_evento` | `inicio_avisado`, `inicio_no_avisado`, `falsa_alarma`, `alerta_continuidad`, `inicio_censurado`, `alerta_censurada` | `02` §7.4 |
+| `zona` | `seguridad`, `alerta`, `epidemia` | Zona del canal (`contrato_predictivo.md` §1) |
+| `estado_alerta` | `sin_alerta`, `senal_en_observacion`, `alerta_confirmada`, `continuidad_epidemica` | Regla de alerta (`contrato_predictivo.md` §7.4 y §9.3) |
+| `origen` | `modelo_final`, `prueba_origen_movil`, `desarrollo_origen_movil`, `carga_usuario` | De dónde sale cada predicción (`contrato_predictivo.md` §9.4) |
+| `periodo` | `desarrollo`, `prueba` | Partición de `contrato_predictivo.md` §6.1 |
+| `nivel_conclusion` | `mejora_consistente`, `tendencia_favorable`, `sin_mejora` | `contrato_predictivo.md` §8.4 |
+| `tipo_evento` | `inicio_avisado`, `inicio_no_avisado`, `falsa_alarma`, `alerta_continuidad`, `inicio_censurado`, `alerta_censurada` | `contrato_predictivo.md` §7.4 |
 | `sistema` | `modelo`, `canal` | Quién emite la alerta |
  
 **Estado de alerta (lo calcula la API):**
@@ -53,7 +53,7 @@ FastAPI genera la documentación interactiva en `/docs` a partir de modelos Pyda
 **Parámetros:**
 - `municipio`: obligatorio.
 - `semana_emision`: opcional; por defecto, la última semana completa de la base (2025-12-22).
-Solo admite semanas de la ventana vigente: posteriores al 2025-10-27 y hasta el 2025-12-22. Para otra fecha responde el error `fuera_de_ventana_vigente` e indica usar `/historial`. Nunca devuelve predicciones del modelo final para semanas con verdad conocida (`02` §9.4).
+Solo admite semanas de la ventana vigente: posteriores al 2025-10-27 y hasta el 2025-12-22. Para otra fecha responde el error `fuera_de_ventana_vigente` e indica usar `/historial`. Nunca devuelve predicciones del modelo final para semanas con verdad conocida (`contrato_predictivo.md` §9.4).
  
 **Campos de la respuesta:**
  
@@ -113,7 +113,7 @@ Solo admite semanas de la ventana vigente: posteriores al 2025-10-27 y hasta el 
  
 ### 4.1 Advertencias
  
-- **Permanentes** (siempre presentes; `02` §9.5): `retrospectivo`, `sin_aval_ins`, `probabilidad_no_certeza`, `semanas_incompletas`.
+- **Permanentes** (siempre presentes; `contrato_predictivo.md` §9.5): `retrospectivo`, `sin_aval_ins`, `probabilidad_no_certeza`, `semanas_incompletas`.
 - **Condicionales:** `parametros_modificados` (τ o k distintos de la receta: la ficha de desempeño no aplica).
 ## 5. `POST /predict/upload`
  
@@ -130,7 +130,7 @@ Solo admite semanas de la ventana vigente: posteriores al 2025-10-27 y hasta el 
 | `precipitation_mm` | número | ≥ 0, sin faltantes |
 | `relative_humidity_pct` | número | Entre 0 y 100, sin faltantes |
  
-**Historia mínima (`02` §3.3):** los cinco años completos anteriores al año de la semana t − 11, más todas las semanas hasta t, donde t es la última semana del archivo. Ejemplo: con t = 2025-12-22, t − 11 cae en 2025, así que el archivo debe empezar en la primera semana de 2020.
+**Historia mínima (`contrato_predictivo.md` §3.3):** los cinco años completos anteriores al año de la semana t − 11, más todas las semanas hasta t, donde t es la última semana del archivo. Ejemplo: con t = 2025-12-22, t − 11 cae en 2025, así que el archivo debe empezar en la primera semana de 2020.
  
 **Salida:** la misma de `/predict`, con `origen` igual a `carga_usuario` y un bloque adicional `validacion` (`filas`, `semana_inicial`, `semana_final`).
  
@@ -148,7 +148,7 @@ Solo admite semanas de la ventana vigente: posteriores al 2025-10-27 y hasta el 
 | `valores_faltantes` | Hay celdas vacías |
 | `valores_invalidos` | Valores fuera de rango o no numéricos |
  
-**[R]** Los datos subidos se usan solo para la consulta y no se almacenan (`02` §9.4).
+**[R]** Los datos subidos se usan solo para la consulta y no se almacenan (`contrato_predictivo.md` §9.4).
  
 ## 6. `GET /historial`
  
@@ -180,7 +180,7 @@ Solo admite semanas de la ventana vigente: posteriores al 2025-10-27 y hasta el 
  
 **Parámetro:** `municipio` (opcional; sin él devuelve la ficha global).
  
-**Contenido** (solo prueba 2023–2025; `02` §9.4, vista 4):
+**Contenido** (solo prueba 2023–2025; `contrato_predictivo.md` §9.4, vista 4):
 - `estimacion`: `bss_vs_b2`, `bss_vs_b1`, `mejora_logloss_vs_b2`, `mejora_logloss_vs_b1` y, para cada comparación (`vs_b2`, `vs_b1`, `ablacion_clima`), un objeto `conclusion` con `nivel_conclusion`, `casillas_ganadas` y `casillas_total`.
 - `eventos`:
   - `inicios_evaluables`, `avisados_modelo`, `avisados_canal`;
@@ -225,7 +225,7 @@ Los nombres definitivos deben armonizarse con los de `src/api.py` y documentarse
 ## 11. Datos simulados para el frontend
  
 Para que los datos simulados se parezcan a los reales, deben respetar estas invariantes, que también sirven como pruebas de la API:
-- `zona` es coherente con `casos`, `central` y `u1e` (`02` §1).
+- `zona` es coherente con `casos`, `central` y `u1e` (`contrato_predictivo.md` §1).
 - `estado_alerta` es coherente con la trayectoria y τ (§2).
 - `semana_objetivo` = `semana_emision` + 8 semanas.
 - `serie_canal` tiene 60 elementos: los 52 primeros, `observada`, y los 8 últimos, `futura`.

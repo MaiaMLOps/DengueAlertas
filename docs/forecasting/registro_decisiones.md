@@ -1,6 +1,6 @@
-# 01 — Registro de decisiones
+# Registro de decisiones
  
-Cada entrada registra la fecha, la decisión, las alternativas consideradas, la justificación y la evidencia. Las decisiones del contrato predictivo (D0–D10) se describen en `02_contrato_predictivo.md`. Una decisión registrada solo se reabre con una nueva entrada que explique el motivo.
+Cada entrada registra la fecha, la decisión, las alternativas consideradas, la justificación y la evidencia. Las decisiones del contrato predictivo (D0–D10) se describen en `contrato_predictivo.md`. Una decisión registrada solo se reabre con una nueva entrada que explique el motivo.
  
 ---
  
@@ -22,7 +22,7 @@ Cada entrada registra la fecha, la decisión, las alternativas consideradas, la 
 - Reducir a dos o tres pilotos.
 - Reemplazarlos por municipios con series «más variables».
 **Justificación:**
-- Carlos pidió pocos municipios, no un número exacto.
+- El experto de dominio pidió pocos municipios, no un número exacto.
 - El criterio de selección (continuidad de la serie) es coherente con el dominio de aplicación del canal endémico: el protocolo INS lo recomienda para transmisión media, alta y muy alta, y Umaña et al. (2026) reportan mejor desempeño del canal a mayor transmisión.
 - La heterogeneidad entre los seis es un resultado en sí mismo.
 - Elegir municipios según cómo se comportan sus series introduciría un sesgo de selección.
@@ -43,13 +43,13 @@ Una semana está en **zona epidémica** si C > U1e (comparación estricta). La h
  
 **Significado:** U1e es el límite entre las zonas de alerta y de epidemia del canal (Bortman, 1999; Umaña et al., 2026). Es el extremo superior del intervalo de confianza del 95 % de la media geométrica, no un intervalo de predicción: en un proceso estable sin brotes se supera ~16 % de las semanas.
  
-**Evidencia:** `claude/estudio_umbrales/04_estudio_umbrales.md` (ejecutado por Fable según `claude/specs/estudio_umbrales.md` v1.0, con criterios fijados antes de ver los resultados). Cifras clave verificadas de forma independiente en el chat de metodología:
+**Evidencia:** estudio de umbrales, estudio exploratorio no versionado, con criterios fijados antes de ver los resultados. Cifras clave verificadas de forma independiente:
 - prevalencia 21,6 % (17,0–27,9 % por municipio);
 - 175 rachas, de las cuales el 50,3 % dura una semana;
 - 38 años casi monoclase de 84;
 - al menos 8 entradas por municipio en 2017–2025;
 - tasa de cambio de estado P(A_{t+4} ≠ A_{t−1}) = 0,117.
-**Desviación declarada de la regla preestablecida:** la regla lexicográfica de la especificación (§5) ordenaba U3a (1.º), U1e (2.º) y U1 (3.º). Se adopta U1e por tres motivos:
+**Desviación declarada de la regla preestablecida:** la regla lexicográfica de la especificación del estudio de umbrales ordenaba U3a (1.º), U1e (2.º) y U1 (3.º). Se adopta U1e por tres motivos:
  
 1. **Validez.** El estudio reveló un artefacto que los criterios no contemplaban. Con ε = 0,001, un cero en la historia entra como ln(0,001) = −6,9 e infla la desviación logarítmica: la mediana de s pasa de 1,12 a 4,25. Eso vuelve inalcanzables a U1 y U3a en el 13 % de las semanas elegibles (29 % en Soledad): sus prevalencias en esas semanas caen a 0,5 % y 2,8 %, frente a 23,2 % de U1e. El artefacto también contamina el conteo de años monoclase que decidió el ranking.
 2. **Respaldo.** U1e es la implementación verificada del paquete del grupo de los autores de Umaña et al. (BIOMAC). U3a es una construcción declarada por el equipo: la familia «media + k·DE» se documenta en escala original, no logarítmica.
@@ -61,7 +61,7 @@ Una semana está en **zona epidémica** si C > U1e (comparación estricta). La h
 - U3a: queda como **sensibilidad** en los resultados.
 **Implicaciones y pendientes:**
 - U1e se implementa como **extensión** de `src/epidemiology`, con columnas nuevas, sin modificar `ewt` ni `excess_label`. Sus pruebas deben reproducir epiCo, incluido el redondeo; idealmente también un contraste ejecutando epiCo en R.
-- Conviven dos desplazamientos: ε = 0,001 en el EWT de D1 y 1 en U1e. La etiqueta no se ve afectada, pero queda pendiente decidir qué línea central muestra el producto: el EWT de D1 o el `central` de epiCo. Fable verificó que U1e nunca queda por debajo del EWT. **Resuelto en D1.1 (2026-11-09):** se usa la central de epiCo.
+- Conviven dos desplazamientos: ε = 0,001 en el EWT de D1 y 1 en U1e. La etiqueta no se ve afectada, pero queda pendiente decidir qué línea central muestra el producto: el EWT de D1 o el `central` de epiCo. Se verificó que U1e nunca queda por debajo del EWT. **Resuelto en D1.1 (2026-11-09):** se usa la central de epiCo.
 - Sensibilidad a la ventana (U1e: 11 %, 20 % y 27 % con n = 3, 5 y 7) y U3a se reportan como análisis de sensibilidad.
 - El respaldo de Umaña et al. a ε = 0,001 se refiere a la tendencia central y a una métrica interna del canal (detección y razón de alertas, sin verdad externa). Además, ese estudio no evaluó la combinación ventana de 5 años + ε. Hay que citarlo con esa precisión.
 **Alternativas adicionales consideradas y descartadas (2026-11-09):**
@@ -77,7 +77,7 @@ Una semana está en **zona epidémica** si C > U1e (comparación estricta). La h
   - conserva los años etiquetados 2012–2013;
   - elegir n después de ver la sensibilidad sería post hoc.
   **[I]** Parte del aumento de prevalencia con n = 7 refleja una referencia más rezagada frente a la tendencia de los registros. Las ventanas de 3 y 7 años se reportan como sensibilidad. Si el equipo quisiera más positivos, n = 7 (línea base institucional) es la única alternativa defendible y debe adoptarse antes de modelar, no después.
-**Preguntas para Carlos:**
+**Preguntas para el experto de dominio:**
 1. ¿Le parece adecuado el límite superior de epiCo (con desplazamiento 1) como umbral de exceso?
 2. Su artículo (Umaña et al., 2026) recomienda desplazar 0,001 en lugar de una unidad. ¿Aplicaron ese desplazamiento también a la desviación geométrica del límite superior? ¿Observaron el inflado de la desviación con ceros en la historia?
 3. ¿Tiene disponible la regla de emparejamiento entre alertas y brotes (Tabla S1 del apéndice)?
@@ -85,7 +85,7 @@ Una semana está en **zona epidémica** si C > U1e (comparación estricta). La h
 5. (Añadida el 2026-11-10, ver D8.) ¿Es razonable una ventana de 12 semanas entre la alerta y el inicio del brote para que una secretaría de salud pueda actuar? ¿Una alerta seguida solo de un exceso corto (1 o 2 semanas en zona epidémica) debería contarse como falsa alarma?
 ## D1.1 — Parametrización única del canal (2026-11-09; enmienda a D1)
  
-**Decisión:** todas las cantidades del canal que usan el modelado y el producto (línea central, límite superior y zonas) se calculan con la parametrización de epiCo: desplazamiento 1 y n = 5. La línea central del canal es `central = round(exp(mean(log(x + 1))) − 1, 5)`, no el EWT de D1. Fórmulas y zonas en `02` §1.
+**Decisión:** todas las cantidades del canal que usan el modelado y el producto (línea central, límite superior y zonas) se calculan con la parametrización de epiCo: desplazamiento 1 y n = 5. La línea central del canal es `central = round(exp(mean(log(x + 1))) − 1, 5)`, no el EWT de D1. Fórmulas y zonas en `contrato_predictivo.md` §1.
  
 **Motivo: coherencia, no superioridad del desplazamiento 1.**
 - U1e = central · e^interval se construye sobre la central de epiCo. Usar el EWT como línea central junto con U1e mezcla dos desplazamientos y rompe la geometría del canal: la zona entre ambas líneas deja de ser la zona de alerta de epiCo.
@@ -93,7 +93,7 @@ Una semana está en **zona epidémica** si C > U1e (comparación estricta). La h
 **Lo que dice la literatura [H].** Umaña et al. (2026) concluyen que desplazar 0,001 en lugar de una unidad mejora el desempeño del canal en todos los niveles de transmisión, en promedio un 23,07 % (P < 0,01). Matices:
 - su métrica es interna al canal (detección y razón de alertas, con brotes definidos por el propio canal);
 - parte de su argumento es evitar umbrales nulos en municipios de baja transmisión, lo que en nuestros pilotos es marginal (0,2 % de las positivas con C ≤ 2, según el estudio de umbrales);
-- no está verificado si aplicaron 0,001 también a la dispersión del límite superior (pregunta 2 para Carlos).
+- no está verificado si aplicaron 0,001 también a la dispersión del límite superior (pregunta 2 al experto de dominio).
 Por eso, en la línea central nos apartamos de su recomendación, y hay que declararlo.
  
 **Magnitud del cambio [C].**
@@ -104,24 +104,24 @@ Por eso, en la línea central nos apartamos de su recomendación, y hay que decl
 - la auditoría, el estudio de umbrales y las cifras de D2 se verificaron contra el archivo actual (SHA-256 `b3b151a5…2c7f`);
 - las 174 pruebas definen `ewt` con ε;
 - cambiar el contenido de una columna sin cambiarle el nombre altera su significado en silencio.
-Se crean un módulo y un producto nuevos con columnas de nombre explícito (`02` §10). Las columnas con ε quedan congeladas como legado, marcadas como obsoletas y ausentes del producto de modelado.
+Se crean un módulo y un producto nuevos con columnas de nombre explícito (`contrato_predictivo.md` §10). Las columnas con ε quedan congeladas como legado, marcadas como obsoletas y ausentes del producto de modelado.
  
 **Declarar en el artículo:** la desviación respecto de la recomendación de Umaña et al. para la tendencia central, con la magnitud anterior.
-**Evidencia:** `claude/verificacion/descriptivos_d3.py`, sección 4.
+**Evidencia:** `docs/forecasting/verificacion/descriptivos_d3.py`, sección 4.
  
 ## D3 — Variable objetivo (2026-11-09)
  
-**Decisión:** y_{t,h} = 1[C_{t+h} > U1e_{t+h}], semana individual en zona epidémica, con clasificación binaria y salida probabilística. Definición, propiedades y cifras en `02` §2.
+**Decisión:** y_{t,h} = 1[C_{t+h} > U1e_{t+h}], semana individual en zona epidémica, con clasificación binaria y salida probabilística. Definición, propiedades y cifras en `contrato_predictivo.md` §2.
  
 **Restricción de alcance (decisión del equipo):**
 - Solo clasificación binaria en el MVP, sin modelos de conteo, de regresión ni multiclase.
-- Carlos pidió un target simple y no contemplar regresión. La multiclase no estaba prohibida; se descarta por conveniencia (ver abajo).
+- El experto de dominio pidió un target simple y no contemplar regresión. La multiclase no estaba prohibida; se descarta por conveniencia (ver abajo).
 **Principio de evaluación acordado:**
 - Eventos y transiciones son objetos de evaluación, no target.
 - Se separan dos capas: estimación (reglas de puntuación propias y métricas de clasificación) y decisión (eventos).
 - Hay tres niveles de evaluación: semana, transición y evento.
 - Los eventos solo ajustan la capa de decisión, en validación.
-Detalle en `02` §2.4; se concreta en D8 y D10.
+Detalle en `contrato_predictivo.md` §2.4; se concreta en D8 y D10.
  
 **Alternativas descartadas [C]:**
 - **Ventana** («al menos una semana en zona epidémica en las h siguientes»). Prevalencia ~30 % (21–42 % por municipio). Pierde el «cuándo», que es lo que se quiere medir, y acumula las fluctuaciones aisladas de varias semanas.
@@ -139,11 +139,11 @@ Detalle en `02` §2.4; se concreta en D8 y D10.
   - *Uso de las zonas:* la zona observada pasa a D6 (feature) y a D10 (visualización). Nota de fuga: la matriz de transición (236 de 253 entradas a la zona epidémica vienen de la zona de alerta) se calculó con todos los años. El feature debe justificarse por el diseño del canal, no por esa cifra.
 - **Modelos de conteo o regresión** (por ejemplo, derivar P(C_{t+h} > U1e_{t+h}) de una distribución predictiva). Excluidos por la restricción de alcance.
 - **Entrenar o evaluar solo filas con estado observado 0, para modelar entradas.** No es un target distinto: es una estratificación legítima de la evaluación (D8), porque el estado al emitir forma parte de la información disponible. Se diferencia del masking del avance, que condicionaba en información futura.
-**Evidencia:** `claude/verificacion/descriptivos_d3.py`, secciones 1, 2, 3 y 5.
+**Evidencia:** `docs/forecasting/verificacion/descriptivos_d3.py`, secciones 1, 2, 3 y 5.
  
 ## D4 — Emisión, información disponible y horizontes (2026-11-09)
  
-**Decisión:** detalle en `02` §3.
+**Decisión:** detalle en `contrato_predictivo.md` §3.
 - **Convención:** t es la última semana con dato completo y h la distancia desde ella.
 - **Información:** en t se conoce todo lo que la base contiene hasta t, más la central y U1e de la semana objetivo y su calendario.
 - **Operación:** el MVP no opera en tiempo real; hay un contrato de entrada para los datos que suba el usuario.
@@ -161,11 +161,11 @@ Detalle en `02` §2.4; se concreta en D8 y D10.
 - **Solo h = 8, sin sensibilidad.** Se perdería la evidencia empírica sobre relevancia frente a viabilidad. Se conserva la sensibilidad con prioridad baja.
 - **Diseño con retraso real de los conteos o cortes distintos por fuente.** El MVP no opera en tiempo real. La latencia queda como limitación declarada, con anticipación operativa h − d.
 **Desviación declarada:** respecto de la propuesta (h = 1, 2 y 4) y del avance (h = 4, que en la convención nueva equivale a 5).
-**Evidencia:** `claude/verificacion/descriptivos_d3.py`, sección 6; referencias en `02` §3.8.
+**Evidencia:** `docs/forecasting/verificacion/descriptivos_d3.py`, sección 6; referencias en `contrato_predictivo.md` §3.8.
  
 ## D5 — Líneas base y modelos (2026-11-09)
  
-**Decisión:** detalle en `02` §4.
+**Decisión:** detalle en `contrato_predictivo.md` §4.
 - **Líneas base:**
   - B2, estado del canal: P(y | zona observada en t). Es la principal.
   - B1, climatología estacional: secundaria.
@@ -182,7 +182,7 @@ Detalle en `02` §2.4; se concreta en D8 y D10.
 - **Persistencia binaria (B3).** B2 la contiene. Una predicción 0/1 no es probabilística: su log-loss es infinito cuando falla. A nivel de eventos casi no puede anticipar inicios, por construcción.
 - **Solo B2.** No separa anticipación de estacionalidad.
 - **Climatología global constante como línea base.** Solo da contexto (la prevalencia π).
-- **Diseño factorial 2 × 2** (regresión logística y LightGBM, con y sin clima), propuesto en el chat de metodología. Se reemplaza por candidatos con todas las features y una sola ablación: responde la misma pregunta con menos modelos y métricas.
+- **Diseño factorial 2 × 2** (regresión logística y LightGBM, con y sin clima). Se reemplaza por candidatos con todas las features y una sola ablación: responde la misma pregunta con menos modelos y métricas.
 - **Ablación en todas las familias.** Multiplica las métricas sin cambiar la respuesta al objetivo 3.
 - **Elegir la familia por municipio.** Con k candidatas de igual desempeño, la ganadora queda sesgada a favor en E[máx de k normales]·σ: 0,56σ con dos, 0,85σ con tres y 1,16σ con cinco. Por municipio, σ es grande y se harían seis elecciones ruidosas.
 - **Familias adicionales.**
@@ -193,14 +193,14 @@ Detalle en `02` §2.4; se concreta en D8 y D10.
 - **De la propuesta:** DLNM+INLA (regresión de conteos, excluida en D3) y ST-GNN (combina municipios, contra D0). Desviación declarada.
 ## D6 — Features (2026-11-09)
  
-**Decisión:** detalle en `02` §5. Son 15 variables:
+**Decisión:** detalle en `contrato_predictivo.md` §5. Son 15 variables:
 - `zona_t`, `posicion_4s` y `crecimiento_4s`: estado y dinámica frente al canal;
 - `cambio_umbral`, `sem_sin` y `sem_cos`: lo que se conoce de antemano sobre la semana objetivo;
 - nueve anomalías climáticas: temperatura, precipitación y humedad en tres bloques mensuales que terminan en t.
 La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. La GRU recibe la secuencia de las mismas fuentes. No hay variables demográficas.
  
 **Justificación:**
-- **Resúmenes frente a rezagos.** Doce rezagos de cuatro series son unas 48 columnas casi colineales para unas 700 filas: colinealidad en la regresión logística y cortes espurios en LightGBM (auditoría, C4). Los resúmenes codifican nivel, tendencia y posición frente al umbral. La vista secuencial la aporta la GRU.
+- **Resúmenes frente a rezagos.** Doce rezagos de cuatro series son unas 48 columnas casi colineales para unas 700 filas: colinealidad en la regresión logística y cortes espurios en LightGBM (auditoría del informe de avance). Los resúmenes codifican nivel, tendencia y posición frente al umbral. La vista secuencial la aporta la GRU.
 - **Clima como anomalía.** El clima crudo repite la estacionalidad que ya aportan `sem_sin` y `sem_cos`. El target también es una anomalía frente a los cinco años anteriores, así que la escala es coherente. Al calcularse solo con el pasado, no puede filtrar información.
 - **Bloques mensuales.** El efecto del clima es acumulativo. Tres bloques cubren rezagos de 8 a 19 semanas respecto a la semana objetivo, el rango que reporta la literatura revisada en D4. Son 9 columnas en lugar de 36.
 - **Covariables futuras conocidas.** `cambio_umbral` usa U1e_{t+h}, que se calcula con años anteriores al de t + h. Comprobación [C]: en los 4.380 pares, la semana más reciente de su historia está 44–45 semanas antes de t, y truncar la base en t no cambia su valor.
@@ -210,14 +210,14 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 - **Semanas en zona epidémica en las últimas 8** y **distancia al umbral objetivo:** redundantes con `posicion_4s`, `zona_t` y `cambio_umbral`. Además, la primera introducía un segundo parámetro de ventana arbitrario.
 - **Cambio de la central entre t y t + h:** duplica `cambio_umbral`.
 - **Ventanas ajustadas con datos:** añaden grados de libertad al investigador. Quedan como trabajo futuro, y solo dentro de la validación.
-- **Población, densidad y área.** Con modelos por municipio, población y densidad solo varían por año y funcionan como reloj (correlación con el año de 0,957 a 0,995; auditoría, I11), y el área es constante. El efecto demográfico no se puede separar del tiempo sin comparar municipios, lo que D0 excluye. **Desviación declarada** respecto al objetivo específico 3: solo se mide el aporte climático.
+- **Población, densidad y área.** Con modelos por municipio, población y densidad solo varían por año y funcionan como reloj (correlación con el año de 0,957 a 0,995; auditoría del informe de avance), y el área es constante. El efecto demográfico no se puede separar del tiempo sin comparar municipios, lo que D0 excluye. **Desviación declarada** respecto al objetivo específico 3: solo se mide el aporte climático.
 - **Población como denominador de tasas:** el target usa conteos (D1).
 **Limitación declarada:** las ventanas son elecciones a priori y otras combinaciones podrían rendir más.
-**Evidencia:** las filas disponibles (711 por municipio desde t = 2012-03-19) y la prueba de truncamiento se calcularon en el chat de metodología. La prueba de truncamiento pasa a ser un requisito de implementación (`02` §10, punto 7).
+**Evidencia:** las filas disponibles (711 por municipio desde t = 2012-03-19) y la prueba de truncamiento se comprueban en `tests/acceptance/test_f2_dataset.py`. La prueba de truncamiento pasa a ser un requisito de implementación (`contrato_predictivo.md` §10, punto 7).
  
 ## D7 — Validación y selección (2026-11-10)
  
-**Decisión:** detalle en `02` §6.
+**Decisión:** detalle en `contrato_predictivo.md` §6.
 - **Origen móvil con reentrenamiento anual,** con corte por el año de la semana objetivo.
 - **Desarrollo:** cuatro ensayos (2019, 2020, 2021 y 2022), para elegir hiperparámetros, familia y regla de decisión.
 - **Prueba:** 2023 a 2025, con la receta congelada, mirada una sola vez.
@@ -227,13 +227,13 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 **Justificación:**
 - *Coherencia con la propuesta.* La propuesta comprometía una evaluación «rolling-origin, con reentrenamiento».
 - *Realismo.* El sistema operaría reentrenándose cada año con todo lo conocido.
-- *Hueco automático.* El corte por la fecha de la semana objetivo elimina la fuga del avance (I9). **Precisado en D7.1 (2026-11-11):** el hueco respecto a la fecha de emisión exige además cerrar el entrenamiento en la primera emisión de cada ensayo.
+- *Hueco automático.* El corte por la fecha de la semana objetivo elimina la fuga del avance (auditoría del informe de avance). **Precisado en D7.1 (2026-11-11):** el hueco respecto a la fecha de emisión exige además cerrar el entrenamiento en la primera emisión de cada ensayo.
 - *Esquema híbrido.* El sesgo del ganador al elegir entre k candidatos ruidosos es E[máx]·σ: 1,97σ con k = 25. Si se promedia sobre seis municipios, baja a unos 0,80σ bajo independencia. La evidencia por municipio es desigual: en desarrollo, Neiva solo tiene positivas en 2019 y Cali 20 en total. Con la misma lista de candidatos, la excepción por municipio se puede comprobar en lugar de afirmarse.
 **Alternativas descartadas [C]:**
 - **Una sola partición fija** (tipo 70/15/15). Deja un solo año para decidir, y los modelos de los años tardíos no ven la historia reciente.
 - **`KFold` y `TimeSeriesSplit`.** El primero mezcla el futuro con el pasado. El segundo corta por número de filas, no por año ni por la fecha de la semana objetivo.
 - **Desarrollo 2018–2022.** El ensayo de 2018 entrena con el régimen tranquilo de 2012–2017 (Cúcuta solo tiene 19 positivas ahí), y el papel de «año tranquilo» ya lo cumple 2020 (prevalencia de 7,7 %). Aportaba 14 entradas y un quinto año para medir la variación.
-- **Desarrollo 2020–2022** (planteado por Jesús, para no restar historia reciente). Con origen móvil, 2019 entra igualmente en el entrenamiento de todos los ensayos posteriores. Quitarlo de la validación no suma entrenamiento, pero deja a Neiva sin ninguna positiva en desarrollo y a Villavicencio con 10. En total quedarían 200 positivas, 5 inicios y 30 entradas, frente a 319, 11 y 45.
+- **Desarrollo 2020–2022** (planteado por el responsable de la implementación, para no restar historia reciente). Con origen móvil, 2019 entra igualmente en el entrenamiento de todos los ensayos posteriores. Quitarlo de la validación no suma entrenamiento, pero deja a Neiva sin ninguna positiva en desarrollo y a Villavicencio con 10. En total quedarían 200 positivas, 5 inicios y 30 entradas, frente a 319, 11 y 45.
 - **Desarrollo 2018–2021 con prueba 2022–2025.** Desarrollo más débil: 247 positivas y 9 inicios.
 - **Prueba solo en 2024–2025.** Solo 6 inicios, y dos municipios sin ninguno.
 - **Prueba sin reentrenamiento** (origen fijo). Evaluaría un sistema desactualizado que nadie operaría así.
@@ -249,15 +249,15 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 - Prevalencia de 25,6 % en desarrollo frente a 34,4 % en prueba.
 - Cambio de régimen después de 2018.
 - Pocos años para medir la variación entre ellos.
-**Evidencia:** los conteos de eventos por año y municipio de cada partición candidata, y los valores de E[máx de k normales], se calcularon en el chat de metodología. Son descriptivos de la etiqueta: no se entrenó ningún modelo.
+**Evidencia:** los conteos de eventos por año y municipio de cada partición candidata, y los valores de E[máx de k normales], se calcularon fuera del repositorio, sin script versionado. Son descriptivos de la etiqueta: no se entrenó ningún modelo.
  
 ## D7.1 — Entrenamiento cerrado en la primera emisión de cada ensayo (2026-11-11; enmienda a D7)
 
-**Decisión:** en el ensayo del año Y, el entrenamiento usa solo las filas cuya semana objetivo es anterior o igual a t0, la emisión más temprana entre las filas evaluadas de Y (t + h ≤ t0). La evaluación no cambia: las filas cuya semana objetivo cae en Y. Se aplica a todos los candidatos, a B1 y B2, a la ablación y a los ensayos de desarrollo y de prueba. Texto vinculante en `02` §6.1. En el repositorio se registra como DV-01.
+**Decisión:** en el ensayo del año Y, el entrenamiento usa solo las filas cuya semana objetivo es anterior o igual a t0, la emisión más temprana entre las filas evaluadas de Y (t + h ≤ t0). La evaluación no cambia: las filas cuya semana objetivo cae en Y. Se aplica a todos los candidatos, a B1 y B2, a la ablación y a los ensayos de desarrollo y de prueba. Texto vinculante en `contrato_predictivo.md` §6.1. En el repositorio se registra como DV-01.
 
 **Problema que corrige.** D7 afirmaba que, con el corte por la fecha de la semana objetivo, «el hueco de h semanas aparece solo». Es cierto respecto a las semanas objetivo: ninguna semana evaluada entra al entrenamiento. No lo es respecto a la fecha de emisión. Con h = 8, el ensayo 2019 entrenaba con las etiquetas de hasta el 2018-12-31, pero su primera emisión es del 2018-11-12. Las 7 primeras emisiones evaluadas de cada año (del t0 al t0 + 6 semanas) usaban un modelo que conocía las etiquetas de las semanas entre su emisión y su objetivo, que en esa fecha no existían. Como el estado está muy autocorrelacionado (kappa de 0,68 a 4 semanas), esas etiquetas informan sobre el objetivo: saber que diciembre fue epidémico es casi saber que la primera semana de enero también lo será. La información entra por los parámetros del modelo, no por las variables, así que la prueba de truncamiento no la detecta.
 
-**Origen.** La observación se identificó al redactar el documento de metodología (sección «Observación sobre el corte», marcada [I][P]) y no se trasladó a este registro. Se retomó al iniciar F3, antes de congelar las pruebas del constructor de cortes y antes de entrenar cualquier modelo, así que el cambio no viola el principio rector.
+**Origen.** La observación se anotó durante la redacción del contrato (marcada [I][P]) y no se trasladó a este registro. Se retomó al iniciar F3, antes de congelar las pruebas del constructor de cortes y antes de entrenar cualquier modelo, así que el cambio no viola el principio rector.
 
 **Alternativas consideradas:**
 - **Mantener D7 y declararlo como limitación.** Sin costo de implementación, pero el sistema evaluado no se podía operar: emite en noviembre con un modelo que solo existe en enero.
@@ -270,13 +270,13 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 - Las filas excluidas no son neutras: 83 de las 294 excluidas en los 42 ensayos municipio-año son positivas, y en Villavicencio 2019 son 5 de 7, el despegue de la epidemia que sigue en enero.
 - Conserva todo el diseño de D7: cortes por año de la semana objetivo, desarrollo 2019–2022, prueba 2023–2025 y comparaciones pareadas.
 
-**Cifras [C]:** `claude/verificacion/tamanos_d71.py` (t0 y filas de entrenamiento de cada ensayo y municipio) y `caso_f3_hueco.py` (B1 y B2 de Villavicencio, ensayo 2019, t = 2018-12-03). Se copian a `docs/forecasting/verificacion/` después de compararlos con la explicación independiente de la implementación, como en F1 y F2.
+**Cifras [C]:** `docs/forecasting/verificacion/tamanos_d71.py` (t0 y filas de entrenamiento de cada ensayo y municipio) y `caso_f3_hueco.py` (B1 y B2 de Villavicencio, ensayo 2019, t = 2018-12-03). Se copiaron a `docs/forecasting/verificacion/` (31997c5) después de compararlos con la explicación independiente de la implementación, como en F1 y F2.
 
 **Declarar en el artículo:** el entrenamiento de cada ensayo usa solo información disponible en su primera emisión; el sistema evaluado se reentrena una vez al año.
 
 ## D7.2 — Conjunto de variables como paso de selección (2026-11-12; enmienda a D5, D6, D7 y D9)
 
-**Decisión:** el conjunto de variables (completo, 15 variables; sin clima, 6) pasa a ser un paso de la selección en desarrollo, con la regla de parsimonia de §8.3: sin clima por defecto; completo solo si tiene mayor mejora media fuera de año frente a B2 y gana al menos 17 de 24 casillas. Se aplica a cada familia antes de compararlas, sin excepciones por municipio. La ablación de §4.4 pasa a ser la familia final con el conjunto no elegido. Texto vinculante en `02` §6.6, con ajustes en §4.2, §4.4, §7.1 y §8.4.
+**Decisión:** el conjunto de variables (completo, 15 variables; sin clima, 6) pasa a ser un paso de la selección en desarrollo, con la regla de parsimonia de §8.3: sin clima por defecto; completo solo si tiene mayor mejora media fuera de año frente a B2 y gana al menos 17 de 24 casillas. Se aplica a cada familia antes de compararlas, sin excepciones por municipio. La ablación de §4.4 pasa a ser la familia final con el conjunto no elegido. Texto vinculante en `contrato_predictivo.md` §6.6, con ajustes en §4.2, §4.4, §7.1 y §8.4.
 
 **Origen.** El 2026-11-12, al preparar la ablación de F7, se ejecutó en desarrollo la selección de hiperparámetros de la logística sin el bloque climático, como exige §4.4 (búsqueda `26dc1af622fb5966e56e`). Comparada con la logística completa, con configuraciones comunes fuera de año, la versión sin clima tuvo una mejora media frente a B2 de +0,211 frente a −0,024 y menor log-loss en 15 de las 24 casillas. D6 había fijado las variables a priori (§5.7) para no añadir grados de libertad; con eso, la selección no podía considerar una opción más simple y, en desarrollo, mejor.
 
@@ -293,7 +293,7 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 
 ## D8 — Métricas y regla de decisión (2026-11-10)
  
-**Decisión:** detalle en `02` §7.
+**Decisión:** detalle en `contrato_predictivo.md` §7.
 - **Dos capas con métricas separadas.**
   - *Estimación:* la mejora de log-loss frente a B2 decide hiperparámetros y familia. El BSS frente a B2 es la métrica principal de reporte. También se reportan el BSS frente a B1, el Brier con su descomposición, la AP con π como referencia, la calibración (diagrama y calibración en grande por año) y las mismas métricas en las transiciones.
   - *Decisión:* una regla de alerta fija y un τ común elegido con eventos en desarrollo.
@@ -308,7 +308,7 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 **Origen de la regla [H].**
 - Umaña et al. definen alerta, inicio de brote, ventana de oportunidad, capacidad de detección y razón de alertas para describir el canal. Aclaran que no lo evaluaron como herramienta de pronóstico.
 - La propuesta del grupo trasladó la alerta al modelo, con el EWT, y añadió Δw.
-- El avance no implementó nada de esto (auditoría, I12 y M15).
+- El avance no implementó nada de esto (auditoría del informe de avance).
 **Justificación:**
 - *Log-loss para decidir.* Es una regla de puntuación estrictamente propia y la misma pérdida del entrenamiento.
 - *Soporte de la regla en la literatura.*
@@ -336,13 +336,13 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 - Cambio de prevalencia entre periodos.
 - Definición estricta de falsa alarma.
 - Alertas repetidas contadas por separado.
-- La regla exacta de Umaña et al. no está verificada (pregunta 3 para Carlos).
+- La regla exacta de Umaña et al. no está verificada (pregunta 3 al experto de dominio).
 - Algunas cifras descriptivas de la alerta del canal ya se vieron con otras reglas (estudio de umbrales y D3). k y W se tomaron de la literatura, no de esas cifras.
-**Evidencia:** `claude/verificacion/eventos_d8.py` (inicios evaluables: 10 de 11 en desarrollo y 10 de 10 en prueba); referencias en `02` §7.9. Pregunta 5 para Carlos añadida en D2.
+**Evidencia:** `docs/forecasting/verificacion/eventos_d8.py` (inicios evaluables: 10 de 11 en desarrollo y 10 de 10 en prueba); referencias en `contrato_predictivo.md` §7.9. Pregunta 5 al experto de dominio, añadida en D2.
  
 ## D9 — Incertidumbre y reglas de comparación (2026-11-10)
  
-**Decisión:** detalle en `02` §8. Una sola idea: contar victorias pareadas y compararlas con el azar (moneda con p = 0,5), con una prueba binomial exacta de una cola al 5 %.
+**Decisión:** detalle en `contrato_predictivo.md` §8. Una sola idea: contar victorias pareadas y compararlas con el azar (moneda con p = 0,5), con una prueba binomial exacta de una cola al 5 %.
 - **Desarrollo,** con puntajes fuera de año (cada configuración se elige sin el año en que se puntúa):
   - excepción de hiperparámetros o de familia por municipio si gana en 4 de 4 años;
   - una familia más compleja reemplaza a la más simple si su mejora promedio es mayor y gana en al menos 17 de 24 casillas municipio-año.
@@ -352,10 +352,10 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
   - *Tendencia favorable:* métrica global favorable y 10 a 12 casillas.
   - *Sin mejora:* cualquier otro caso.
 - **Eventos:** McNemar exacto de una cola sobre los inicios discrepantes entre el modelo y el canal, con los mismos tres niveles. Δw se reporta inicio por inicio, sin prueba.
-**Origen [H]:** la auditoría del avance (I9e) recomendaba bootstrap por bloques anuales, McNemar en decisiones pareadas y resultados por año. La propuesta prometía McNemar para detecciones y falsas alarmas, y bootstrap estratificado por municipio. D9 mantiene el propósito y simplifica el método.
+**Origen [H]:** la auditoría del informe de avance recomendaba bootstrap por bloques anuales, McNemar en decisiones pareadas y resultados por año. La propuesta prometía McNemar para detecciones y falsas alarmas, y bootstrap estratificado por municipio. D9 mantiene el propósito y simplifica el método.
  
 **Justificación:**
-- *Necesidad.* Sin estas reglas, D5 («la más simple si la diferencia está dentro de la incertidumbre») y D7 («excepción si gana de forma consistente») no son ejecutables. Además, el avance reportó diferencias sin ninguna medida de incertidumbre (I9e).
+- *Necesidad.* Sin estas reglas, D5 («la más simple si la diferencia está dentro de la incertidumbre») y D7 («excepción si gana de forma consistente») no son ejecutables. Además, el avance reportó diferencias sin ninguna medida de incertidumbre (auditoría del informe de avance).
 - *Conteo en lugar de bootstrap.* Con 18 casillas en prueba, el bootstrap supone lo mismo que el conteo (casillas independientes), es más difícil de explicar y no aporta mucho más que mirar la tabla. El conteo no simula datos, no reordena nada y se verifica con la tabla publicada.
 - *Puntajes fuera de año.* Elegir y juzgar con los mismos años favorece siempre al elegido (sesgo del ganador). Además, sin esta corrección LightGBM, con ~25 candidatos, quedaría favorecido frente a la regresión logística, con ~6. Se obtienen de la tabla única sin entrenar nada adicional.
 - *Una cola.* Todas las preguntas son direccionales y se declaran antes. Ninguna decisión depende de que una opción sea significativamente peor.
@@ -377,13 +377,13 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 - Cuatro afirmaciones en prueba sin corrección (≈ 19 % de al menos un falso positivo bajo nulidad total).
 - Entre una y dos excepciones espurias esperables, de bajo costo.
 - El 5 % es una convención.
-**Evidencia:** `claude/verificacion/umbrales_d9.py` (umbrales, probabilidades por azar y potencia).
+**Evidencia:** `docs/forecasting/verificacion/umbrales_d9.py` (umbrales, probabilidades por azar y potencia).
  
 ## D9.1 — Análisis diagnóstico integrado (2026-11-12; enmienda de reporte a D9)
 
-**Decisión:** el reporte incluye un análisis descriptivo municipio por municipio y año por año, con un nivel descriptivo por municipio (favorable, mixto o desfavorable, sin valor de conclusión estadística), una clasificación de régimen de cada casilla, seis insumos obligatorios para desarrollo y prueba, dos hipótesis secundarias que se contrastan solo en prueba y una lista de limitaciones de las métricas. Texto vinculante en `02` §8.8 y §10, punto 22. No cambia ninguna decisión: receta, criterios de §8.3 y §8.4, regla de alerta y τ quedan iguales.
+**Decisión:** el reporte incluye un análisis descriptivo municipio por municipio y año por año, con un nivel descriptivo por municipio (favorable, mixto o desfavorable, sin valor de conclusión estadística), una clasificación de régimen de cada casilla, seis insumos obligatorios para desarrollo y prueba, dos hipótesis secundarias que se contrastan solo en prueba y una lista de limitaciones de las métricas. Texto vinculante en `contrato_predictivo.md` §8.8 y §10, punto 22. No cambia ninguna decisión: receta, criterios de §8.3 y §8.4, regla de alerta y τ quedan iguales.
 
-**Origen.** Se propuso el 2026-11-12, después de ejecutar la selección de F6 en desarrollo y antes de congelar la receta y de abrir la prueba. Una lectura por casilla de los resultados de desarrollo (chat de desarrollo guiado) mostró tres cosas que las conclusiones agregadas no muestran:
+**Origen.** Se propuso el 2026-11-12, después de ejecutar la selección de F6 en desarrollo y antes de congelar la receta y de abrir la prueba. Una lectura por casilla de los resultados de desarrollo mostró tres cosas que las conclusiones agregadas no muestran:
 - qué municipio parece fallar frente a B2 depende de la métrica: el promedio de mejoras relativas y la diferencia absoluta de log-loss señalan municipios distintos, porque el cociente se dispara en años sin positivas, cuando el log-loss de B2 es pequeño;
 - la ventaja del modelo frente a B2 se concentra en años epidémicos y se pierde en años tranquilos que siguen a una epidemia, con probabilidades medias por encima de la prevalencia;
 - ese patrón afecta a varios municipios a la vez, en el mismo año.
@@ -400,7 +400,7 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 
 ## D10 — Salida para el usuario final (2026-11-10)
  
-**Decisión:** detalle en `02` §9. Es una primera versión; el equipo de frontend puede complementarla dentro de las reglas de §9.4 y §9.5.
+**Decisión:** detalle en `contrato_predictivo.md` §9. Es una primera versión; el equipo de frontend puede complementarla dentro de las reglas de §9.4 y §9.5.
 - **Principio:** el usuario ve exactamente lo que se evaluó: la misma probabilidad, las mismas referencias, la misma regla de alerta y el desempeño de prueba.
 - **Vista principal:**
   - la probabilidad de zona epidémica en t + 8, con las fechas explícitas;
@@ -418,9 +418,9 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 - **API:** se amplía la FastAPI existente con `/predict`, `/predict/upload`, `/historial` y `/desempeno`. La parametrización va por variables de entorno.
 **Justificación:**
 - *Coherencia.* Si la interfaz usa la misma regla y las mismas referencias que la evaluación, el desempeño reportado aplica a lo que el usuario ve.
-- *Referencias B1 y B2 visibles* (pedido de Jesús). Muestran cuánto agrega el modelo sobre el canal y sobre la estación, ya están calculadas para la evaluación y evidencian el trabajo metodológico.
+- *Referencias B1 y B2 visibles* (pedido del responsable de la implementación). Muestran cuánto agrega el modelo sobre el canal y sobre la estación, ya están calculadas para la evaluación y evidencian el trabajo metodológico.
 - *Historial solo fuera de muestra.* El modelo final se entrenó con las etiquetas de 2012–2025; mostrarlo sobre semanas pasadas sería la misma fuga criticada en el avance, trasladada a la interfaz.
-- *Carga de datos con prioridad completa* (pedido de Jesús: el equipo quiere verla). Ya estaba en el contrato de entrada de §3.3 y demuestra inferencia sobre datos nuevos (rúbrica de funcionamiento).
+- *Carga de datos con prioridad completa* (pedido del responsable de la implementación: el equipo quiere verla). Ya estaba en el contrato de entrada de §3.3 y demuestra inferencia sobre datos nuevos (rúbrica de funcionamiento).
 - *Rúbrica del despliegue.* Usabilidad (35 puntos): instrucciones, etiquetas, explicaciones y visualizaciones. Parametrización (15 puntos): variables de entorno. README (15 puntos): plantilla CSV y respuesta JSON como ejemplos.
 - *Infraestructura existente.* La API FastAPI, el frontend React en Cloudflare Pages y el registro MLflow ya existen; fijar el esquema JSON permite que el frontend avance en paralelo con valores simulados.
 **Alternativas descartadas:**
@@ -429,7 +429,7 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 - **τ ajustable por el usuario.** El desempeño medido solo vale para el τ congelado.
 - **Categorías de riesgo adicionales** (bajo, medio, alto). No se evaluaron; los estados de alerta de §7.4 sí.
 - **Atribuciones por variable** (por ejemplo, SHAP). Añaden complejidad y favorecen lecturas causales.
-- **Carga de datos como prioridad secundaria** (propuesta inicial en el chat de metodología). Descartada por el equipo.
+- **Carga de datos como prioridad secundaria** (propuesta inicial). Descartada por el equipo.
 - **Ficha con resultados de desarrollo.** Se usaron para elegir; solo la prueba es una medición limpia.
 - **Mapas, los 78 municipios, conteos o varios horizontes.** Fuera de alcance por D0, D3 y D4.
 - **Cambiar a Streamlit o Power BI** (mencionados en la propuesta). La infraestructura React y FastAPI ya está desplegada.
@@ -437,5 +437,5 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 - La usabilidad no se valida con usuarios reales.
 - El pronóstico vigente no tiene verdad para comparar.
 - Los datos subidos solo se validan en formato y completitud.
-**Evidencia:** criterios de evaluación del despliegue (`Entregable y criterios de evaluación.docx`); estado del repositorio en `00` §5; propuesta del grupo, sección de transparencia.
+**Evidencia:** criterios de evaluación del despliegue (rúbrica del curso, no versionada: usabilidad, 35 puntos; parametrización, 15; README, 15); propuesta del grupo, sección de transparencia.
  

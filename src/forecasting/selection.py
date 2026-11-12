@@ -25,24 +25,32 @@ Flow:
       -> choose_tau: maximum warned onsets with false alarms <= the channel's; tie -> larger tau; none
          feasible -> fewest false alarms (tie -> larger tau) and restriccion_cumplida = False
     select(...) chains everything and checks that no input has a test-period target week.
+    build_recipe(selection, config, provenance) -> the recipe draft of especificación §8 (no approval, no hash)
+      -> write_recipe_draft: YAML, never overwriting and never at configs/receta_congelada.yaml. Approval and
+         hash are added in a separate unit, with Jesús's approval; only then the test period opens.
 
 Wins are counted on log-loss, the deciding metric in development (contrato §8.2), never on mejora_b2:
 1 − a/c can tie in floating point while a < b. The table is put in a canonical order first, so the result
 does not depend on the order of its rows.
 """
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
+import json
+from pathlib import Path
+import re
 
 import numpy as np
 import pandas as pd
+import yaml
 
 from src.epidemiology.validation import require
 
 from .comparison import _choose, count_wins, out_of_year_scores, win_threshold
+from .config import ROOT
 from .events import channel_positive, evaluate_period, model_positive
-from .guard import RecipeAccess
+from .guard import FROZEN_RECIPE_PATH, HASH_FIELD, RecipeAccess
 from .models import FAMILIES
 from .search import validate_score_table
 
@@ -54,6 +62,9 @@ _PREDICTION_COLUMNS = ("municipality_code", "t", "target_week", "familia", "cand
 _ROW_COLUMNS = ("municipality_code", "t", "target_week", "zona_t", "y")
 _KEYS = ["municipality_code", "t"]
 _CANONICAL_ORDER = ["municipality_code", "familia", "orden", "anio"]
+_COMMIT = re.compile(r"[0-9a-f]{40}")
+_MD5 = re.compile(r"[0-9a-f]{32}")
+CONFIGURATION_SECTIONS = ("canal", "features", "validacion", "lineas_base", "metricas")
 CURVE_COLUMNS = ("evaluable_onsets", "warned_onsets", "detection", "false_alarms", "municipality_years",
                  "false_alarms_per_municipality_year", "judgeable_alerts", "continuity_alerts")
 
@@ -297,3 +308,106 @@ def select(table: pd.DataFrame, predictions: pd.DataFrame, rows: pd.DataFrame, o
     tau = choose_tau(curve, channel_false_alarms=channel["false_alarms"])
     return Selection(familias=families, elecciones=choices, comparaciones=comparisons, predicciones=chosen,
                      curva=curve, canal=channel, tau=tau)
+
+
+# --------------------------------------------------------------------------- recipe draft (especificación §8)
+def _check_provenance(provenance: Mapping, config) -> dict:
+    require(isinstance(provenance, Mapping), "provenance must be a mapping.")
+    checked = dict(provenance)
+    for key in ("commit_codigo", "commit_contrato"):
+        value = checked.get(key)
+        require(isinstance(value, str) and _COMMIT.fullmatch(value) is not None,
+                f"provenance.{key} must be a 40-character lowercase hexadecimal commit; got {value!r}.")
+    require(checked.get("version_dvc_canal") == config.datos.version_dvc_canal,
+            f"provenance.version_dvc_canal {checked.get('version_dvc_canal')!r} differs from the configuration "
+            f"{config.datos.version_dvc_canal!r}.")
+    require(isinstance(checked.get("busqueda_id"), str) and checked["busqueda_id"].strip() != "",
+            "provenance.busqueda_id must be a non-empty text.")
+    digests = checked.get("insumos_md5")
+    require(isinstance(digests, Mapping) and len(digests) > 0
+            and all(isinstance(value, str) and _MD5.fullmatch(value) for value in digests.values()),
+            "provenance.insumos_md5 must map each input file to its md5.")
+    checked["insumos_md5"] = {str(name): str(value) for name, value in digests.items()}
+    return checked
+
+
+def _differences(comparisons: pd.DataFrame, code: str, rule: str) -> dict:
+    rows = comparisons[(comparisons["municipality_code"] == code) & (comparisons["regla"] == rule)]
+    require(len(rows) > 0, f"No {rule} comparison for municipality {code}.")
+    rows = rows.sort_values("anio")
+    return {str(int(year)): float(value) for year, value in zip(rows["anio"], rows["diferencia"])}
+
+
+def build_recipe(selection: Selection, *, config, provenance: Mapping) -> dict:
+    """Recipe draft with the fields of especificación §8, without aprobacion and hash_sha256."""
+    require(isinstance(selection, Selection), "selection must be the result of select().")
+    families, comparisons = selection.familias, selection.comparaciones
+    municipalities = {}
+    for _, row in selection.elecciones.sort_values("municipality_code").iterrows():
+        code = str(row["municipality_code"])
+        municipalities[code] = {
+            "familia": str(row["familia"]), "candidato": str(row["candidato"]), "orden": int(row["orden"]),
+            "hiperparametros": json.loads(row["parametros"]),
+            "excepcion_familia": {"aplica": bool(row["excepcion_familia"]),
+                                  "diferencias_logloss": _differences(comparisons, code, FAMILY_RULE)},
+            "excepcion_hiperparametros": {
+                "aplica": bool(row["excepcion_hiperparametros"]),
+                "nominal": bool(row["excepcion_hiperparametros_nominal"]),
+                "diferencias_logloss": _differences(comparisons, code, HYPERPARAMETER_RULE)},
+        }
+    tau = float(selection.tau.tau)
+    require(tau in config.decision.tau_grid, f"tau {tau} is not in the configured grid.")
+    points = selection.curva[selection.curva["tau"] == tau]
+    require(len(points) == 1, f"The curve must have exactly one row for tau = {tau}.")
+    point, channel = points.iloc[0], selection.canal
+    decision = {
+        "tau": tau, "k": config.decision.k, "W": config.decision.W,
+        "restriccion_cumplida": bool(selection.tau.restriccion_cumplida),
+        "inicios_evaluables": int(point["evaluable_onsets"]), "inicios_avisados": int(point["warned_onsets"]),
+        "falsas_alarmas_modelo": int(point["false_alarms"]), "falsas_alarmas_canal": int(channel["false_alarms"]),
+        "inicios_avisados_canal": int(channel["warned_onsets"]),
+        "municipio_anios": int(point["municipality_years"]),
+    }
+    return {
+        "familia_comun": str(families.familia_comun),
+        "comparacion_familias": {
+            "mejora_media_fuera_de_anio": {str(name): float(value) for name, value in families.mejora.items()},
+            "victorias": int(families.victorias), "casillas": int(families.casillas),
+            "umbral": None if families.umbral is None else int(families.umbral),
+            "reemplaza": bool(families.reemplaza)},
+        "municipios": municipalities,
+        "decision": decision,
+        "configuracion": {"h": config.horizonte.h,
+                          **{name: getattr(config, name).model_dump(mode="json") for name in CONFIGURATION_SECTIONS}},
+        "procedencia": _check_provenance(provenance, config),
+    }
+
+
+class _RecipeDumper(yaml.SafeDumper):
+    """Quotes texts made only of digits (DIVIPOLA codes, years), so that no YAML 1.1 or 1.2 reader turns 08001
+    into a number."""
+
+
+def _represent_text(dumper, value: str):
+    if value.isdigit():
+        return dumper.represent_scalar("tag:yaml.org,2002:str", value, style="'")
+    return dumper.represent_str(value)
+
+
+_RecipeDumper.add_representer(str, _represent_text)
+
+
+def write_recipe_draft(recipe: Mapping, path: str | Path) -> Path:
+    """Write the draft as YAML; never overwrites and never writes the frozen recipe path."""
+    path = Path(path)
+    require(isinstance(recipe, Mapping), "recipe must be a mapping.")
+    require("aprobacion" not in recipe and HASH_FIELD not in recipe,
+            "A draft has no aprobacion or hash_sha256: they are added when Jesús approves the recipe.")
+    require(path.resolve() != (ROOT / FROZEN_RECIPE_PATH).resolve(),
+            f"A draft is never written at {FROZEN_RECIPE_PATH}; that file is written only when the recipe is frozen.")
+    require(not path.exists(), f"{path} exists; a recipe draft is never overwritten.")
+    text = yaml.dump(dict(recipe), Dumper=_RecipeDumper, sort_keys=False, allow_unicode=True)
+    require(yaml.safe_load(text) == dict(recipe), "The recipe does not round-trip through YAML.")
+    with path.open("x", encoding="utf-8") as handle:
+        handle.write(text)
+    return path

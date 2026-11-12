@@ -31,6 +31,18 @@ Flow:
       -> write_recipe_draft: YAML, never overwriting and never at configs/receta_congelada.yaml. Approval and
          hash are added in a separate unit, with Jesús's approval; only then the test period opens.
 
+Step 0 (contrato §6.6, D7.2), before everything above, with one single table per feature set:
+    choose_feature_set(tables, familia, alpha), per family: "sin_clima" (dataset.DEFAULT_FEATURE_SET) unless
+      "completo" has a STRICTLY greater mean out-of-year improvement and wins at least win_threshold cells (17 of
+      24) by log-loss, with the common out-of-year configuration of each set (feature_set_cells); no exception per
+      municipality
+    select_with_feature_sets(tables, predictions, rows, observed, ...): the table and predictions of each family
+      come from its chosen set (or from `forced_set`), then `select` runs steps 1-4 and tau unchanged; the ablation
+      of each municipality is its final family with the other set, configured with hyperparameter_choices
+    build_recipe_with_feature_sets: the F6 draft plus conjunto_variables, the set of each municipality, ablacion
+      and the provenance of both searches.
+With the full set forced the result is the F6 selection on the full-set table, exactly.
+
 Wins are counted on log-loss, the deciding metric in development (contrato §8.2), never on mejora_b2:
 1 − a/c can tie in floating point while a < b. The table is put in a canonical order first, so the result
 does not depend on the order of its rows.
@@ -51,6 +63,7 @@ from src.epidemiology.validation import require
 
 from .comparison import _choose, count_wins, out_of_year_scores, win_threshold
 from .config import ROOT
+from .dataset import DEFAULT_FEATURE_SET, FEATURE_SETS
 from .events import channel_positive, evaluate_period, model_positive
 from .guard import FROZEN_RECIPE_PATH, HASH_FIELD, RecipeAccess
 from .models import FAMILIES
@@ -369,6 +382,11 @@ def _differences(comparisons: pd.DataFrame, code: str, rule: str) -> dict:
 
 def build_recipe(selection: Selection, *, config, provenance: Mapping) -> dict:
     """Recipe draft with the fields of especificación §8, without aprobacion and hash_sha256."""
+    return {**_recipe_body(selection, config=config), "procedencia": _check_provenance(provenance, config)}
+
+
+def _recipe_body(selection: Selection, *, config) -> dict:
+    """Every field of the F6 draft except procedencia, in the order of especificación §8."""
     require(isinstance(selection, Selection), "selection must be the result of select().")
     families, comparisons = selection.familias, selection.comparaciones
     municipalities = {}
@@ -408,7 +426,6 @@ def build_recipe(selection: Selection, *, config, provenance: Mapping) -> dict:
         "decision": decision,
         "configuracion": {"h": config.horizonte.h,
                           **{name: getattr(config, name).model_dump(mode="json") for name in CONFIGURATION_SECTIONS}},
-        "procedencia": _check_provenance(provenance, config),
     }
 
 
@@ -440,3 +457,170 @@ def write_recipe_draft(recipe: Mapping, path: str | Path) -> Path:
     with path.open("x", encoding="utf-8") as handle:
         handle.write(text)
     return path
+
+
+# =========================================================================== step 0: feature set (D7.2)
+SET_CELL_COLUMNS = ["familia", "municipality_code", "anio", "candidato_completo", "candidato_sin_clima",
+                    "logloss_completo", "logloss_sin_clima", "mejora_completo", "mejora_sin_clima", "gana_completo"]
+ABLATION_COLUMNS = ["municipality_code", "familia", "conjunto_variables", "candidato", "orden", "parametros",
+                    "excepcion_hiperparametros", "excepcion_hiperparametros_nominal"]
+_FULL_SET = "completo"
+_OTHER_SET = {"completo": "sin_clima", "sin_clima": "completo"}
+
+
+@dataclass(frozen=True)
+class FeatureSetChoice:
+    """Step 0 of one family: chosen set, mean out-of-year improvement of each set and the win count."""
+
+    familia: str
+    conjunto: str
+    mejora: dict
+    victorias: int
+    casillas: int
+    umbral: int | None
+    reemplaza: bool
+
+
+@dataclass(frozen=True)
+class SetSelection:
+    """The whole selection of D7.2: step 0 per family, F6 steps on the chosen sets and the ablation."""
+
+    conjuntos: dict                       # family -> FeatureSetChoice
+    celdas_conjuntos: pd.DataFrame        # feature_set_cells of both families
+    seleccion: Selection                  # steps 1-4 and tau on the chosen sets
+    conjuntos_municipio: dict             # municipality -> feature set of its model
+    ablacion: pd.DataFrame                # ABLATION_COLUMNS, one row per municipality
+    comparaciones_ablacion: pd.DataFrame  # hyperparameter comparisons of the ablation
+
+
+def _check_sets(frames, name: str) -> None:
+    require(isinstance(frames, Mapping) and set(frames) == set(FEATURE_SETS),
+            f"{name} must map exactly the feature sets {sorted(FEATURE_SETS)}; got "
+            f"{sorted(frames) if isinstance(frames, Mapping) else type(frames).__name__}.")
+
+
+def feature_set_cells(tables: Mapping[str, pd.DataFrame], *, familia: str) -> pd.DataFrame:
+    """Per (municipality, year): common out-of-year configuration of `familia` in each set and its log-loss."""
+    _check_sets(tables, "tables")
+    require(familia in FAMILIES, f"Unknown family {familia!r}; expected one of {list(FAMILIES)}.")
+    scores = {name: out_of_year_scores(_canonical(tables[name], required=(familia,)), familia=familia)
+              for name in FEATURE_SETS}
+    keys = ["municipality_code", "anio"]
+    full, simple = scores["completo"], scores["sin_clima"]
+    require(full[keys].equals(simple[keys]), f"Both feature sets must have the same cells for {familia}.")
+    cells = pd.DataFrame({
+        "familia": familia, "municipality_code": full["municipality_code"], "anio": full["anio"],
+        "candidato_completo": full["candidato_comun"], "candidato_sin_clima": simple["candidato_comun"],
+        "logloss_completo": full["logloss_comun"], "logloss_sin_clima": simple["logloss_comun"],
+        "mejora_completo": full["mejora_comun"], "mejora_sin_clima": simple["mejora_comun"]})
+    cells["gana_completo"] = cells["logloss_completo"] < cells["logloss_sin_clima"]
+    return cells[SET_CELL_COLUMNS]
+
+
+def choose_feature_set(tables: Mapping[str, pd.DataFrame], *, familia: str, alpha: float) -> FeatureSetChoice:
+    """Step 0 for one family (contrato §6.6): the full set replaces the default only with a strictly greater mean
+    out-of-year improvement and at least win_threshold wins by log-loss."""
+    cells = feature_set_cells(tables, familia=familia)
+    means = {name: float(cells.groupby("municipality_code")[f"mejora_{name}"].mean().mean()) for name in FEATURE_SETS}
+    wins = count_wins(cells["logloss_completo"].to_numpy(), cells["logloss_sin_clima"].to_numpy())
+    threshold = win_threshold(len(cells), alpha=alpha)
+    replaces = bool(means[_FULL_SET] > means[DEFAULT_FEATURE_SET] and threshold is not None and wins >= threshold)
+    return FeatureSetChoice(familia=familia, conjunto=_FULL_SET if replaces else DEFAULT_FEATURE_SET, mejora=means,
+                            victorias=wins, casillas=len(cells), umbral=threshold, reemplaza=replaces)
+
+
+def _per_family(frames: Mapping[str, pd.DataFrame], chosen: Mapping[str, str]) -> pd.DataFrame:
+    """Rows of each family taken from its chosen set."""
+    parts = []
+    for family in FAMILIES:
+        frame = frames[chosen[family]]
+        _check_columns(frame, ("familia",), f"{chosen[family]} frame")
+        parts.append(frame[frame["familia"] == family])
+    return pd.concat(parts, ignore_index=True)
+
+
+def select_with_feature_sets(tables: Mapping[str, pd.DataFrame], predictions: Mapping[str, pd.DataFrame],
+                             rows: pd.DataFrame, observed: pd.DataFrame, *, config, access: RecipeAccess,
+                             forced_set: str | None = None) -> SetSelection:
+    """The selection of D7.2 (contrato §6.6): step 0 per family, then `select` on the chosen sets, then the ablation.
+    `forced_set` skips the choice (the step-0 comparison is still reported); "completo" reproduces F6."""
+    _check_sets(tables, "tables")
+    _check_sets(predictions, "predictions")
+    require(forced_set is None or forced_set in FEATURE_SETS,
+            f"forced_set must be None or one of {sorted(FEATURE_SETS)}; got {forced_set!r}.")
+    alpha = config.comparacion.alfa
+    choices = {family: choose_feature_set(tables, familia=family, alpha=alpha) for family in FAMILIES}
+    cells = pd.concat([feature_set_cells(tables, familia=family) for family in FAMILIES], ignore_index=True)
+    chosen = {family: forced_set or choices[family].conjunto for family in FAMILIES}
+    if forced_set == _FULL_SET:   # exactly the F6 inputs, not a re-assembled copy of them
+        table, chosen_predictions = tables[_FULL_SET], predictions[_FULL_SET]
+    else:
+        table, chosen_predictions = _per_family(tables, chosen), _per_family(predictions, chosen)
+    result = select(table, chosen_predictions, rows, observed, config=config, access=access)
+
+    per_municipality, ablation, comparisons, cache = {}, [], [], {}
+    for row in result.elecciones.sort_values("municipality_code").itertuples():
+        family, code = row.familia, row.municipality_code
+        per_municipality[code] = chosen[family]
+        other = _OTHER_SET[chosen[family]]
+        if (family, other) not in cache:
+            cache[(family, other)] = hyperparameter_choices(tables[other], familia=family)
+        own, own_comparisons = cache[(family, other)]
+        pick = own[own["municipality_code"] == code]
+        require(len(pick) == 1, f"No ablation configuration for {code} ({family}, {other}).")
+        pick = pick.iloc[0]
+        ablation.append({"municipality_code": code, "familia": family, "conjunto_variables": other,
+                         "candidato": pick["candidato"], "orden": int(pick["orden"]), "parametros": pick["parametros"],
+                         "excepcion_hiperparametros": bool(pick["excepcion_hiperparametros"]),
+                         "excepcion_hiperparametros_nominal": bool(pick["excepcion_hiperparametros_nominal"])})
+        comparisons.append(own_comparisons[own_comparisons["municipality_code"] == code])
+    return SetSelection(conjuntos=choices, celdas_conjuntos=cells, seleccion=result,
+                        conjuntos_municipio=per_municipality, ablacion=pd.DataFrame(ablation, columns=ABLATION_COLUMNS),
+                        comparaciones_ablacion=pd.concat(comparisons, ignore_index=True))
+
+
+def _check_set_provenance(provenance: Mapping, config) -> dict:
+    """Common commits and channel version, plus busqueda_id and input md5 of the search of each feature set."""
+    require(isinstance(provenance, Mapping), "provenance must be a mapping.")
+    searches = provenance.get("busquedas")
+    _check_sets(searches, "provenance.busquedas")
+    common = {key: value for key, value in provenance.items() if key != "busquedas"}
+    checked = {name: _check_provenance({**common, **dict(searches[name])}, config) for name in sorted(FEATURE_SETS)}
+    first = checked[_FULL_SET]
+    return {"commit_codigo": first["commit_codigo"], "commit_contrato": first["commit_contrato"],
+            "version_dvc_canal": first["version_dvc_canal"],
+            "busquedas": {name: {"busqueda_id": item["busqueda_id"], "insumos_md5": item["insumos_md5"]}
+                          for name, item in checked.items()}}
+
+
+def build_recipe_with_feature_sets(set_selection: SetSelection, *, config, provenance: Mapping) -> dict:
+    """Recipe draft of D7.2: the F6 fields plus conjunto_variables (per family), the feature set of each
+    municipality and ablacion (per municipality); without aprobacion and hash_sha256."""
+    require(isinstance(set_selection, SetSelection), "set_selection must be the result of select_with_feature_sets().")
+    body = _recipe_body(set_selection.seleccion, config=config)
+    sets = {}
+    for family in FAMILIES:
+        choice = set_selection.conjuntos[family]
+        sets[family] = {"conjunto": choice.conjunto, "features": list(FEATURE_SETS[choice.conjunto]),
+                        "mejora_media_fuera_de_anio": {str(name): float(value) for name, value in choice.mejora.items()},
+                        "victorias": int(choice.victorias), "casillas": int(choice.casillas),
+                        "umbral": None if choice.umbral is None else int(choice.umbral),
+                        "reemplaza": bool(choice.reemplaza)}
+    municipalities = {}
+    for code, entry in body["municipios"].items():
+        municipalities[code] = {**entry, "conjunto_variables": set_selection.conjuntos_municipio[code]}
+    comparisons = set_selection.comparaciones_ablacion
+    ablation = {}
+    for row in set_selection.ablacion.sort_values("municipality_code").itertuples():
+        code = str(row.municipality_code)
+        ablation[code] = {
+            "familia": str(row.familia), "conjunto_variables": str(row.conjunto_variables),
+            "features": list(FEATURE_SETS[row.conjunto_variables]), "candidato": str(row.candidato),
+            "orden": int(row.orden), "hiperparametros": json.loads(row.parametros),
+            "excepcion_hiperparametros": {"aplica": bool(row.excepcion_hiperparametros),
+                                          "nominal": bool(row.excepcion_hiperparametros_nominal),
+                                          "diferencias_logloss": _differences(comparisons, code, HYPERPARAMETER_RULE)}}
+    return {"familia_comun": body["familia_comun"], "conjunto_variables": sets,
+            "comparacion_familias": body["comparacion_familias"], "municipios": municipalities,
+            "ablacion": ablation, "decision": body["decision"], "configuracion": body["configuracion"],
+            "procedencia": _check_set_provenance(provenance, config)}

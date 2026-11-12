@@ -109,3 +109,53 @@ def test_selection_runs_are_compared_field_by_field():
                                                     TauChoice(0.1, True)))
     assert not run_selection._same(first, Selection(families, frame, frame, frame, frame, {"x": 2},
                                                     TauChoice(0.1, True)))
+
+
+# --------------------------------------------------------------------------- D7.2 mode
+def _manifest_folder(tmp_path: Path, name: str, **content) -> Path:
+    from src.forecasting.dataset import FEATURE_SETS
+
+    base = {"anios": [2019, 2020, 2021, 2022], "prueba": [2023, 2025], "primer_anio_entrenamiento": 2012,
+            "municipios": ["08001"], "configuracion": {"h": 8}, "candidatos": [{"candidato": "r"}],
+            "ejemplos_sha256": "e" * 64}
+    if name == "sin_clima":
+        base["variante"] = {"nombre": "sin_clima", "features": list(FEATURE_SETS["sin_clima"])}
+    base.update(content)
+    folder = tmp_path / name
+    folder.mkdir()
+    (folder / run_selection.MANIFEST_FILENAME).write_text(json.dumps({"busqueda_id": name, "contenido": base}),
+                                                          encoding="utf-8")
+    return folder
+
+
+def test_paired_searches_are_accepted(tmp_path):
+    run_selection.check_paired_searches(_manifest_folder(tmp_path, "completo"), _manifest_folder(tmp_path, "sin_clima"))
+
+
+@pytest.mark.parametrize("change", [{"ejemplos_sha256": "f" * 64}, {"candidatos": [{"candidato": "s"}]},
+                                    {"municipios": ["08001", "76001"]}, {"variante": {"nombre": "otra"}}])
+def test_unpaired_searches_are_refused(tmp_path, change):
+    with pytest.raises(EpidemiologyValidationError):
+        run_selection.check_paired_searches(_manifest_folder(tmp_path, "completo"),
+                                            _manifest_folder(tmp_path, "sin_clima", **change))
+
+
+def test_the_full_set_search_must_have_no_variant(tmp_path):
+    full = _manifest_folder(tmp_path, "completo", variante={"nombre": "sin_clima"})
+    with pytest.raises(EpidemiologyValidationError):
+        run_selection.check_paired_searches(full, _manifest_folder(tmp_path, "sin_clima"))
+
+
+def test_forced_set_needs_the_sin_clima_search(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(run_selection, "_dirty_paths", lambda: [])
+    assert run_selection.main(["--salida", str(tmp_path / "x"), "--conjunto-forzado", "completo"]) == 1
+    assert "--busqueda-sin-clima" in capsys.readouterr().err
+
+
+def test_dvc_status_of_a_search_without_descriptors(tmp_path):
+    folder = _search_folder(tmp_path)
+    provenance = run_selection.search_provenance(folder, config=load_config())
+    assert run_selection._dvc_status(provenance, folder).startswith("pendiente")
+    for name, digest in provenance["insumos_md5"].items():
+        _descriptor(folder, name, digest)
+    assert run_selection._dvc_status(provenance, folder).startswith("verificado")

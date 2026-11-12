@@ -253,6 +253,20 @@ Cifras de contrato §2.2, §5.4, §6.1, §7.4, §8.2 y `registro_decisiones.md` 
 - B1 y B2 se estiman solo con el entrenamiento del ensayo; con datos sintéticos, el suavizado de Laplace da (positivos + 1)/(casos + 2).
 - **Barrera:** pedir una métrica sobre filas de 2023–2025 sin una receta válida lanza el error de `guard.py`; con una receta de prueba sintética válida, no.
 
+**Lo que se congeló en F3 [H].** Archivos `tests/acceptance/test_f3_splits.py`, `test_f3_baselines.py` y `test_f3_guard.py` (commit 9a8f607), con su regla `Edit(...)` de denegación (e7cae5c). Procedencia de los literales: `docs/forecasting/verificacion/tamanos_d71.py` y `caso_f3_hueco.py` (31997c5). Además de las cifras anteriores:
+- **Ensayos** (`splits.yearly_trials`): uno por municipio y año, con `t0`, `train` y `evaluate` como etiquetas de índice de las filas de `build_examples`. Ejemplo de 2019: t0 = 2018-11-12; la última fila de entrenamiento es la emitida el 2018-09-17 (objetivo 2018-11-12); las emitidas del 2018-09-24 al 2018-11-05 no entran en el entrenamiento de 2019 y sí en el de 2020. t0 y las filas de entrenamiento de cada ensayo y municipio se reportaron sin congelarse (de 340 filas en 2019 a 653 en 2025; 7 menos que con el corte anterior en cada ensayo y municipio).
+- **Líneas base:** B2 por (municipio, `zona_t`) y B1 por (municipio, ordinal de t + h), con Laplace y solo con el entrenamiento del ensayo. Un grupo sin casos da 0,5; con los datos reales no ocurre. Caso literal: Villavicencio `50001`, ensayo 2019, t = 2018-12-03 (zona epidemia, objetivo 2019-01-28 con ordinal 4), B2 = 21/43 y B1 = 5/32.
+- **Bordes de B1 [D, U3.1]:** el ordinal 53 cuenta como 52, en las filas de entrenamiento y en la evaluada, y la ventana es circular sobre 52 semanas, {((o − 1 + d) mod 52) + 1 : d = −k..k}. La semiventana k = 2 está en `lineas_base.b1_semiventana` (1 ≤ k ≤ 25).
+- **Barrera y receta mínima:** `guard.check_test_access(target_weeks, access)` es la única verificación y relee la receta en cada llamada. Una receta es válida si tiene `procedencia` (`commit_codigo` y `commit_contrato` de 40 caracteres hexadecimales, `version_dvc_canal` igual a la configuración), `aprobacion` (nombre no vacío y fecha) y `hash_sha256`. El hash es el SHA-256 de `json.dumps(receta sin hash_sha256, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)` en UTF-8, con fechas ISO: reordenar el YAML o entrecomillar la fecha no lo cambia. Se rechazan las claves YAML duplicadas. Las pruebas usan solo recetas sintéticas en `tmp_path`; `configs/receta_congelada.yaml` no existe hasta F6.
+- **Quién llama a la barrera:** `metrics.log_loss`, `brier` y `average_precision`, y `baselines.b1_predict` y `b2_predict`, con las semanas objetivo de las filas que puntúan, antes de validar nada. `splits` no la llama, porque no puntúa. Las filas de entrenamiento no pasan por ella: el ensayo de 2024 entrena con objetivos de 2023.
+- **Nota sobre `test_f3_guard.py`:** su función auxiliar `_score` importa `baselines`, `guard` y `metrics` en la misma línea, así que sus casos solo pasan cuando existen los tres módulos.
+
+**Convenciones de F3 [D].**
+- **Recorte del log-loss:** ε = 1e-15 (`metricas.recorte_log_loss`), el mismo para todos los sistemas; es una protección numérica. Con B1 y B2 nunca actúa. Un error extremo cuesta como máximo 34,54 en una fila; los dos topes difieren en 8·10⁻⁴ porque 1 − ε se redondea en float64.
+- **AP sin positivas:** NaN, porque la métrica no está definida (scikit-learn devolvería 0,0).
+- **Mejora frente a una referencia:** `improvement(score, reference)` = 1 − score/reference, para la mejora de log-loss y para el BSS; falla si la referencia es ≤ 0.
+- **Comprobaciones de las líneas base:** fallan si un municipio evaluado no tiene entrenamiento o si alguna etiqueta de entrenamiento es posterior a su t0 (D7.1). `yearly_trials` falla si un municipio no tiene filas en el año evaluado.
+
 **F4**
 - Pruebas sintéticas de contrato §10, punto 13:
   - una emisión positiva aislada no produce alerta;
@@ -314,6 +328,8 @@ Contrato §6.3 exige fijarlo antes de correr el desarrollo. Esta propuesta inici
 | `horizonte` | h = 8; sobrescribible con `FORECAST_HORIZON` |
 | `features` | w = 4; bloques m1–m3; ventana de 12 semanas |
 | `validacion` | Años de desarrollo [2019, 2022] y de prueba [2023, 2025]; primer año de entrenamiento 2012 |
+| `lineas_base` | Semiventana de B1, k = 2 (contrato §4.1; F3) |
+| `metricas` | Recorte del log-loss, ε = 1e-15 (contrato §10.16; F3) |
 | `decision` | k = 2; W = 12; rejilla de τ (0,05 a 0,95, paso 0,05) |
 | `busqueda` | Vacía hasta el pre-registro (§7); después, espacios, presupuesto y semillas |
 | `seguimiento` | Nombres de experimentos y modo (servidor o respaldo local) |

@@ -20,4 +20,4 @@ Formato de cada entrada:
 - Alternativas consideradas: mantener el corte y declararlo como limitación; reentrenar en cada emisión (×52 entrenamientos); ensayos por año de emisión (rompe la barrera de prueba y las cifras verificadas).
 - Decisión de Jesús: en el ensayo Y, t0 es la emisión más temprana entre las filas evaluadas de Y; el entrenamiento usa solo las filas con t + h ≤ t0, desde 2012. Se aplica a modelos, B1, B2, ablación, desarrollo y prueba. Las filas evaluadas no cambian.
 - Impacto en resultados o en el artículo: 7 filas menos de entrenamiento por ensayo y municipio; las filas evaluadas no cambian. Se declara en el artículo que cada ensayo simula un reentrenamiento anual el día de su primera emisión.
-- Commit: (pendiente)
+- Commit: bf477f5 (enmienda); implementada en f0589b3 (`splits.yearly_trials`) y en las líneas base de 0fe3eca; pruebas congeladas en 9a8f607.

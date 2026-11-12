@@ -157,7 +157,8 @@ def _spans(ax, alerts: pd.DataFrame, code: str, y0: float, y1: float, color: str
 
 
 def series_figure(code: str, systems: dict, observed: pd.DataFrame, events: dict, tau: float):
-    fig, (top, bottom) = plt.subplots(2, 1, figsize=(12, 6.2), sharex=True, gridspec_kw={"height_ratios": [1.1, 1]})
+    fig, (top, band, bottom) = plt.subplots(3, 1, figsize=(12, 6.8), sharex=True,
+                                            gridspec_kw={"height_ratios": [1.1, 0.16, 1], "hspace": 0.08})
     weeks = observed[(observed["municipality_code"] == code)]
     first = min(systems[p].rows["target_week"].min() for p in PERIODS)
     last = max(systems[p].rows["target_week"].max() for p in PERIODS)
@@ -176,29 +177,34 @@ def series_figure(code: str, systems: dict, observed: pd.DataFrame, events: dict
         bottom.plot(rows.loc[mask, "t"], p["B2"][mask], color=MUTED, linewidth=1.0, linestyle=":",
                     label="B2 (canal como probabilidad)" if periodo == PERIODS[0] else None)
         first_period = periodo == PERIODS[0]
-        _spans(bottom, events[periodo]["modelo"].alerts, code, 0.93, 1.0, BLUE,
-               "Alerta del modelo (de t_c al fin)" if first_period else None)
-        _spans(bottom, events[periodo]["canal"].alerts, code, 0.85, 0.92, ORANGE,
-               "Alerta del canal (de t_c al fin)" if first_period else None)
+        _spans(band, events[periodo]["modelo"].alerts, code, 0.54, 0.96, BLUE, None)
+        _spans(band, events[periodo]["canal"].alerts, code, 0.04, 0.46, ORANGE, None)
         onsets = events[periodo]["modelo"].onsets
         onsets = onsets[(onsets["municipality_code"] == code) & (onsets["kind"] == "inicio") & onsets["evaluable"]]
         for i, week in enumerate(onsets["week"]):
-            for ax in (top, bottom):
+            for ax in (top, band, bottom):
                 ax.axvline(week, color=INK, linewidth=0.9, linestyle="--",
                            label="Inicio de brote evaluable" if (ax is top and first_period and i == 0) else None)
     bottom.axhline(tau, color=INK, linewidth=0.9, label=f"τ = {tau:.2f}")
     bottom.set(ylim=(0, 1.0), ylabel="Probabilidad")
     test_start = systems["prueba"].rows.loc[systems["prueba"].rows["municipality_code"] == code, "t"].min()
-    for ax in (top, bottom):
+    for ax in (top, band, bottom):
         ax.axvline(test_start, color=MUTED, linewidth=1.2)
+    band.set(ylim=(0, 1), yticks=[0.25, 0.75])
+    band.set_yticklabels(["Alerta canal", "Alerta modelo"], fontsize=8)
+    band.grid(False)
+    band.tick_params(axis="y", length=0)
+    band.text(1.01, 0.5, "de t_c al fin\nde cada alerta", transform=band.transAxes, va="center", fontsize=8,
+              color=INK_2)
     top.text(test_start, 1.01, "  prueba →", transform=top.get_xaxis_transform(), color=INK_2, fontsize=8)
     top.text(test_start, 1.01, "← desarrollo (usado para elegir)  ", transform=top.get_xaxis_transform(),
              color=INK_2, fontsize=8, ha="right")
     top.legend(loc="upper left", fontsize=8, bbox_to_anchor=(1.01, 1.0))
     bottom.legend(loc="upper left", fontsize=8, bbox_to_anchor=(1.01, 1.0))
     top.set_title(f"{NAMES[code]} ({code}) — serie semanal {first.year}–{last.year}", pad=16)
-    fig.text(0.5, -0.01, SERIES_NOTE, ha="center", color=INK_2, fontsize=8)
-    fig.tight_layout()
+    fig.text(0.5, 0.01, SERIES_NOTE, ha="center", color=INK_2, fontsize=8)
+    # explicit margins (tight_layout does not handle the thin alert band); savefig's tight bbox keeps the legends
+    fig.subplots_adjust(left=0.07, right=0.84, top=0.91, bottom=0.08, hspace=0.08)
     return fig
 
 
@@ -228,8 +234,13 @@ def summary_figure(cells: pd.DataFrame, events: pd.DataFrame):
             kwargs = dict(linestyle="none", marker="o" if system == "modelo" else "D", markersize=6.5, color=color,
                           markerfacecolor=color if filled else SURFACE, markeredgewidth=1.5,
                           label=f"{'Modelo' if system == 'modelo' else 'Canal'}, {periodo}")
-            axes[1].plot(warned, y + offsets[periodo] + shift, **kwargs)
+            some = np.array(total) > 0   # no point where the period has no evaluable onset
+            axes[1].plot(np.array(warned)[some], (y + offsets[periodo] + shift)[some], **kwargs)
             axes[2].plot(rate, y + offsets[periodo] + shift, **kwargs)
+            if system == "modelo":
+                for yy in (y + offsets[periodo])[~some]:
+                    axes[1].text(-0.2, yy, f"sin inicios ({periodo})", va="center", ha="left", fontsize=7,
+                                 color=INK_2)
     axes[0].axvline(0, color=AXIS, linewidth=1)
     evaluable = {periodo: _period(events, periodo).query("nivel == 'municipio' and sistema == 'modelo'")
                  .set_index("grupo")["inicios_evaluables"] for periodo in PERIODS}
@@ -240,11 +251,11 @@ def summary_figure(cells: pd.DataFrame, events: pd.DataFrame):
     axes[1].set(xlabel="Inicios avisados", title="Detección", xlim=(-0.3, 3.3), xticks=[0, 1, 2, 3])
     axes[2].set(xlabel="Falsas alarmas por municipio-año", title="Costo")
     axes[0].invert_yaxis()
-    axes[0].legend(loc="lower right", fontsize=7)
-    axes[2].legend(loc="lower right", fontsize=7)
     fig.suptitle("Resumen por municipio: hueco = desarrollo (usado para elegir), lleno = prueba", color=INK,
                  fontsize=11)
     fig.tight_layout()
+    handles, names = axes[2].get_legend_handles_labels()   # the four (system, period) markers, outside the data
+    fig.legend(handles, names, loc="upper center", ncol=4, fontsize=8, bbox_to_anchor=(0.5, 0.0))
     return fig
 
 

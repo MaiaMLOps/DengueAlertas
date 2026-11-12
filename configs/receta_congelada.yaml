@@ -1,0 +1,437 @@
+familia_comun: logistica
+conjunto_variables:
+  logistica:
+    conjunto: sin_clima
+    features:
+    - zona_t
+    - posicion_4s
+    - crecimiento_4s
+    - cambio_umbral
+    - sem_sin
+    - sem_cos
+    mejora_media_fuera_de_anio:
+      completo: -0.023968181424018162
+      sin_clima: 0.21090958293979553
+    victorias: 9
+    casillas: 24
+    umbral: 17
+    reemplaza: false
+  lightgbm:
+    conjunto: sin_clima
+    features:
+    - zona_t
+    - posicion_4s
+    - crecimiento_4s
+    - cambio_umbral
+    - sem_sin
+    - sem_cos
+    mejora_media_fuera_de_anio:
+      completo: -0.028082585531237696
+      sin_clima: 0.08395871267355431
+    victorias: 11
+    casillas: 24
+    umbral: 17
+    reemplaza: false
+comparacion_familias:
+  mejora_media_fuera_de_anio:
+    logistica: 0.21090958293979553
+    lightgbm: 0.08395871267355431
+  victorias: 6
+  casillas: 24
+  umbral: 17
+  reemplaza: false
+municipios:
+  '08001':
+    familia: logistica
+    candidato: logistica_05
+    orden: 5
+    hiperparametros:
+      C: 3.0
+      max_iter: 5000
+    excepcion_familia:
+      aplica: false
+      diferencias_logloss:
+        '2019': -0.03475693799528223
+        '2020': 0.07609380844447866
+        '2021': 0.14312066465549833
+        '2022': 0.3003277227340928
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': -0.002591302709746765
+        '2020': 0.0
+        '2021': -0.007918849170413689
+        '2022': 0.0
+    conjunto_variables: sin_clima
+  '08758':
+    familia: logistica
+    candidato: logistica_05
+    orden: 5
+    hiperparametros:
+      C: 3.0
+      max_iter: 5000
+    excepcion_familia:
+      aplica: false
+      diferencias_logloss:
+        '2019': 0.31069631800471575
+        '2020': -0.1620584398737083
+        '2021': 0.1539055402045536
+        '2022': 0.06665209472080791
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': -0.05047320882326578
+        '2020': -0.040720823649861015
+        '2021': 0.12721426537960412
+        '2022': 0.15758712950403508
+    conjunto_variables: sin_clima
+  '41001':
+    familia: logistica
+    candidato: logistica_05
+    orden: 5
+    hiperparametros:
+      C: 3.0
+      max_iter: 5000
+    excepcion_familia:
+      aplica: false
+      diferencias_logloss:
+        '2019': 0.42341601966120423
+        '2020': -0.08514353418008945
+        '2021': 0.0022665269103246503
+        '2022': -0.015048525653770947
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': -0.015544988828018469
+        '2020': 0.0
+        '2021': 0.008066129601863686
+        '2022': -0.001450826275044309
+    conjunto_variables: sin_clima
+  '50001':
+    familia: logistica
+    candidato: logistica_05
+    orden: 5
+    hiperparametros:
+      C: 3.0
+      max_iter: 5000
+    excepcion_familia:
+      aplica: false
+      diferencias_logloss:
+        '2019': 0.2777978039525478
+        '2020': 0.03716299996065481
+        '2021': 0.011843949419294474
+        '2022': 0.03176157420939413
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': 0.0
+        '2020': 0.0
+        '2021': 0.0
+        '2022': -0.0009450574695708536
+    conjunto_variables: sin_clima
+  '54001':
+    familia: logistica
+    candidato: logistica_05
+    orden: 5
+    hiperparametros:
+      C: 3.0
+      max_iter: 5000
+    excepcion_familia:
+      aplica: false
+      diferencias_logloss:
+        '2019': 0.29629177717798244
+        '2020': 0.010761833168552304
+        '2021': -0.007149709497931256
+        '2022': 0.07997957775615966
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': -0.014898970020153446
+        '2020': 0.0
+        '2021': 0.008742912532019198
+        '2022': 0.0009330316622665202
+    conjunto_variables: sin_clima
+  '76001':
+    familia: logistica
+    candidato: logistica_05
+    orden: 5
+    hiperparametros:
+      C: 3.0
+      max_iter: 5000
+    excepcion_familia:
+      aplica: false
+      diferencias_logloss:
+        '2019': 0.05548016873408834
+        '2020': -0.27810101339317744
+        '2021': 0.0014072627249369918
+        '2022': 0.0028205509103023246
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': 0.010615402633716936
+        '2020': 0.0
+        '2021': 0.0
+        '2022': 0.01519841318879022
+    conjunto_variables: sin_clima
+ablacion:
+  '08001':
+    familia: logistica
+    conjunto_variables: completo
+    features:
+    - zona_t
+    - posicion_4s
+    - crecimiento_4s
+    - cambio_umbral
+    - sem_sin
+    - sem_cos
+    - anom_temp_m1
+    - anom_temp_m2
+    - anom_temp_m3
+    - anom_prec_m1
+    - anom_prec_m2
+    - anom_prec_m3
+    - anom_hum_m1
+    - anom_hum_m2
+    - anom_hum_m3
+    candidato: logistica_03
+    orden: 3
+    hiperparametros:
+      C: 0.3
+      max_iter: 5000
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': 0.0
+        '2020': 0.0
+        '2021': 0.0
+        '2022': 0.125853277989869
+  '08758':
+    familia: logistica
+    conjunto_variables: completo
+    features:
+    - zona_t
+    - posicion_4s
+    - crecimiento_4s
+    - cambio_umbral
+    - sem_sin
+    - sem_cos
+    - anom_temp_m1
+    - anom_temp_m2
+    - anom_temp_m3
+    - anom_prec_m1
+    - anom_prec_m2
+    - anom_prec_m3
+    - anom_hum_m1
+    - anom_hum_m2
+    - anom_hum_m3
+    candidato: logistica_03
+    orden: 3
+    hiperparametros:
+      C: 0.3
+      max_iter: 5000
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': -0.03217809964901708
+        '2020': -0.05843507775707418
+        '2021': 0.10369098152730916
+        '2022': 0.0911131044802026
+  '41001':
+    familia: logistica
+    conjunto_variables: completo
+    features:
+    - zona_t
+    - posicion_4s
+    - crecimiento_4s
+    - cambio_umbral
+    - sem_sin
+    - sem_cos
+    - anom_temp_m1
+    - anom_temp_m2
+    - anom_temp_m3
+    - anom_prec_m1
+    - anom_prec_m2
+    - anom_prec_m3
+    - anom_hum_m1
+    - anom_hum_m2
+    - anom_hum_m3
+    candidato: logistica_03
+    orden: 3
+    hiperparametros:
+      C: 0.3
+      max_iter: 5000
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': 0.09539708877940634
+        '2020': 0.058959496201419104
+        '2021': 0.014558095775865976
+        '2022': 0.007312248896959861
+  '50001':
+    familia: logistica
+    conjunto_variables: completo
+    features:
+    - zona_t
+    - posicion_4s
+    - crecimiento_4s
+    - cambio_umbral
+    - sem_sin
+    - sem_cos
+    - anom_temp_m1
+    - anom_temp_m2
+    - anom_temp_m3
+    - anom_prec_m1
+    - anom_prec_m2
+    - anom_prec_m3
+    - anom_hum_m1
+    - anom_hum_m2
+    - anom_hum_m3
+    candidato: logistica_03
+    orden: 3
+    hiperparametros:
+      C: 0.3
+      max_iter: 5000
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': -0.13068850500244789
+        '2020': 0.007373765972132185
+        '2021': -0.006503547188188316
+        '2022': -0.029245232531041193
+  '54001':
+    familia: logistica
+    conjunto_variables: completo
+    features:
+    - zona_t
+    - posicion_4s
+    - crecimiento_4s
+    - cambio_umbral
+    - sem_sin
+    - sem_cos
+    - anom_temp_m1
+    - anom_temp_m2
+    - anom_temp_m3
+    - anom_prec_m1
+    - anom_prec_m2
+    - anom_prec_m3
+    - anom_hum_m1
+    - anom_hum_m2
+    - anom_hum_m3
+    candidato: logistica_03
+    orden: 3
+    hiperparametros:
+      C: 0.3
+      max_iter: 5000
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': 0.0
+        '2020': 0.010243950194032177
+        '2021': 0.0
+        '2022': 0.05875074910410977
+  '76001':
+    familia: logistica
+    conjunto_variables: completo
+    features:
+    - zona_t
+    - posicion_4s
+    - crecimiento_4s
+    - cambio_umbral
+    - sem_sin
+    - sem_cos
+    - anom_temp_m1
+    - anom_temp_m2
+    - anom_temp_m3
+    - anom_prec_m1
+    - anom_prec_m2
+    - anom_prec_m3
+    - anom_hum_m1
+    - anom_hum_m2
+    - anom_hum_m3
+    candidato: logistica_03
+    orden: 3
+    hiperparametros:
+      C: 0.3
+      max_iter: 5000
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': -0.024674471091176653
+        '2020': -0.09108118036975466
+        '2021': -0.02584855740212255
+        '2022': 0.027341960048596035
+decision:
+  tau: 0.05
+  k: 2
+  W: 12
+  restriccion_cumplida: true
+  inicios_evaluables: 10
+  inicios_avisados: 8
+  falsas_alarmas_modelo: 22
+  falsas_alarmas_canal: 48
+  inicios_avisados_canal: 10
+  municipio_anios: 24
+configuracion:
+  h: 8
+  canal:
+    n: 5
+    desplazamiento: 1
+    cuantil_t: 0.025
+  features:
+    w: 4
+    bloques:
+      m1:
+      - -3
+      - 0
+      m2:
+      - -7
+      - -4
+      m3:
+      - -11
+      - -8
+    ventana_semanas: 12
+  validacion:
+    desarrollo:
+    - 2019
+    - 2022
+    prueba:
+    - 2023
+    - 2025
+    primer_anio_entrenamiento: 2012
+  lineas_base:
+    b1_semiventana: 2
+  metricas:
+    recorte_log_loss: 1.0e-15
+procedencia:
+  commit_codigo: 1f45514686200b4eeef6ca5ca2e814700b674b72
+  commit_contrato: 847b3bad5af04fdd8848b93a5d2a26879e1fe780
+  version_dvc_canal: 99fd12311a261264019645d906631cfc
+  busquedas:
+    completo:
+      busqueda_id: 7f34b69832eea69407c6
+      insumos_md5:
+        tabla_unica_desarrollo.parquet: a38ab5ef1f925f46264a90bb13a4d80c
+        predicciones_desarrollo.parquet: ac5a28f3cdd47273a4cb694b8dc942ca
+        busqueda_manifest.json: 48b930bfb3eaa4ac334fb47c680a9889
+    sin_clima:
+      busqueda_id: ae6225180d37d025224b
+      insumos_md5:
+        tabla_unica_desarrollo.parquet: 8e18c06857c0b840d6c08dc8cef8320a
+        predicciones_desarrollo.parquet: 75d29d5396488b28f67908750cb7986e
+        busqueda_manifest.json: 8d1df8e3beb107e78864a2aa5bb14ba6
+aprobacion:
+  nombre: Jesús Sierra
+  fecha: 2026-11-12
+hash_sha256: de74d4abd33537433ffc9d1572c6cdd8620a2608fcc2b67ee4a1752aa865fda5

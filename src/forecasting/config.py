@@ -116,6 +116,74 @@ class DecisionSection(_Section):
         return grid
 
 
+class LogisticSearch(_Section):
+    # Grid of C, in pre-registered order (contrato §6.3); max_iter must be enough to converge (§7).
+    C: tuple[float, ...] = Field(min_length=1)
+    max_iter: int = Field(ge=1, strict=True)
+
+    @field_validator("C")
+    @classmethod
+    def _positive_increasing(cls, grid):
+        if any(value <= 0 for value in grid):
+            raise ValueError("busqueda.logistica.C values must be positive")
+        if any(later <= earlier for earlier, later in zip(grid, grid[1:])):
+            raise ValueError("busqueda.logistica.C must be strictly increasing without repetitions")
+        return grid
+
+
+class ParameterSpace(_Section):
+    # One sampled LightGBM hyperparameter: uniform integer, uniform real or log-uniform real on [a, b].
+    escala: Literal["entera", "real", "log"]
+    rango: tuple[float, float]
+    tope_por_profundidad: bool = False   # num_leaves <= 2^max_depth (pre-registration, especificación §7)
+
+    @model_validator(mode="after")
+    def _valid_range(self):
+        low, high = self.rango
+        if low > high:
+            raise ValueError(f"rango [{low}, {high}] is not ordered")
+        if self.escala == "log" and low <= 0:
+            raise ValueError("a log scale needs a positive range")
+        if self.escala == "entera" and not (float(low).is_integer() and float(high).is_integer()):
+            raise ValueError("an integer scale needs integer bounds")
+        return self
+
+
+class LightGBMSearch(_Section):
+    # Random search with a fixed budget and seeds (contrato §6.3); values come from the pre-registration.
+    n_candidatos: int = Field(ge=1, strict=True)
+    semilla_muestreo: int = Field(strict=True)
+    semilla_modelo: int = Field(strict=True)
+    fijos: dict[str, int | float] = Field(default_factory=dict)
+    espacio: dict[str, ParameterSpace] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _consistent(self):
+        overlap = sorted(set(self.fijos) & set(self.espacio))
+        if overlap:
+            raise ValueError(f"busqueda.lightgbm parameters both fixed and sampled: {overlap}")
+        if "random_state" in self.fijos or "random_state" in self.espacio:
+            raise ValueError("random_state is semilla_modelo; do not set it in fijos or espacio")
+        capped = [name for name, space in self.espacio.items() if space.tope_por_profundidad]
+        if capped and capped != ["num_leaves"]:
+            raise ValueError("tope_por_profundidad only applies to num_leaves")
+        if capped and "max_depth" not in self.espacio and "max_depth" not in self.fijos:
+            raise ValueError("tope_por_profundidad needs max_depth in espacio or fijos")
+        return self
+
+
+class SearchSection(_Section):
+    # Empty until the pre-registration (especificación §7 and §8).
+    logistica: LogisticSearch | None = None
+    lightgbm: LightGBMSearch | None = None
+
+    @model_validator(mode="after")
+    def _at_least_one_family(self):
+        if self.logistica is None and self.lightgbm is None:
+            raise ValueError("busqueda must define at least one family")
+        return self
+
+
 class ExperimentNames(_Section):
     desarrollo: str = Field(min_length=1)
     prueba: str = Field(min_length=1)
@@ -139,6 +207,7 @@ class ForecastConfig(_Section):
     metricas: MetricsSection
     decision: DecisionSection
     seguimiento: TrackingSection
+    busqueda: SearchSection | None = None
 
 
 def _horizon_override(raw: str, allowed: tuple[int, ...]) -> int:

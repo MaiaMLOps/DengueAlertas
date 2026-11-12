@@ -1,7 +1,9 @@
 """MLflow connection with Cloudflare Access headers (especificación §9).
 
 Server mode needs CF_ACCESS_CLIENT_ID and CF_ACCESS_CLIENT_SECRET and fails before any network
-call when either is missing. Local mode uses the file store under mlruns/. There is no automatic
+call when either is missing. Local mode uses the file store under mlruns/; MLflow 3.17 refuses it unless
+MLFLOW_ALLOW_FILE_STORE=true, which `allow_file_store` sets in this process only, and only for file: URIs
+(especificación §9). There is no automatic
 fallback from server to local: the mode is chosen explicitly in configs/forecasting.yaml.
 Credential values are never logged, printed or included in error messages.
 """
@@ -20,6 +22,7 @@ from src.forecasting.config import ROOT, ForecastConfig
 CLIENT_ID_VAR = "CF_ACCESS_CLIENT_ID"
 CLIENT_SECRET_VAR = "CF_ACCESS_CLIENT_SECRET"
 TRACKING_URI_VAR = "MLFLOW_TRACKING_URI"
+FILE_STORE_VAR = "MLFLOW_ALLOW_FILE_STORE"
 DEFAULT_DOTENV_PATH = ROOT / ".env"
 
 # Headers served by the registered provider; empty until server mode is configured.
@@ -65,6 +68,12 @@ def load_environment(dotenv_path: str | Path = DEFAULT_DOTENV_PATH) -> dict[str,
     return {**from_file, **os.environ}
 
 
+def allow_file_store(uri: str) -> None:
+    """Allow MLflow's file store in this process when, and only when, the tracking URI is a file: URI."""
+    if str(uri).startswith("file:"):
+        os.environ[FILE_STORE_VAR] = "true"
+
+
 def _register_provider_once() -> None:
     if not any(isinstance(provider, CloudflareAccessHeaderProvider) for provider in _request_header_provider_registry):
         _request_header_provider_registry.register(CloudflareAccessHeaderProvider)
@@ -79,6 +88,7 @@ def configure_tracking(config: ForecastConfig, environ: Mapping[str, str] | None
         if not directory.is_absolute():
             directory = ROOT / directory
         uri = directory.resolve().as_uri()
+        allow_file_store(uri)
     else:
         env = load_environment() if environ is None else environ
         headers = cloudflare_headers(env)

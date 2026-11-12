@@ -20,6 +20,7 @@ def _isolate(monkeypatch):
     monkeypatch.setattr(socket.socket, "connect", refuse)
     monkeypatch.setattr(socket, "create_connection", refuse)
     monkeypatch.delenv("FORECAST_HORIZON", raising=False)
+    monkeypatch.delenv(tracking.FILE_STORE_VAR, raising=False)
     monkeypatch.setattr(header_registry._request_header_provider_registry, "_registry", [])
     monkeypatch.setattr(tracking, "_active_headers", {})
     uris = []
@@ -109,3 +110,17 @@ def test_switching_to_local_deactivates_headers():
     tracking.configure_tracking(_with_mode("servidor"), environ=FAKE_ENV)
     tracking.configure_tracking(_with_mode("local"), environ={})
     assert header_registry.resolve_request_headers() == {}
+
+
+def test_file_store_is_allowed_only_for_file_uris(_isolate):
+    tracking.allow_file_store("https://platform.example.org")
+    assert tracking.FILE_STORE_VAR not in os.environ
+    tracking.allow_file_store("file:///D:/somewhere/mlruns")
+    assert os.environ[tracking.FILE_STORE_VAR] == "true"
+
+
+def test_local_mode_allows_file_store_and_server_mode_does_not(_isolate):
+    tracking.configure_tracking(_with_mode("servidor"), environ=FAKE_ENV)
+    assert tracking.FILE_STORE_VAR not in os.environ
+    tracking.configure_tracking(_with_mode("local"), environ={})
+    assert os.environ[tracking.FILE_STORE_VAR] == "true"

@@ -118,3 +118,47 @@ def test_feature_and_channel_values_match_yaml():
     assert (config.canal.n, config.canal.desplazamiento, config.canal.cuantil_t) == (5, 1, 0.025)
     assert config.validacion.primer_anio_entrenamiento == 2012
     assert config.seguimiento.modo == "local"
+
+
+# --------------------------------------------------------------------------- busqueda (U5.3; values come with the pre-registration)
+SEARCH = {
+    "logistica": {"C": [0.1, 1.0], "max_iter": 2000},
+    "lightgbm": {
+        "n_candidatos": 3, "semilla_muestreo": 11, "semilla_modelo": 7, "fijos": {"subsample_freq": 1},
+        "espacio": {"max_depth": {"escala": "entera", "rango": [2, 5]},
+                    "num_leaves": {"escala": "entera", "rango": [4, 31], "tope_por_profundidad": True},
+                    "learning_rate": {"escala": "log", "rango": [0.01, 0.1]}},
+    },
+}
+
+
+def test_busqueda_is_absent_until_the_pre_registration():
+    assert load_config().busqueda is None
+
+
+def test_valid_busqueda_loads(tmp_path, base_data):
+    data = copy.deepcopy(base_data)
+    data["busqueda"] = copy.deepcopy(SEARCH)
+    config = load_config(_write(tmp_path, data))
+    assert config.busqueda.logistica.C == (0.1, 1.0)
+    assert config.busqueda.lightgbm.espacio["num_leaves"].tope_por_profundidad
+
+
+@pytest.mark.parametrize(("change", "message"), [
+    (lambda s: s["logistica"].update(C=[1.0, 0.1]), "strictly increasing"),
+    (lambda s: s["logistica"].update(C=[0.0, 1.0]), "positive"),
+    (lambda s: s["lightgbm"]["espacio"]["learning_rate"].update(rango=[0.0, 0.1]), "positive range"),
+    (lambda s: s["lightgbm"]["espacio"]["max_depth"].update(rango=[2.5, 5]), "integer bounds"),
+    (lambda s: s["lightgbm"]["espacio"]["max_depth"].update(rango=[5, 2]), "not ordered"),
+    (lambda s: s["lightgbm"]["fijos"].update(max_depth=3), "both fixed and sampled"),
+    (lambda s: s["lightgbm"]["fijos"].update(random_state=1), "semilla_modelo"),
+    (lambda s: s["lightgbm"]["espacio"]["learning_rate"].update(tope_por_profundidad=True), "only applies"),
+    (lambda s: s.update(logistica=None, lightgbm=None), "at least one family"),
+])
+def test_invalid_busqueda_is_rejected(tmp_path, base_data, change, message):
+    data = copy.deepcopy(base_data)
+    search = copy.deepcopy(SEARCH)
+    change(search)
+    data["busqueda"] = search
+    with pytest.raises(ValidationError, match=message):
+        load_config(_write(tmp_path, data))

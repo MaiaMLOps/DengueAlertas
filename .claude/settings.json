@@ -20,7 +20,8 @@
       "Edit(/tests/acceptance/test_f3_*.py)",
       "Edit(/tests/acceptance/test_f4_*.py)",
       "Edit(/tests/acceptance/test_f5a_*.py)",
-      "Edit(/tests/acceptance/test_f6_*.py)"
+      "Edit(/tests/acceptance/test_f6_*.py)",
+      "Edit(/tests/acceptance/test_f6receta_*.py)"
     ],
     "ask": [
       "Bash(git commit *)",

@@ -14,13 +14,14 @@ Mapa de las carpetas de resultados del MVP de pronóstico (`feature/forecasting-
 |---|---|---|---|---|---|
 | raíz `data/processed/forecasting/` | Búsqueda de F5b: tabla única, predicciones, líneas base y manifiesto (con `.dvc`); `partes/` y `busqueda.log` solo locales | **Completo**, logística (6) y LightGBM (25) | `7f34b69832eea69407c6`; código cd9d702; `.dvc` en 1a1ad2d | Pre-registro (especificación §7), D5–D7 | **Vigente** como conjunto completo del paso 0 (D7.2) |
 | `ablacion_clima/` | Búsqueda de la logística sin clima (6 candidatos); sin `.dvc` todavía (`dvc add` con aprobación) | Sin clima, solo logística | `26dc1af622fb5966e56e`; código a3b274b | Ablación de F7, decisión D1 (contrato §4.4) | **Registro**: origen de D7.2; no alimenta la selección |
-| `sin_clima/` | Búsqueda sin clima de las dos familias | Sin clima, logística (6) y LightGBM (25) | Pendiente de lanzar | D7.2 (contrato §6.6) | **Pendiente**; será vigente como conjunto sin clima del paso 0 |
+| `sin_clima/` | Búsqueda sin clima de las dos familias (`--variante sin_clima`) | Sin clima, logística (6) y LightGBM (25), mismos candidatos y semillas que F5b | Pendiente de lanzar (código 2e6311a; selección 409f38c) | D7.2 (contrato §6.6) | **Pendiente**; será vigente como conjunto sin clima del paso 0 |
 
 ## Evidencia (`reports/forecasting/evidence/`, git)
 
 | Carpeta | Contenido | Conjunto | Commit | Origen | Estado |
 |---|---|---|---|---|---|
 | `seleccion_20261112/` | Selección de F6 (casillas fuera de año, comparaciones, curva de τ, márgenes), borrador de receta y copia de la receta congelada sustituida (`receta_congelada_sustituida_d2135a39.yaml`) | Completo | f1c0876 (evidencia y borrador); receta fc31f13; copia con DV-02 | F6, contrato §6.2, §7.5 y §8.3 | **Sustituida** por D7.2 (DV-02); se conserva como registro |
+| `seleccion_conjuntos_<fecha>/` | Selección de D7.2: paso 0 por familia (`comparacion_conjuntos.csv`), pasos 1–4, τ, ablación (`ablacion.csv`) y borrador de receta con `conjunto_variables` y `ablacion` | Elegido por familia | Pendiente (tras la búsqueda `sin_clima/`) | D7.2, contrato §6.6 | **Pendiente** |
 | `diagnostico_desarrollo_20261112/` | Seis insumos de §8.8 en desarrollo: logística completa con la configuración común fuera de año, τ = 0,10 | Completo | a3b274b (código caae344) | D9.1, contrato §8.8 | **Registro**: corresponde a la receta sustituida; el de la receta nueva está pendiente |
 
 ## Configuración

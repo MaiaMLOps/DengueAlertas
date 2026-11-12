@@ -1,0 +1,5 @@
+outs:
+- md5: 7fb8390c139e63ca847af3f0bd6e2ac5
+  size: 10447
+  hash: md5
+  path: predicciones_lineas_base_desarrollo.parquet

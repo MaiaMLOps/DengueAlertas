@@ -56,6 +56,13 @@ env/
 !/data/processed/forecasting/
 /data/processed/forecasting/?*
 !/data/processed/forecasting/*.dvc
+# D7.2 searches (reports/forecasting/INDICE.md): sin_clima/ (vigente) and ablacion_clima/ (registro), descriptors only.
+!/data/processed/forecasting/sin_clima/
+/data/processed/forecasting/sin_clima/?*
+!/data/processed/forecasting/sin_clima/*.dvc
+!/data/processed/forecasting/ablacion_clima/
+/data/processed/forecasting/ablacion_clima/?*
+!/data/processed/forecasting/ablacion_clima/*.dvc
 
 # DVC local cache
 .dvc/cache/

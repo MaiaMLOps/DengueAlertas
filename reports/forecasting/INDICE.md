@@ -13,8 +13,8 @@ Mapa de las carpetas de resultados del MVP de pronóstico (`feature/forecasting-
 | Carpeta | Contenido | Conjunto | Búsqueda / commit | Origen | Estado |
 |---|---|---|---|---|---|
 | raíz `data/processed/forecasting/` | Búsqueda de F5b: tabla única, predicciones, líneas base y manifiesto (con `.dvc`); `partes/` y `busqueda.log` solo locales | **Completo**, logística (6) y LightGBM (25) | `7f34b69832eea69407c6`; código cd9d702; `.dvc` en 1a1ad2d | Pre-registro (especificación §7), D5–D7 | **Vigente** como conjunto completo del paso 0 (D7.2) |
-| `ablacion_clima/` | Búsqueda de la logística sin clima (6 candidatos); sin `.dvc` todavía (`dvc add` con aprobación) | Sin clima, solo logística | `26dc1af622fb5966e56e`; código a3b274b | Ablación de F7, decisión D1 (contrato §4.4) | **Registro**: origen de D7.2; no alimenta la selección |
-| `sin_clima/` | Búsqueda sin clima de las dos familias (`--variante sin_clima`), 198 de 198 unidades; sin `.dvc` todavía (`dvc add` con aprobación) | Sin clima, logística (6) y LightGBM (25), mismos candidatos y semillas que F5b | `ae6225180d37d025224b`; código 1f45514 | D7.2 (contrato §6.6) | **Vigente** como conjunto sin clima del paso 0; su logística es idéntica a `ablacion_clima/` |
+| `ablacion_clima/` | Búsqueda de la logística sin clima (6 candidatos); tabla, predicciones, líneas base y manifiesto con `.dvc` (`partes/` y `busqueda.log` solo locales) | Sin clima, solo logística | `26dc1af622fb5966e56e`; código a3b274b | Ablación de F7, decisión D1 (contrato §4.4) | **Registro**: origen de D7.2; no alimenta la selección |
+| `sin_clima/` | Búsqueda sin clima de las dos familias (`--variante sin_clima`), 198 de 198 unidades; tabla, predicciones, líneas base y manifiesto con `.dvc` (`partes/` y `busqueda.log` solo locales) | Sin clima, logística (6) y LightGBM (25), mismos candidatos y semillas que F5b | `ae6225180d37d025224b`; código 1f45514 | D7.2 (contrato §6.6) | **Vigente** como conjunto sin clima del paso 0; su logística es idéntica a `ablacion_clima/` |
 
 ## Evidencia (`reports/forecasting/evidence/`, git)
 

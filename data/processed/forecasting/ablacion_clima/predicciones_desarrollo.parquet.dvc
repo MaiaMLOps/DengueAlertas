@@ -1,0 +1,5 @@
+outs:
+- md5: db4703420ef6f731e7673d05883bd600
+  size: 80204
+  hash: md5
+  path: predicciones_desarrollo.parquet

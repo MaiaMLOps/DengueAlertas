@@ -309,6 +309,17 @@ Cifras de contrato §2.2, §5.4, §6.1, §7.4, §8.2 y `registro_decisiones.md` 
 - La lista de candidatos es idéntica en los seis municipios; si difiere, falla.
 - En una corrida de humo con dos candidatos y datos reales de desarrollo, la tabla única tiene 6 × 2 × 4 filas por familia y ninguna fila de 2023–2025.
 
+**Convenciones de F5a [D, aprobadas por Jesús el 2026-11-11].**
+- **Desempate.** Si dos candidatos tienen la misma mejora promedio frente a B2, se elige el que aparece primero en la lista pre-registrada. La tabla única guarda esa posición en la columna `orden`.
+- **Familia y excepciones de hiperparámetros.** No está fijado si cada familia entra en la comparación de familias (contrato §8.3) con su configuración común fuera de año o con su excepción por municipio. Se fija en el pre-registro (§7). F5a solo entrega, para cada casilla, la configuración común y la propia, ambas elegidas sin el año puntuado.
+- **Predicciones por fila.** `run_search` también guarda en `data/processed/forecasting/` las predicciones por fila (`municipality_code`, `t`, `target_week`, `familia`, `candidato`, `anio`, `y`, `p`), para que F6 elija τ sin reentrenar.
+- **Aceptación añadida a la lista anterior.** Hay que reproducir lo siguiente:
+  - las predicciones tienen 1.248 filas por (familia, candidato) y ninguna de 2023 o posterior;
+  - el log-loss recalculado desde ellas es igual, de forma exacta, al de la tabla única;
+  - `logloss_b2` es el mismo para todos los candidatos de una casilla y coincide exactamente con `b2_predict` más `log_loss`;
+  - hay un run terminado por (municipio, familia, candidato);
+  - se cumplen los niveles de §8.4 y los de eventos.
+
 **F5b**
 - La tabla única queda completa: 6 municipios × número de candidatos × 4 años, por familia, sin faltantes. Hay un run de MLflow (o del respaldo local) por municipio, familia y candidato.
 
@@ -394,6 +405,13 @@ Contrato §6.3 exige fijarlo antes de correr el desarrollo. Esta propuesta inici
 **Respaldo local [D, contingencia].** Si en F0 el servidor no responde o Jesús no tiene credenciales o un rol con permiso de escritura, los runs van a un almacén local dentro del repositorio, ignorado por git (`mlruns/` ya está en `.gitignore`), que se respalda aparte. Solo los modelos finales se registran en el servidor en F8. F0 elige el tipo de almacén según la versión de MLflow fijada.
 
 **Cliente y almacén fijados en F0 [D, U0.3].** El cliente es `mlflow-skinny`, primero 2.16.2 y, desde el cierre de F0, **3.17.0**, igual a la versión del servidor. Razón de usar skinny: el paquete `mlflow` completo 2.16.2 exige `pyarrow<18` y choca con `pyarrow==21.0.0` de `requirements/data.txt`; skinny trae el mismo cliente de seguimiento sin esa dependencia. Como skinny no incluye SQLAlchemy, el respaldo local es el almacén de archivos en `mlruns/`. `seguimiento.modo` queda en `local` hasta antes de F5b, porque los runs del servidor no se pueden borrar; el regreso a `servidor` va en un commit explícito.
+
+**Almacén de archivos con MLflow 3.17 [H, F5a U5.1; D, aprobado por Jesús el 2026-11-11].** MLflow 3.17 rechaza el almacén de archivos (`mlruns/`) con una excepción, salvo que esté activada `MLFLOW_ALLOW_FILE_STORE=true`. En F0 no se detectó porque las pruebas de `tracking.py` simulan `set_tracking_uri` y nunca escribieron un run. El respaldo local de F0 necesita esa opción y se activa así:
+- en el entorno del propio proceso (`os.environ`), justo antes de apuntar MLflow a la URI;
+- solo cuando la URI de seguimiento empieza por `file:`;
+- nunca como variable global del sistema o del usuario, ni en `.env`, ni al importar un módulo.
+
+En modo servidor no se activa.
 
 **Registro de modelos finales [P: acordar en F8 con quien administra la API].** Propuesta, compatible con `src/api.py`:
 - un modelo registrado por municipio, `DengueAlertas_<Municipio>`;

@@ -2,12 +2,13 @@
 
 Flow (rows come from `build_examples`; train and evaluate are the rows of one `splits.yearly_trials` trial):
     _check_rows: the fifteen FEATURES, numeric ones finite, zona_t in ZONES; in train, y in {0, 1} with both classes
-      -> make_model(family, params): unfitted sklearn Pipeline
+      -> make_model(family, params, features=FEATURES): unfitted sklearn Pipeline
            logistica: ColumnTransformer[StandardScaler(14 numeric) | OneHotEncoder(zona_t, ZONES, drop seguridad)]
                       -> LogisticRegression(L2, class_weight=None, **params)
            lightgbm:  FunctionTransformer(zona_t -> pd.Categorical with fixed categories ZONES)
                       -> LGBMClassifier(binary, class_weight=None, verbose=-1, n_jobs=1, deterministic, **params)
-      -> fit_model(family, params, train): every fitted quantity (scaler, coefficients, trees) sees only train
+      -> fit_model(family, params, train, features=FEATURES): every fitted quantity (scaler, coefficients, trees)
+         sees only train
       -> predict_positive(model, rows): predict_proba[:, 1] in the order of rows
 
 Columns are selected by name in the order of `dataset.FEATURES`, so the input column order does not matter.
@@ -16,10 +17,15 @@ requires exactly its allowed names and the module supplies no default value. The
 structural, not searched: no class weights (contrato §4.2), L2 penalty, binary objective, and one thread with
 deterministic LightGBM so that two equal fits give the same p bit for bit. Nothing is imputed (§5.5).
 
+`features` (keyword only, F7) restricts the model to a subset of FEATURES, always with zona_t: the climate
+ablation (contrato §4.4) fits the same family without the nine anom_* columns. Without it the pipeline is exactly
+the one of F5a: logistic regression scales the requested numeric columns; LightGBM gets a leading column selection
+step only when a subset is requested. The input rows still carry the fifteen columns (`_check_rows`).
+
 Fitting and predicting is not scoring: the test-period barrier (guard.py) is applied by the metrics.
 """
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 import warnings
 
 import lightgbm as lgb
@@ -60,6 +66,22 @@ def _zone_as_category(frame: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def _select_columns(frame: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    """Columns of a feature subset, in the order of FEATURES (module-level so the pipeline can be pickled)."""
+    return frame[columns]
+
+
+def _check_features(features) -> tuple[str, ...]:
+    """A subset of FEATURES with zona_t, without repetitions, returned in the order of FEATURES."""
+    require(not isinstance(features, str), "features must be a sequence of feature names, not a string.")
+    chosen = list(features)
+    require(len(set(chosen)) == len(chosen), f"features has repeated names: {chosen}.")
+    unknown = sorted(set(chosen) - set(FEATURES))
+    require(not unknown, f"Unknown features {unknown}; expected a subset of {list(FEATURES)}.")
+    require("zona_t" in chosen, "features must include zona_t (the zone is the core of every model, contrato §5.2).")
+    return tuple(name for name in FEATURES if name in chosen)
+
+
 def _check_params(family: str, params) -> dict:
     require(family in FAMILIES, f"Unknown model family {family!r}; expected one of {FAMILIES}.")
     require(isinstance(params, Mapping), f"params must be a mapping; got {type(params).__name__}.")
@@ -74,12 +96,14 @@ def _check_params(family: str, params) -> dict:
     return dict(params)
 
 
-def make_model(family: str, params: Mapping) -> Pipeline:
-    """Unfitted pipeline of a family with the candidate's hyperparameters."""
+def make_model(family: str, params: Mapping, *, features: Sequence[str] = FEATURES) -> Pipeline:
+    """Unfitted pipeline of a family with the candidate's hyperparameters, on `features` (all by default)."""
     params = _check_params(family, params)
+    ordered = _check_features(features)
+    numeric = [name for name in ordered if name != "zona_t"]
     if family == "logistica":
         prepare = ColumnTransformer(
-            [("estandarizar", StandardScaler(), list(NUMERIC_FEATURES)),
+            [("estandarizar", StandardScaler(), numeric),
              ("zona", OneHotEncoder(categories=[list(ZONES)], drop=[_REFERENCE_ZONE], sparse_output=False,
                                     handle_unknown="error"), ["zona_t"])],
             remainder="drop")
@@ -87,7 +111,11 @@ def make_model(family: str, params: Mapping) -> Pipeline:
                          ("modelo", LogisticRegression(penalty="l2", class_weight=None, **params))])
     estimator = lgb.LGBMClassifier(objective="binary", class_weight=None, verbose=-1, n_jobs=1, deterministic=True,
                                    **params)
-    return Pipeline([("preparar", FunctionTransformer(_zone_as_category, validate=False)), ("modelo", estimator)])
+    steps = [("preparar", FunctionTransformer(_zone_as_category, validate=False)), ("modelo", estimator)]
+    if ordered != tuple(FEATURES):
+        steps.insert(0, ("seleccionar", FunctionTransformer(_select_columns, kw_args={"columns": list(ordered)},
+                                                            validate=False)))
+    return Pipeline(steps)
 
 
 def _check_rows(rows, name: str, *, target: bool) -> pd.DataFrame:
@@ -114,9 +142,9 @@ def _check_rows(rows, name: str, *, target: bool) -> pd.DataFrame:
     return features
 
 
-def fit_model(family: str, params: Mapping, train: pd.DataFrame) -> Pipeline:
-    """Fit the family's pipeline with the training rows only (the trial's train)."""
-    model = make_model(family, params)
+def fit_model(family: str, params: Mapping, train: pd.DataFrame, *, features: Sequence[str] = FEATURES) -> Pipeline:
+    """Fit the family's pipeline with the training rows only (the trial's train), on `features`."""
+    model = make_model(family, params, features=features)
     features = _check_rows(train, "train", target=True)
     y = train["y"].to_numpy(dtype=int)
     with warnings.catch_warnings():

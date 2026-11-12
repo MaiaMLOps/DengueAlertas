@@ -65,6 +65,8 @@ CLIMATE_VARIABLES = {
     "hum": ("relative_humidity_pct", "mean"),
 }
 CLIMATE_COLUMNS = tuple(column for column, _ in CLIMATE_VARIABLES.values())
+# The climate block of contrato §5.2 (the nine anomalies), removed by the climate ablation (contrato §4.4).
+CLIMATE_FEATURES = tuple(name for name in FEATURES if name.startswith("anom_"))
 # GRU input (contrato §5.3): per week, log(C_s + 1), pos_s, zona_s one-hot and the three anomalies.
 GRU_SEQUENCE_CHANNELS = ("log_c", "pos", "zona_seguridad", "zona_alerta", "zona_epidemia",
                          "anom_temp", "anom_prec", "anom_hum")

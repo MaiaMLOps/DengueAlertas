@@ -17,6 +17,11 @@ Flow (rows come from `build_examples`, trials from `splits.yearly_trials`; nothi
          A unit is complete or absent; an existing folder is skipped when the search is relaunched.
       4. consolidation in canonical order, validation and atomic writing of the final files.
 
+Climate ablation (contrato §4.4, decision D1 of F7): `variante="sin_clima"` fits the same candidates without the
+nine climate anomalies (dataset.CLIMATE_FEATURES). The variant enters the manifest (so the busqueda_id differs)
+and the run tags; the CLI option --variante sin_clima keeps only the family of the frozen recipe and writes to
+data/processed/forecasting/ablacion_clima/ by default. Without a variant, everything is as in F5b.
+
 Runs are never duplicated. A unit whose run finished but whose folder was not written (a crash in between)
 reuses that run: the unit is recomputed and its metrics must match the logged ones (rel = 1e-12, because the
 server stores them through JSON and a database). RUNNING runs of the same search (same busqueda_id tag) are
@@ -52,8 +57,8 @@ from src.epidemiology.validation import require
 from .baselines import b1_predict, b2_predict
 from .build_channel import code_state
 from .config import DEFAULT_CONFIG_PATH, ROOT, ForecastConfig, SearchSection, load_config
-from .dataset import build_examples, load_channel_product
-from .guard import RecipeAccess
+from .dataset import CLIMATE_FEATURES, FEATURES, build_examples, load_channel_product
+from .guard import FROZEN_RECIPE_PATH, RecipeAccess, load_frozen_recipe
 from .metrics import brier, improvement, log_loss
 from .models import FAMILIES, fit_model, make_model, predict_positive
 from .splits import yearly_trials
@@ -67,6 +72,9 @@ MANIFEST_FILENAME = "busqueda_manifest.json"
 LOG_FILENAME = "busqueda.log"
 PARTS_DIRNAME = "partes"
 DEFAULT_OUTPUT_DIR = ROOT / "data" / "processed" / "forecasting"
+ABLATION_DIRNAME = "ablacion_clima"
+# Feature sets of the variants of the search (contrato §4.4): name -> features of the models.
+VARIANTS = {"sin_clima": tuple(name for name in FEATURES if name not in CLIMATE_FEATURES)}
 BASELINE_FAMILIES = ("B2", "B1")
 REUSED_RUN_REL = 1e-12          # approved by Jesús for comparing a reused run with the recomputed unit
 _NAME_CHARACTERS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-")
@@ -217,9 +225,9 @@ def _git(*args: str) -> str | None:
     return result.stdout.strip() or None
 
 
-def _manifest_content(examples, checked, config: ForecastConfig, years, codes) -> dict:
+def _manifest_content(examples, checked, config: ForecastConfig, years, codes, variante: str | None = None) -> dict:
     state = code_state()
-    return {
+    content = {
         "anios": years,
         "prueba": list(config.validacion.prueba),
         "primer_anio_entrenamiento": config.validacion.primer_anio_entrenamiento,
@@ -237,6 +245,9 @@ def _manifest_content(examples, checked, config: ForecastConfig, years, codes) -
         "ejemplos_sha256": _examples_hash(examples),
         "commit": state.get("commit"),
     }
+    if variante is not None:   # only added for a variant, so the identity of the F5b search does not change
+        content["variante"] = {"nombre": variante, "features": list(VARIANTS[variante])}
+    return content
 
 
 def _search_id(content: dict) -> str:
@@ -275,7 +286,8 @@ class _Tracker:
     finished: dict  # clave -> run_id of FINISHED runs of this search
 
 
-def _tracker(tracking_uri: str, config: ForecastConfig, search_id: str, commit: str | None) -> _Tracker:
+def _tracker(tracking_uri: str, config: ForecastConfig, search_id: str, commit: str | None,
+             variante: str | None = None) -> _Tracker:
     allow_file_store(tracking_uri)
     client = MlflowClient(tracking_uri=tracking_uri)
     name = config.seguimiento.experimentos.desarrollo
@@ -302,6 +314,8 @@ def _tracker(tracking_uri: str, config: ForecastConfig, search_id: str, commit: 
             "contrato_commit": _git("log", "-1", "--format=%H", "--", "docs/forecasting/contrato_predictivo.md")
             or "desconocido",
             "datos_dvc": config.datos.version_dvc_canal or "desconocido", "busqueda_id": search_id}
+    if variante is not None:
+        tags["variante"] = variante
     return _Tracker(client, experiment_id, search_id, tags, finished)
 
 
@@ -377,12 +391,12 @@ def _baseline_unit(code, family, trial_data, access, clip, state):
     return pd.DataFrame(scores), pd.concat(predictions, ignore_index=True), metrics
 
 
-def _model_unit(code, family, position, candidate, params_json, trial_data, access, clip, state):
+def _model_unit(code, family, position, candidate, params_json, trial_data, access, clip, state, features):
     scores, predictions, metrics = [], [], {}
     for data in trial_data:
         state["year"] = data.year
         start = time.perf_counter()
-        model = fit_model(family, candidate.params, data.train)
+        model = fit_model(family, candidate.params, data.train, features=features)
         p = predict_positive(model, data.evaluate)
         seconds = time.perf_counter() - start
         y = data.evaluate["y"].to_numpy()
@@ -456,9 +470,12 @@ def _elapsed(start: float) -> str:
 
 
 def run_search(examples: pd.DataFrame, candidates: Mapping[str, Sequence[Candidate]], *, config: ForecastConfig,
-               output_dir: str | Path, tracking_uri: str) -> pd.DataFrame:
-    """Score every candidate in every development trial of every municipality; return the single table."""
+               output_dir: str | Path, tracking_uri: str, variante: str | None = None) -> pd.DataFrame:
+    """Score every candidate in every development trial of every municipality; return the single table.
+    With `variante` (a key of VARIANTS) the models use that feature set; baselines are unchanged."""
     start = time.monotonic()
+    require(variante is None or variante in VARIANTS, f"Unknown variant {variante!r}; expected one of {list(VARIANTS)}.")
+    features = FEATURES if variante is None else VARIANTS[variante]
     checked = _check_candidates(candidates)
     years = _development_years(config)
     trials = yearly_trials(examples, years, first_train_year=config.validacion.primer_anio_entrenamiento)
@@ -477,9 +494,9 @@ def run_search(examples: pd.DataFrame, candidates: Mapping[str, Sequence[Candida
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
     try:
-        content = _manifest_content(examples, checked, config, years, codes)
+        content = _manifest_content(examples, checked, config, years, codes, variante)
         search_id = _ensure_manifest(output_dir, content)
-        tracker = _tracker(tracking_uri, config, search_id, content["commit"])
+        tracker = _tracker(tracking_uri, config, search_id, content["commit"], variante)
         access = RecipeAccess.from_config(config)
         clip = config.metricas.recorte_log_loss
         trial_data = _trial_data(examples, trials, config, access)
@@ -489,8 +506,8 @@ def run_search(examples: pd.DataFrame, candidates: Mapping[str, Sequence[Candida
             units += [(code, family, None, None, None) for family in BASELINE_FAMILIES]
             units += [(code, family, position, candidate, params) for family, position, candidate, params in checked]
         total = len(units)
-        logger.info("%s Search %s: %d municipalities, years %s, %d units (%s); output %s.", _elapsed(start),
-                    search_id, len(codes), years, total,
+        logger.info("%s Search %s%s: %d municipalities, years %s, %d units (%s); output %s.", _elapsed(start),
+                    search_id, "" if variante is None else f" (variant {variante})", len(codes), years, total,
                     ", ".join(f"{family}: {sum(1 for c in checked if c[0] == family)} candidates"
                               for family in dict.fromkeys(c[0] for c in checked)), output_dir)
 
@@ -510,7 +527,7 @@ def run_search(examples: pd.DataFrame, candidates: Mapping[str, Sequence[Candida
                     run_params = ({"semiventana": config.lineas_base.b1_semiventana} if family == "B1" else {})
                 else:
                     scores, predictions, metrics = _model_unit(code, family, position, candidate, params_json,
-                                                               trial_data[code], access, clip, state)
+                                                               trial_data[code], access, clip, state, features)
                     run_params = dict(candidate.params)
                 state["year"] = None
                 tags = {"municipio": code, "familia": family, "candidato": name}
@@ -563,7 +580,12 @@ def _dirty_paths() -> list[str]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Development search of the forecasting MVP (F5).")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
-    parser.add_argument("--salida", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--salida", type=Path, default=None,
+                        help=f"Output folder (default {DEFAULT_OUTPUT_DIR}; with a variant, its {ABLATION_DIRNAME} "
+                             f"subfolder).")
+    parser.add_argument("--variante", choices=sorted(VARIANTS), default=None,
+                        help="Climate ablation (contrato §4.4): the family of the frozen recipe without the climate "
+                             "anomalies.")
     parser.add_argument("--permitir-cambios", action="store_true",
                         help="Run with uncommitted changes in src/ or configs/ (smoke runs only).")
     args = parser.parse_args(argv)
@@ -583,6 +605,16 @@ def main(argv: list[str] | None = None) -> int:
         if dirty:
             logger.warning("Running with uncommitted changes in src/ or configs/ (--permitir-cambios).")
         candidates = candidates_from_config(config.busqueda)
+        output_dir = args.salida
+        if args.variante is not None:
+            recipe = load_frozen_recipe(ROOT / FROZEN_RECIPE_PATH, channel_version=config.datos.version_dvc_canal)
+            family = recipe["familia_comun"]
+            require(family in candidates, f"The recipe family {family!r} has no pre-registered candidates.")
+            candidates = {family: candidates[family]}
+            output_dir = output_dir or DEFAULT_OUTPUT_DIR / ABLATION_DIRNAME
+            require(Path(output_dir).resolve() != DEFAULT_OUTPUT_DIR.resolve(),
+                    "A variant never writes into the folder of the F5b search.")
+        output_dir = output_dir or DEFAULT_OUTPUT_DIR
         channel = Path(config.datos.canal)
         product = load_channel_product(channel if channel.is_absolute() else ROOT / channel,
                                        expected_md5=config.datos.version_dvc_canal)
@@ -590,7 +622,8 @@ def main(argv: list[str] | None = None) -> int:
         uri = configure_tracking(config)
         logger.info("Tracking: %s (mode %s).", uri if config.seguimiento.modo == "local" else "server",
                     config.seguimiento.modo)
-        run_search(examples, candidates, config=config, output_dir=args.salida, tracking_uri=uri)
+        extra = {} if args.variante is None else {"variante": args.variante}
+        run_search(examples, candidates, config=config, output_dir=output_dir, tracking_uri=uri, **extra)
     except KeyboardInterrupt:
         print("Search interrupted; completed units are kept. Relaunch the same command to continue.",
               file=sys.stderr)

@@ -339,3 +339,57 @@ def test_cli_refuses_uncommitted_changes_unless_allowed(tmp_path, monkeypatch, c
     assert search.main(["--config", config]) == 1
     assert "uncommitted changes" in capsys.readouterr().err
     assert search.main(["--config", config, "--permitir-cambios"]) == 0
+
+
+# --------------------------------------------------------------------------- climate ablation variant (F7, D1)
+def test_variant_without_climate_has_its_own_identity_and_tags(tmp_path):
+    from src.forecasting.dataset import CLIMATE_FEATURES
+
+    candidates = {"logistica": CANDIDATES["logistica"]}
+    uri = (tmp_path / "mlruns").resolve().as_uri()
+    base = run_search(EXAMPLES, candidates, config=load_config(), output_dir=tmp_path / "base", tracking_uri=uri)
+    ablation = run_search(EXAMPLES, candidates, config=load_config(), output_dir=tmp_path / "sin_clima",
+                          tracking_uri=uri, variante="sin_clima")
+    manifests = {name: json.loads((tmp_path / name / search.MANIFEST_FILENAME).read_text(encoding="utf-8"))
+                 for name in ("base", "sin_clima")}
+    assert "variante" not in manifests["base"]["contenido"]
+    variant = manifests["sin_clima"]["contenido"]["variante"]
+    assert variant["nombre"] == "sin_clima" and not set(variant["features"]) & set(CLIMATE_FEATURES)
+    assert len(variant["features"]) == 6 and len(CLIMATE_FEATURES) == 9
+    assert manifests["base"]["busqueda_id"] != manifests["sin_clima"]["busqueda_id"]
+
+    assert not np.allclose(base["logloss"].to_numpy(), ablation["logloss"].to_numpy())
+    assert base["logloss_b2"].tolist() == ablation["logloss_b2"].tolist()   # baselines do not change
+    tagged = [run for run in _runs(uri) if run.data.tags.get("busqueda_id") == manifests["sin_clima"]["busqueda_id"]]
+    assert len(tagged) == len(CODES) * 4 and all(run.data.tags.get("variante") == "sin_clima" for run in tagged)
+    tagged_ids = {run.info.run_id for run in tagged}
+    others = [run for run in _runs(uri) if run.info.run_id not in tagged_ids]
+    assert len(others) == len(CODES) * 4 and not any("variante" in run.data.tags for run in others)
+
+
+def test_unknown_variant_fails_before_any_fit(tmp_path):
+    with pytest.raises(EpidemiologyValidationError, match="Unknown variant"):
+        run_search(EXAMPLES, CANDIDATES, config=load_config(), output_dir=tmp_path / "x",
+                   tracking_uri=(tmp_path / "mlruns").resolve().as_uri(), variante="sin_lluvia")
+    assert not (tmp_path / "x").exists()
+
+
+def test_cli_variant_keeps_the_recipe_family_and_its_own_folder(tmp_path, monkeypatch):
+    calls = {}
+    monkeypatch.setattr(search, "_dirty_paths", lambda: [])
+    monkeypatch.setattr(search, "load_channel_product", lambda path, *, expected_md5: "product")
+    monkeypatch.setattr(search, "build_examples", lambda product, **kwargs: EXAMPLES)
+    monkeypatch.setattr(search, "configure_tracking", lambda config: "file:///unused")
+    monkeypatch.setattr(search, "load_frozen_recipe", lambda path, *, channel_version: {"familia_comun": "logistica"})
+
+    def fake_run(examples, candidates, *, config, output_dir, tracking_uri, variante=None):
+        calls.update(candidates=candidates, output_dir=output_dir, variante=variante)
+        return pd.DataFrame()
+
+    monkeypatch.setattr(search, "run_search", fake_run)
+    config = _config_file(tmp_path)
+    assert search.main(["--config", str(config), "--variante", "sin_clima"]) == 0
+    assert list(calls["candidates"]) == ["logistica"] and calls["variante"] == "sin_clima"
+    assert calls["output_dir"] == search.DEFAULT_OUTPUT_DIR / search.ABLATION_DIRNAME
+    assert search.main(["--config", str(config), "--variante", "sin_clima", "--salida",
+                        str(search.DEFAULT_OUTPUT_DIR)]) == 1

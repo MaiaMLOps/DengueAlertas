@@ -19,6 +19,8 @@ Flow:
             common one chosen without y in every year; then the own candidate chosen with the 4 years is used
             (nominal exception when it equals the common one)
          every comparison is reported with its annual differences (logloss option − logloss reference)
+      4 alone. hyperparameter_choices(table, familia): the same step 4 with a fixed family, for the climate
+         ablation (contrato §4.4, D1 of F7), whose search holds only the family of the recipe
     per-row predictions -> chosen_predictions (the configuration of each municipality)
       -> tau_curve: the development rows of the six municipalities together, through events.evaluate_period
          for the channel (channel_positive) and for every tau of the grid (model_positive), same rows
@@ -65,6 +67,8 @@ _CANONICAL_ORDER = ["municipality_code", "familia", "orden", "anio"]
 _COMMIT = re.compile(r"[0-9a-f]{40}")
 _MD5 = re.compile(r"[0-9a-f]{32}")
 CONFIGURATION_SECTIONS = ("canal", "features", "validacion", "lineas_base", "metricas")
+_CHOICE_COLUMNS = ["municipality_code", "familia", "candidato", "orden", "parametros", "excepcion_familia",
+                   "excepcion_hiperparametros", "excepcion_hiperparametros_nominal"]
 CURVE_COLUMNS = ("evaluable_onsets", "warned_onsets", "detection", "false_alarms", "municipality_years",
                  "false_alarms_per_municipality_year", "judgeable_alerts", "continuity_alerts")
 
@@ -101,13 +105,13 @@ class Selection:
 
 
 # --------------------------------------------------------------------------- the single table
-def _canonical(table: pd.DataFrame) -> pd.DataFrame:
-    """Validate the single table and return it in a canonical row order."""
+def _canonical(table: pd.DataFrame, required: tuple[str, ...] = FAMILIES) -> pd.DataFrame:
+    """Validate the single table (with every `required` family) and return it in a canonical row order."""
     require(isinstance(table, pd.DataFrame), "table must be the single score table (pandas DataFrame).")
     missing = [column for column in _TABLE_COLUMNS if column not in table.columns]
     require(not missing, f"Score table lacks columns {missing}.")
-    absent = [family for family in FAMILIES if family not in set(table["familia"])]
-    require(not absent, f"Score table lacks the families {absent}; selection compares {list(FAMILIES)}.")
+    absent = [family for family in required if family not in set(table["familia"])]
+    require(not absent, f"Score table lacks the families {absent}; selection compares {list(required)}.")
     unknown = sorted(set(table["familia"]) - set(FAMILIES))
     require(not unknown, f"Score table has families outside the selection {unknown}.")
     validate_score_table(table, municipalities=sorted(set(table["municipality_code"])),
@@ -183,22 +187,47 @@ def municipality_choices(table: pd.DataFrame, *, familia_comun: str) -> tuple[pd
                                         familia_comun, reference_loss, reference["candidato_comun"])
 
         final = alternative if family_exception else familia_comun
-        own = scores[final].loc[code]
-        own_loss = pd.Series(_loss(own, "propio"), index=own.index)
-        common_loss = pd.Series(_loss(own, "comun"), index=own.index)
-        hyperparameter_exception = count_wins(own_loss, common_loss) == n_years
-        comparisons += _comparison_rows(code, HYPERPARAMETER_RULE, final, own_loss, own["candidato_propio"],
-                                        final, common_loss, own["candidato_comun"])
+        choice, rows = _hyperparameter_step(table, code, final, scores[final].loc[code], common[final], n_years)
+        comparisons += rows
+        choices.append({**choice, "excepcion_familia": bool(family_exception)})
+    return pd.DataFrame(choices)[_CHOICE_COLUMNS], pd.DataFrame(comparisons)
 
-        rows = table[(table["familia"] == final) & (table["municipality_code"] == code)]
-        name = _choose(rows) if hyperparameter_exception else common[final]
-        described = rows[rows["candidato"] == name].iloc[0]
-        choices.append({"municipality_code": code, "familia": final, "candidato": name,
-                        "orden": int(described["orden"]), "parametros": str(described["parametros"]),
-                        "excepcion_familia": bool(family_exception),
-                        "excepcion_hiperparametros": bool(hyperparameter_exception),
-                        "excepcion_hiperparametros_nominal": bool(hyperparameter_exception and name == common[final])})
-    return pd.DataFrame(choices), pd.DataFrame(comparisons)
+
+def _hyperparameter_step(table, code, family, own, common_name, n_years) -> tuple[dict, list[dict]]:
+    """Step 4 for one municipality within `family`: own candidate chosen without y against the common one chosen
+    without y, in every year (out-of-year scores `own` of the municipality)."""
+    own_loss = pd.Series(_loss(own, "propio"), index=own.index)
+    common_loss = pd.Series(_loss(own, "comun"), index=own.index)
+    exception = count_wins(own_loss, common_loss) == n_years
+    comparisons = _comparison_rows(code, HYPERPARAMETER_RULE, family, own_loss, own["candidato_propio"],
+                                   family, common_loss, own["candidato_comun"])
+    rows = table[(table["familia"] == family) & (table["municipality_code"] == code)]
+    name = _choose(rows) if exception else common_name
+    described = rows[rows["candidato"] == name].iloc[0]
+    choice = {"municipality_code": code, "familia": family, "candidato": name, "orden": int(described["orden"]),
+              "parametros": str(described["parametros"]), "excepcion_familia": False,
+              "excepcion_hiperparametros": bool(exception),
+              "excepcion_hiperparametros_nominal": bool(exception and name == common_name)}
+    return choice, comparisons
+
+
+def hyperparameter_choices(table: pd.DataFrame, *, familia: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Only step 4 with a fixed family (climate ablation, contrato §4.4 and D1 of F7): common configuration of
+    `familia` and the hyperparameter exception per municipality (4 of 4, out of year). The table may hold only
+    that family. Returns (choices, comparisons) with the columns of municipality_choices; excepcion_familia is
+    always False and there are no family comparisons."""
+    require(familia in FAMILIES, f"Unknown family {familia!r}; expected one of {list(FAMILIES)}.")
+    table = _canonical(table, required=(familia,))
+    own_family = table[table["familia"] == familia].reset_index(drop=True)
+    scores = out_of_year_scores(own_family, familia=familia).set_index(["municipality_code", "anio"])
+    common = _choose(own_family)
+    n_years = len(set(own_family["anio"]))
+    choices, comparisons = [], []
+    for code in sorted(set(own_family["municipality_code"])):
+        choice, rows = _hyperparameter_step(own_family, code, familia, scores.loc[code], common, n_years)
+        choices.append(choice)
+        comparisons += rows
+    return pd.DataFrame(choices)[_CHOICE_COLUMNS], pd.DataFrame(comparisons)
 
 
 # --------------------------------------------------------------------------- predictions and tau

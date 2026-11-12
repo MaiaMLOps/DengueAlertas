@@ -149,3 +149,40 @@ def test_duplicated_rows_are_rejected():
     predictions = rows[["municipality_code", "t", "target_week", "y"]].assign(p=0.2).iloc[:1]
     with pytest.raises(EpidemiologyValidationError, match="rows have duplicated"):
         selection._aligned_probabilities(rows, predictions)
+
+
+# --------------------------------------------------------------------------- step 4 alone (F7, climate ablation)
+def _exception_loss(code, family, name, year):
+    """r1 is the own best of 76001 in every year (exception); 08001 keeps the common r0."""
+    if code == "76001":
+        return {"r0": 0.5, "r1": 0.4}.get(name, 0.8)
+    return {"r0": 0.4, "r1": 0.6}.get(name, 0.8)
+
+
+def test_hyperparameter_choices_equal_step_4_of_the_full_selection():
+    table = _table(_exception_loss)
+    full_choices, full_comparisons = selection.municipality_choices(table, familia_comun="logistica")
+    choices, comparisons = selection.hyperparameter_choices(table[table["familia"] == "logistica"],
+                                                            familia="logistica")
+    assert list(choices.columns) == list(full_choices.columns)
+    assert choices.drop(columns="excepcion_familia").equals(full_choices.drop(columns="excepcion_familia"))
+    assert not choices["excepcion_familia"].any()
+    step4 = full_comparisons[full_comparisons["regla"] == selection.HYPERPARAMETER_RULE].reset_index(drop=True)
+    assert comparisons.equals(step4)
+    by_code = choices.set_index("municipality_code")
+    assert by_code.loc["76001", "candidato"] == "r1" and bool(by_code.loc["76001", "excepcion_hiperparametros"])
+    assert by_code.loc["08001", "candidato"] == "r0" and not bool(by_code.loc["08001", "excepcion_hiperparametros"])
+
+
+def test_hyperparameter_choices_accept_a_table_with_both_families():
+    table = _table(_exception_loss)
+    only, _ = selection.hyperparameter_choices(table[table["familia"] == "logistica"], familia="logistica")
+    both, _ = selection.hyperparameter_choices(table, familia="logistica")
+    assert only.equals(both)
+
+
+@pytest.mark.parametrize("familia", ["lightgbm", "gru"])
+def test_hyperparameter_choices_need_the_family(familia):
+    table = _table(_constant)
+    with pytest.raises(EpidemiologyValidationError):
+        selection.hyperparameter_choices(table[table["familia"] == "logistica"], familia=familia)

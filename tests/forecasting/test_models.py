@@ -186,3 +186,54 @@ def test_invalid_training_rows_fail_clearly(family, alter, message, train):
 def test_non_convergence_is_an_error(train):
     with pytest.raises(EpidemiologyValidationError, match="did not converge"):
         fit_model("logistica", {"C": 1.0, "max_iter": 1}, train)
+
+
+# --------------------------------------------------------------------------- feature subsets (F7, climate ablation)
+NO_CLIMATE = tuple(name for name in FEATURES if not name.startswith("anom_"))
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_default_features_give_the_same_pipeline_bit_for_bit(family, train, evaluate):
+    default = predict_positive(fit_model(family, PARAMS[family], train), evaluate)
+    explicit = predict_positive(fit_model(family, PARAMS[family], train, features=FEATURES), evaluate)
+    assert np.array_equal(default, explicit)
+    assert [name for name, _ in make_model(family, PARAMS[family]).steps] == \
+        [name for name, _ in make_model(family, PARAMS[family], features=FEATURES).steps]
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_subset_ignores_the_removed_columns(family, train, evaluate):
+    model = fit_model(family, PARAMS[family], train, features=NO_CLIMATE)
+    base = predict_positive(model, evaluate)
+    noisy_train = train.copy()
+    noisy_evaluate = evaluate.copy()
+    rng = np.random.default_rng(11)
+    for name in FEATURES:
+        if name.startswith("anom_"):
+            noisy_train[name] = rng.normal(size=len(train))
+            noisy_evaluate[name] = rng.normal(size=len(evaluate))
+    refit = fit_model(family, PARAMS[family], noisy_train, features=NO_CLIMATE)
+    assert np.array_equal(predict_positive(refit, noisy_evaluate), base)
+    assert not np.array_equal(predict_positive(fit_model(family, PARAMS[family], noisy_train), noisy_evaluate),
+                              predict_positive(fit_model(family, PARAMS[family], train), evaluate))
+
+
+def test_logistic_subset_has_one_coefficient_per_kept_feature(train):
+    model = fit_model("logistica", LOGISTIC, train, features=NO_CLIMATE)
+    assert model.named_steps["modelo"].coef_.shape == (1, len(NO_CLIMATE) - 1 + 2)   # numeric + two zone indicators
+
+
+def test_feature_order_does_not_matter(train, evaluate):
+    reversed_order = tuple(reversed(NO_CLIMATE))
+    assert np.array_equal(predict_positive(fit_model("logistica", LOGISTIC, train, features=reversed_order), evaluate),
+                          predict_positive(fit_model("logistica", LOGISTIC, train, features=NO_CLIMATE), evaluate))
+
+
+@pytest.mark.parametrize("features, message", [
+    (tuple(name for name in FEATURES if name != "zona_t"), "zona_t"),
+    (("zona_t", "posicion_4s", "posicion_4s"), "repeated"),
+    (("zona_t", "otra"), "Unknown features"),
+    ("zona_t", "not a string")])
+def test_invalid_feature_subsets_fail_clearly(features, message, train):
+    with pytest.raises(EpidemiologyValidationError, match=message):
+        fit_model("logistica", LOGISTIC, train, features=features)

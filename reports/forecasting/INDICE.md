@@ -2,7 +2,7 @@
 
 Mapa de las carpetas de resultados del MVP de pronóstico (`feature/forecasting-mvp`): qué contiene cada una, con qué conjunto de variables, de qué búsqueda o commit sale, qué decisión del contrato la originó y si está vigente. Se actualiza en cada unidad. Ningún archivo versionado se mueve: las carpetas sustituidas se conservan como registro.
 
-**Estados:** *vigente* (insumo de la receta en curso), *registro* (se conserva como evidencia; no alimenta la receta en curso), *sustituida* (reemplazada por una decisión posterior), *pendiente* (todavía no generada).
+**Estados:** *vigente* (insumo de la receta en curso), *registro* (se conserva como evidencia; no alimenta la receta en curso), *sustituida* (reemplazada por una decisión posterior), *pendiente* (todavía no generada), *exploratorio* (cálculo descriptivo del análisis integrado que no se declaró antes de la prueba; no alimenta ninguna decisión ni modifica las conclusiones de §8.4).
 
 **Conjuntos de variables (contrato §6.6, D7.2):** *completo*, las 15 variables de §5.2; *sin clima*, las 6 que no son anomalías climáticas (`zona_t`, `posicion_4s`, `crecimiento_4s`, `cambio_umbral`, `sem_sin`, `sem_cos`).
 
@@ -27,6 +27,7 @@ Mapa de las carpetas de resultados del MVP de pronóstico (`feature/forecasting-
 | `diagnostico_desarrollo_20261112/` | Seis insumos de §8.8 en desarrollo: logística completa con la configuración común fuera de año, τ = 0,10 | Completo | a3b274b (código caae344); regresión en `test_f7_diagnostico_desarrollo.py` | D9.1, contrato §8.8 | **Registro**: corresponde a la receta sustituida (DV-02) |
 | `diagnostico_desarrollo_sin_clima_20261112/` | Seis insumos de §8.8 en desarrollo para la receta vigente: logística sin clima con la configuración común fuera de año (2019, 2021 y 2022 `logistica_04`; 2020 `logistica_05`), τ = 0,05, rótulo «usado para elegir»; reproducido por `caso_f7_diagnostico.py` | Sin clima | a1d1cc0 (generado desde 2a1ab0b); regresión congelada en 043c8ad (`test_f7b_diagnostico_desarrollo.py`) | D9.1 y D7.2, contrato §8.8 y §6.6 | **Vigente** |
 | `reportes_20261112/` | Reportes derivables de U7.5, desarrollo («usado para elegir») y prueba, todos desde predicciones guardadas: `clasificacion_tau.csv` (§7.3, modelo y B2 en τ = 0,05), `murphy.csv` y `confiabilidad.csv` (§7.2, receta y ablación, 10 intervalos de igual frecuencia, global y por año), `calibracion_anual.csv`, `eventos_razon.csv` (§7.4, modelo y canal, global y por municipio), `duracion_alertas.csv` (descriptivo, fuera del contrato), `habilidad.csv`, `casillas.csv`, `desarrollo_vs_prueba.csv`, `curva_amoc.csv` y `manifiesto_reportes.json` | Receta sin clima; ablación completa | 7c2267c (generado desde 176f89d, árbol limpio); fórmulas e identidades congeladas en 37406f7, cifras en fbb51d8 | Contrato §7.2–§7.4 y §8.4 | **Vigente** |
+| `exploratorio_20261112/` | Tablas del análisis integrado (`docs/forecasting/analisis_resultados.md`): clasificación de la etiqueta en τ = 0,05, en el τ de F1 máxima de desarrollo (0,30) y en 0,50, y sobre la rejilla de τ, con la persistencia como referencia (`clasificacion_umbrales.csv`, `clasificacion_curva_tau.csv`); desempeño por zona del canal en t (`zona_canal*.csv`); Murphy de B2 con dos agrupamientos y AP con empates (`murphy_b2.csv`, `ap_empates.csv`); fases, semanas desde el último episodio, estratos y episodios por municipio, rachas (`fases*.csv`, `semanas_desde_episodio.csv`, `estratos_municipio.csv`, `episodios_entrenamiento.csv`, `rachas_positivas.csv`); detalle de inicios y tasa base de alertas (`inicios_detalle.csv`, `tasa_base_alerta.csv`); contraste independiente de U7.5 (`contraste_u75.csv`, 480 de 480 cifras coinciden) y `manifiesto_exploratorio.json` (md5 de los insumos) | Receta sin clima: desarrollo con la configuración común fuera de año, prueba con `predicciones_prueba.parquet` | Generado con `docs/forecasting/verificacion/analisis_integrado_exploratorio.py` sobre 03f5970; commit pendiente | Contrato §8.8 (D9.1) | **Exploratorio** |
 
 **Notas de `reportes_20261112/` (convenciones, sin interpretación):**
 - **Insumos.** En desarrollo, la receta usa la configuración común fuera de año de la búsqueda sin clima y la ablación la de la búsqueda completa (2019, 2021 y 2022 `logistica_03`; 2020 `logistica_04`). B2 y B1 son las líneas base guardadas. En prueba se usan los cuatro sistemas de `predicciones_prueba.parquet`.
@@ -41,6 +42,13 @@ Mapa de las carpetas de resultados del MVP de pronóstico (`feature/forecasting-
 | Carpeta | Contenido | Commit | Estado |
 |---|---|---|---|
 | `20261112/` | PNG y SVG de U7.5: `confiabilidad_*`, `amoc_*` y `mapa_bss_*` de desarrollo («usado para elegir») y de prueba; `serie_<código>` 2019–2025 por municipio (p̂ y alertas en la semana de emisión t, referidos a t + 8, con las alertas en una franja propia); `resumen_municipios` (sin punto de detección donde no hay inicios evaluables) | Regeneradas desde 300cb08 (primera versión en 7c2267c, desde 176f89d); las tablas son idénticas byte a byte y el manifiesto registra 300cb08 | **Vigente** |
+| `exploratorio_20261112/` | PNG y SVG del análisis integrado: `clasificacion_pr`, `clasificacion_umbral`, `zona_canal`, `fases_aporte`, `fases_municipio`, `semanas_desde_episodio`, `inicios_prueba` y `regimen_casillas`; rótulo [X] en el título | Mismo script y commit que `evidence/exploratorio_20261112/` | **Exploratorio** |
+
+## Entregables (`reports/forecasting/entregables/`, git)
+
+| Carpeta | Contenido | Fuente | Estado |
+|---|---|---|---|
+| `analisis_20261112/` | Análisis integrado en Word (`analisis_resultados.docx`) y presentación de referencia para el equipo (`presentacion_resultados.pdf`), con su `README.md` | `docs/forecasting/analisis_resultados.md`; evidencia `prueba_20261112/`, `reportes_20261112/` y `exploratorio_20261112/` | **Vigente** (versión de lectura; la fuente es el Markdown) |
 
 ## Configuración
 

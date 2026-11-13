@@ -1,0 +1,5 @@
+periodo,rotulo,sistema,inicios_evaluables,inicios_bajo_alerta,semanas_emision,semanas_bajo_alerta,fraccion_bajo_alerta,esperado_por_tasa_base
+desarrollo,usado_para_elegir,modelo,10,9,1248,586,0.46955128205128205,4.69551282051282
+desarrollo,usado_para_elegir,canal,10,0,1248,406,0.32532051282051283,3.253205128205128
+prueba,prueba,modelo,10,8,936,565,0.6036324786324786,6.036324786324786
+prueba,prueba,canal,10,0,936,393,0.4198717948717949,4.198717948717949

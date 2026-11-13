@@ -1,0 +1,13 @@
+periodo,rotulo,municipality_code,municipio,primera_emision,episodios_antes_del_periodo,semanas_en_episodio_antes,episodios_en_el_periodo
+desarrollo,usado_para_elegir,41001,Neiva,2018-11-12,4,46,2
+desarrollo,usado_para_elegir,50001,Villavicencio,2018-11-12,7,41,6
+desarrollo,usado_para_elegir,76001,Cali,2018-11-12,2,35,1
+desarrollo,usado_para_elegir,08758,Soledad,2018-11-12,4,50,8
+desarrollo,usado_para_elegir,54001,Cúcuta,2018-11-12,1,4,3
+desarrollo,usado_para_elegir,08001,Barranquilla,2018-11-12,4,32,3
+prueba,prueba,41001,Neiva,2022-11-07,6,78,4
+prueba,prueba,50001,Villavicencio,2022-11-07,11,89,3
+prueba,prueba,76001,Cali,2022-11-07,3,51,1
+prueba,prueba,08758,Soledad,2022-11-07,10,91,5
+prueba,prueba,54001,Cúcuta,2022-11-07,4,59,2
+prueba,prueba,08001,Barranquilla,2022-11-07,6,57,4

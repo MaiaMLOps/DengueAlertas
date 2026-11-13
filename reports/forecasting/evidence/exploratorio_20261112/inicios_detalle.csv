@@ -1,0 +1,41 @@
+periodo,rotulo,municipality_code,municipio,inicio,sistema,estado,avisado_7_4,anticipacion,bajo_alerta_en_inicio,t_c,fin,semanas_desde_tc,semanas_tc_a_inicio
+desarrollo,usado_para_elegir,08001,Barranquilla,2020-01-27,modelo,avisado,True,8.0,True,2019-12-02,2020-05-18,25,8
+desarrollo,usado_para_elegir,08001,Barranquilla,2021-08-23,modelo,avisado,True,7.0,True,2021-07-05,2022-10-31,70,7
+desarrollo,usado_para_elegir,08758,Soledad,2019-05-27,modelo,avisado,True,2.0,False,2019-05-13,2019-05-13,1,2
+desarrollo,usado_para_elegir,08758,Soledad,2019-11-04,modelo,avisado,True,2.0,True,2019-10-21,2020-04-06,25,2
+desarrollo,usado_para_elegir,08758,Soledad,2022-02-28,modelo,en continuidad,False,,True,2021-06-14,2022-10-31,73,37
+desarrollo,usado_para_elegir,41001,Neiva,2019-02-18,modelo,avisado,True,9.0,True,2018-12-17,2019-11-04,47,9
+desarrollo,usado_para_elegir,50001,Villavicencio,2019-11-25,modelo,alerta confirmada más de 12 semanas antes,False,,True,2018-11-19,2020-02-10,65,53
+desarrollo,usado_para_elegir,50001,Villavicencio,2022-10-31,modelo,avisado,True,8.0,True,2022-09-05,2022-10-31,9,8
+desarrollo,usado_para_elegir,54001,Cúcuta,2021-06-21,modelo,avisado,True,2.0,True,2021-06-07,2021-12-27,30,2
+desarrollo,usado_para_elegir,76001,Cali,2019-12-16,modelo,avisado,True,8.0,True,2019-10-21,2020-05-11,30,8
+desarrollo,usado_para_elegir,08001,Barranquilla,2020-01-27,canal,avisado,True,1.0,False,2020-01-20,2020-01-20,1,1
+desarrollo,usado_para_elegir,08001,Barranquilla,2021-08-23,canal,avisado,True,7.0,False,2021-07-05,2021-08-16,7,7
+desarrollo,usado_para_elegir,08758,Soledad,2019-05-27,canal,avisado,True,4.0,False,2019-04-29,2019-04-29,1,4
+desarrollo,usado_para_elegir,08758,Soledad,2019-11-04,canal,avisado,True,4.0,False,2019-10-07,2019-10-28,4,4
+desarrollo,usado_para_elegir,08758,Soledad,2022-02-28,canal,avisado,True,2.0,False,2022-02-14,2022-02-21,2,2
+desarrollo,usado_para_elegir,41001,Neiva,2019-02-18,canal,avisado,True,4.0,False,2019-01-21,2019-02-11,4,4
+desarrollo,usado_para_elegir,50001,Villavicencio,2019-11-25,canal,avisado,True,1.0,False,2019-11-18,2019-11-18,1,1
+desarrollo,usado_para_elegir,50001,Villavicencio,2022-10-31,canal,avisado,True,4.0,False,2022-10-03,2022-10-24,4,4
+desarrollo,usado_para_elegir,54001,Cúcuta,2021-06-21,canal,avisado,True,1.0,False,2021-06-14,2021-06-14,1,1
+desarrollo,usado_para_elegir,76001,Cali,2019-12-16,canal,avisado,True,2.0,False,2019-12-02,2019-12-09,2,2
+prueba,prueba,08001,Barranquilla,2023-04-10,modelo,en continuidad,False,,True,2022-11-14,2023-08-07,39,21
+prueba,prueba,08758,Soledad,2023-07-03,modelo,alerta confirmada más de 12 semanas antes,False,,True,2022-11-14,2023-09-04,43,33
+prueba,prueba,08758,Soledad,2024-12-23,modelo,avisado,True,1.0,True,2024-12-16,2025-05-05,21,1
+prueba,prueba,08758,Soledad,2025-05-26,modelo,alerta apagada antes del inicio,False,,False,2024-12-16,2025-05-05,21,23
+prueba,prueba,41001,Neiva,2023-07-17,modelo,avisado,True,2.0,True,2023-07-03,2024-09-30,66,2
+prueba,prueba,41001,Neiva,2023-08-28,modelo,avisado,True,8.0,True,2023-07-03,2024-09-30,66,8
+prueba,prueba,41001,Neiva,2024-06-03,modelo,alerta confirmada más de 12 semanas antes,False,,True,2023-07-03,2024-09-30,66,48
+prueba,prueba,50001,Villavicencio,2025-12-01,modelo,alerta apagada antes del inicio,False,,False,2025-09-01,2025-10-27,9,13
+prueba,prueba,54001,Cúcuta,2024-01-15,modelo,avisado,True,7.0,True,2023-11-27,2024-09-09,42,7
+prueba,prueba,54001,Cúcuta,2025-02-24,modelo,alerta confirmada más de 12 semanas antes,False,,True,2024-11-11,2025-09-15,45,15
+prueba,prueba,08001,Barranquilla,2023-04-10,canal,avisado,True,1.0,False,2023-04-03,2023-04-03,1,1
+prueba,prueba,08758,Soledad,2023-07-03,canal,avisado,True,1.0,False,2023-06-26,2023-06-26,1,1
+prueba,prueba,08758,Soledad,2024-12-23,canal,alerta apagada antes del inicio,False,,False,2024-06-10,2024-12-16,28,28
+prueba,prueba,08758,Soledad,2025-05-26,canal,avisado,True,5.0,False,2025-04-21,2025-05-19,5,5
+prueba,prueba,41001,Neiva,2023-07-17,canal,avisado,True,2.0,False,2023-07-03,2023-07-10,2,2
+prueba,prueba,41001,Neiva,2023-08-28,canal,avisado,True,1.0,False,2023-08-21,2023-08-21,1,1
+prueba,prueba,41001,Neiva,2024-06-03,canal,avisado,True,3.0,False,2024-05-13,2024-05-27,3,3
+prueba,prueba,50001,Villavicencio,2025-12-01,canal,alerta apagada antes del inicio,False,,False,2025-03-03,2025-10-27,35,39
+prueba,prueba,54001,Cúcuta,2024-01-15,canal,avisado,True,2.0,False,2024-01-01,2024-01-08,2,2
+prueba,prueba,54001,Cúcuta,2025-02-24,canal,avisado,True,1.0,False,2025-02-17,2025-02-17,1,1

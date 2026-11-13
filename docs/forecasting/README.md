@@ -10,9 +10,11 @@ Guía para entender, reproducir y auditar el MVP de pronóstico con solo el repo
 | [`desviaciones.md`](desviaciones.md) | Lo que cambió durante la implementación (DV-01 a DV-03) |
 | [`api_salida_d10.md`](api_salida_d10.md) | Esquema de salida de la API |
 | [`verificacion/`](verificacion/) | Cálculos independientes con los que se obtuvieron y contrastaron las cifras |
+| [`analisis_resultados.md`](analisis_resultados.md) | Análisis integrado de los resultados de la prueba (contrato §8.8): calidad de la estimación, municipios, eventos, robustez y valor práctico. Lo exploratorio va marcado |
+| [`../../reports/forecasting/entregables/`](../../reports/forecasting/entregables/) | Versiones en Word y presentación del análisis, una carpeta por corrida |
 | [`../../reports/forecasting/INDICE.md`](../../reports/forecasting/INDICE.md) | Mapa de datos, evidencia, figuras y configuración, con su estado |
 
-Esta guía no reporta resultados. Las cifras están en la evidencia de `reports/forecasting/evidence/` y se localizan con `INDICE.md`.
+Esta guía no reporta resultados. Las cifras están en la evidencia de `reports/forecasting/evidence/` y se localizan con `INDICE.md`; su lectura integrada está en `analisis_resultados.md`.
 
 ## 1. Problema y pregunta
 

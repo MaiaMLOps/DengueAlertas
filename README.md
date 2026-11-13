@@ -16,7 +16,7 @@ La pregunta del proyecto es: **¿qué tan probable es que un municipio esté en 
 - **Validación.** Origen móvil con reentrenamiento anual: desarrollo 2019–2022 para elegir; prueba 2023–2025 evaluada una sola vez, después de congelar la receta.
 - **Entrega.** API FastAPI y frontend React con cuatro vistas: pronóstico vigente, historial fuera de muestra, carga de datos y desempeño en prueba (pendiente de F8).
 
-La metodología completa, sus decisiones (D0–D10) y la secuencia de fases están en [`docs/forecasting/README.md`](docs/forecasting/README.md). Este README no reporta resultados: están en la evidencia indexada en [`reports/forecasting/INDICE.md`](reports/forecasting/INDICE.md).
+La metodología completa, sus decisiones (D0–D10) y la secuencia de fases están en [`docs/forecasting/README.md`](docs/forecasting/README.md). Este README no reporta resultados: están en la evidencia indexada en [`reports/forecasting/INDICE.md`](reports/forecasting/INDICE.md). El análisis integrado de los resultados está en [`docs/forecasting/analisis_resultados.md`](docs/forecasting/analisis_resultados.md), con versiones en Word y presentación en [`reports/forecasting/entregables/`](reports/forecasting/entregables/).
 
 ## 3. Estructura del repositorio
 
@@ -26,7 +26,7 @@ data/processed/           Descriptores .dvc y manifiestos; el contenido está en
 docs/                     Documentación de datos, selección de pilotos y etiquetas epidemiológicas
 docs/forecasting/         Contrato predictivo, especificación, decisiones, desviaciones, API y scripts de verificación
 frontend/                 Aplicación React/Vite (Cloudflare Pages)
-reports/                  Evidencia versionada: selección de pilotos, etiquetas y pronóstico (tablas, figuras, bitácora)
+reports/                  Evidencia versionada: selección de pilotos, etiquetas y pronóstico (tablas, figuras, bitácora, entregables)
 requirements/             Dependencias por etapa
 scripts/                  Utilidades (descripción del canal, comprobación de MLflow en solo lectura)
 src/data/                 Integración de SIVIGILA y covariables (panel maestro)

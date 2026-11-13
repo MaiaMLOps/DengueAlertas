@@ -439,3 +439,13 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 - Los datos subidos solo se validan en formato y completitud.
 **Evidencia:** criterios de evaluación del despliegue (rúbrica del curso, no versionada: usabilidad, 35 puntos; parametrización, 15; README, 15); propuesta del grupo, sección de transparencia.
  
+## Erratas (2026-11-13)
+
+Correcciones de redacción o de estado registradas tras la auditoría de coherencia del 2026-11-13. No cambian ninguna decisión, regla ni cifra del pre-registro, ni la procedencia de la receta congelada (`commit_contrato` 847b3ba). El texto anterior se conserva sin cambios; donde una errata y el texto difieren, se lee la errata.
+
+1. **D0, «Opcional (semana 7)» (l.31).** La validación externa en 2–3 municipios de los 78 no se ejecutó en el MVP; queda como desarrollo posterior posible, sin compromiso de realizarla. Fuente: `git log`; `reports/forecasting/INDICE.md` («Pendientes declarados»).
+2. **D2, consecuencias (l.61 y l.65) y alternativas (l.79).** Dicen que U3a y las ventanas de 3 y 7 años «se reportan» como sensibilidad. Léase: «no se ejecutaron en el MVP; quedan como desarrollo posterior posible». Fuente: ídem.
+3. **D5 (l.173 y l.185), D6 (l.196 y l.200) y D9.** Dicen: «Todos usan todas las features de D6», «candidatos con todas las features y una sola ablación», «Son 15 variables» y «fijado a priori». D7.2 se declara enmienda a D5, D6, D7 y D9 (l.277), pero solo D1 y D7 llevan nota de enmienda. Léase en D5, D6 y D9: «**Enmendado por D7.2 (2026-11-12):** el conjunto de variables (completo o sin clima) se elige en desarrollo como paso 0; la ablación es la familia final con el otro conjunto». La ventana w = 4 sigue fijada a priori. Fuente: D7.2; `contrato_predictivo.md` §6.6.
+4. **D7.2 (l.277–292): relación con las desviaciones.** D7.2 no dice cómo quedó registrada en `desviaciones.md`. Léase: «En el repositorio se registra como DV-02 (receta `d2135a39…da98` sustituida)». DV-03 (2026-11-12) es solo editorial y no requiere entrada de decisión. Fuente: `docs/forecasting/desviaciones.md`.
+5. **D7.2, «Por qué es legítima» (l.283).** Dice: «la bitácora de prueba está vacía». Léase: «la bitácora de prueba no existía (ninguna ejecución registrada)». Fuente: `desviaciones.md`, DV-02 («`reports/forecasting/bitacora_prueba.jsonl` no existe»).
+6. **D7.2 (l.279–290) y D9.1 (l.384–396).** Los «§» sin documento («§8.3», «§4.4», «§5.7», «§8.4») se refieren a `contrato_predictivo.md`. Fuente: el resto de las entradas escriben «`contrato_predictivo.md` §N».

@@ -54,3 +54,13 @@ Formato de cada entrada:
 - Impacto en resultados o en el artículo: ninguno.
 - Evidencia: el diff del commit de esta edición.
 - Commit: el de esta edición (ver git log de desviaciones.md).
+
+## Notas posteriores (2026-11-13)
+
+Notas añadidas tras la auditoría de coherencia del 2026-11-13. No son desviaciones: no cambian ninguna cláusula, decisión ni cifra. Las entradas anteriores se conservan sin cambios.
+
+1. **Rama.** La cabecera de este archivo menciona la implementación «en `feature/forecasting-mvp`». Esa rama se fusionó en `main` (PR #8, 03f5970); las entradas posteriores se registran sobre `main`. De las desviaciones, DV-01 y DV-02 están consolidadas en `registro_decisiones.md` como D7.1 y D7.2; DV-03 es editorial y no tiene entrada de decisión.
+2. **«Decisión D1» en DV-02.** En «Problema encontrado», «la ablación de F7 (decisión D1)» se refiere a la decisión 1 del plan de F7: la ablación del clima de D5 (contrato §4.4). No es D1 del contrato (conteo, calendario y canal). Las decisiones de plan están en el glosario de `docs/forecasting/README.md`.
+3. **Commits de DV-02 y DV-03.** DV-02 se registró en 804504f. DV-03 se registró en 855af78 y se completó en 7d5a117: su punto 3 de «Hechos corregidos» pasó a «Decisión», y se añadió «Fuera del alcance». Esa edición modificó una entrada existente, contra la regla de que este archivo solo crece; se deja constancia aquí y no se revierte.
+4. **Orden de `analisis_resultados.md` frente a §8.8.** El contrato §8.8 fija una estructura «de lo particular a lo general»: perfil por municipio, relato por año, síntesis, contraste de H-R y H-E, efecto de las métricas y conclusiones. El análisis integrado conserva los seis contenidos, pero adelanta tres secciones de síntesis sobre la calidad de la estimación, su valor práctico y los eventos (secciones 3 a 5), antes del relato por año (sección 6). Así, el relato por año puede apoyarse en las métricas y los estratos ya definidos. Es un cambio editorial de orden, no de contenido: la Tabla 0 del documento indica dónde está cada contenido de §8.8, y ninguna conclusión de §8.4 cambia.
+5. **Erratas de los documentos pre-registrados.** `contrato_predictivo.md`, `registro_decisiones.md` y `especificacion_implementacion.md` reciben una sección final «Erratas (2026-11-13)». Su texto anterior no se reescribe, y la procedencia de la receta (`commit_contrato` 847b3ba) no cambia.

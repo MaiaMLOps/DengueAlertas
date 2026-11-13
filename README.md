@@ -103,8 +103,8 @@ Los datos originales de SIVIGILA y las covariables no están en el repositorio n
 
 Todos los comandos se ejecutan desde la raíz del repositorio. Principios que el código hace cumplir:
 
-- **Nunca sobrescribe.** Cada comando se niega a escribir sobre una salida existente. Para reproducir, se escribe en una carpeta nueva (`--salida`) y se compara con la versionada (md5 del `.dvc` o bytes de la evidencia).
-- **Árbol limpio.** La búsqueda, la selección, la prueba, los artefactos y los reportes se niegan a correr con cambios sin commit en `src/` o `configs/` (salvo `--permitir-cambios`, que queda registrado), para que cada salida corresponda a un commit.
+- **Nunca sobrescribe.** Cada comando se niega a escribir sobre una salida existente. Para reproducir, se escribe en una carpeta nueva (`--salida`; `--output` en `build_channel`; en `artifacts`, una copia de `prueba/` sin la ficha, el historial ni `modelos_finales/`, pasada con `--prueba`) y se compara con la versionada (md5 del `.dvc` o bytes de la evidencia; los JSON pueden diferir solo en el fin de línea entre Windows y Linux).
+- **Árbol limpio.** La búsqueda, la selección, la prueba, los artefactos y los reportes se niegan a correr con cambios sin commit en `src/` o `configs/`, para que cada salida corresponda a un commit. La búsqueda, la selección, los artefactos y los reportes admiten `--permitir-cambios` para corridas de humo; la prueba no lo admite, y solo el manifiesto de los reportes lo registra (`cambios_sin_commit`). El diagnóstico (`diagnostics`) no comprueba el árbol y `build_channel` lo registra como `src_dirty` en su manifiesto.
 - **Barrera de prueba.** Ninguna métrica sobre semanas objetivo de 2023–2025 se calcula sin una receta congelada válida (`src/forecasting/guard.py`).
 - **Seguimiento.** La búsqueda y la prueba registran runs en MLflow según `seguimiento.modo` de `configs/forecasting.yaml` (modo `servidor` con credenciales de Cloudflare Access en `.env`, o `local` en `mlruns/`).
 
@@ -136,7 +136,7 @@ Las pruebas de aceptación con datos reales necesitan `dvc pull` y se ejecutan p
 .venv/Scripts/python.exe -B -m pytest tests/acceptance -q -rA -p no:cacheprovider --panel-parquet data/processed/pilot_municipalities_weekly.parquet --channel-parquet data/processed/epidemiology/pilot_weekly_channel.parquet --legacy-labels-parquet data/processed/epidemiology/pilot_weekly_labels.parquet --search-dir data/processed/forecasting --sin-clima-dir data/processed/forecasting/sin_clima --prueba-dir data/processed/forecasting/prueba
 ```
 
-Sin las opciones, las pruebas con datos se omiten; con una opción y sin el archivo, fallan.
+Sin las opciones, las pruebas con datos se omiten; con una opción y sin el archivo, fallan. Las pruebas `*_real_*` de F6 y F7 ya no se deseleccionan con `-k` (sus docstrings congelados lo piden solo hasta U6.3 y U7.3, ya cerradas): se ejecutan con el comando anterior.
 
 ## 7. El modelo
 
@@ -144,7 +144,7 @@ Sin las opciones, las pruebas con datos se omiten; con una opción y sin el arch
 - **Tamaño.** Seis archivos `joblib` de unos 4 KB cada uno, más un manifiesto: unos 28 KB en total.
 - **Dónde están.**
   - **DVC:** `data/processed/forecasting/prueba/modelos_finales/` (`<código>.joblib` y `manifiesto.json`, con la familia, el candidato, el conjunto de variables, las filas y el hash de la receta). Copia del manifiesto en git: `reports/forecasting/evidence/prueba_20261112/manifiesto_modelos_finales.json`.
-  - **MLflow:** la prueba única quedó registrada en el experimento `dengue_h8_prueba` del servidor del equipo; la búsqueda de desarrollo, en `dengue_h8_desarrollo`. El registro de los modelos finales como `DengueAlertas_<municipio>` en el registro de modelos, que es lo que lee la API, es parte de F8.
+  - **MLflow:** la prueba única quedó registrada en el experimento `dengue_h8_prueba` del servidor del equipo; la búsqueda de desarrollo, en `dengue_h8_desarrollo`. El registro de los modelos finales como `DengueAlertas_<Municipio>` (nombre del municipio; propuesta de la especificación §9) en el registro de modelos, que es lo que lee la API, es parte de F8.
 - **Por qué no hay carpeta `modelos/`.** Los modelos son salidas del pipeline, como las predicciones y la ficha: se versionan con DVC junto a las salidas de la prueba de la que dependen (especificación §4, «Ubicación de resultados»), y git solo guarda su descriptor. El punto de distribución para la API es el registro de modelos de MLflow, no una carpeta del repositorio.
 
 ## 8. Parametrización
@@ -158,7 +158,7 @@ Variables de entorno existentes:
 
 | Variable | Uso |
 |---|---|
-| `FORECAST_HORIZON` | Sobrescribe h del pipeline (por defecto 8); debe ser entero |
+| `FORECAST_HORIZON` | Sobrescribe h del pipeline (por defecto 8); debe ser 2, 4, 8 o 12 (`horizonte.permitidos`), y solo h = 8 tiene receta y modelos |
 | `MLFLOW_TRACKING_URI` | Servidor MLflow (por defecto, el de `configs/forecasting.yaml`) |
 | `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | Credenciales de Cloudflare Access para MLflow. Van en `.env` (plantilla: `.env.example`), que git ignora; las entrega el responsable de infraestructura y API |
 | `STAGE`, `MODEL_NAME`, `MODEL_THRESHOLD` | Configuración de la API actual (`src/api.py`, `Dockerfile`); se revisan en F8 |

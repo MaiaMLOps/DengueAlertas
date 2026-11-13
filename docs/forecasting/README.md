@@ -77,7 +77,7 @@ Cada fase tiene pruebas de aceptación que se escribieron y congelaron antes de 
 
 ### 3.1 Qué lee y qué escribe cada módulo
 
-Los módulos sin línea de comandos son funciones puras: reciben tablas en memoria y no escriben archivos. Los que puntúan filas llaman primero a la barrera de prueba.
+Los módulos sin línea de comandos no deciden dónde escribir: reciben tablas o rutas de quien los llama. Los que puntúan filas llaman primero a la barrera de prueba.
 
 | Módulo | Responsabilidad | Lee | Escribe |
 |---|---|---|---|
@@ -101,7 +101,7 @@ Los módulos sin línea de comandos son funciones puras: reciben tablas en memor
 | `src/forecasting/run_selection.py` | Línea de comandos de la selección; ejecuta la selección dos veces y exige el mismo resultado | Salidas de las búsquedas y sus `.dvc` | Evidencia `seleccion_*` (CSV, JSON y borrador) |
 | `src/forecasting/evaluate.py` | Prueba única: modelo, ablación, B2 y B1 en las mismas filas; resumen de §7 y §8.4 | Receta, configuración, canal, bitácora | `prueba/`: predicciones, ensayos, casillas, resumen, `diagnostico_prueba/`; entrada en `bitacora_prueba.jsonl`; runs en `dengue_h8_prueba` |
 | `src/forecasting/artifacts.py` | Ficha de desempeño, historial fuera de muestra y modelos finales | Salidas de la prueba, receta, búsqueda | `prueba/`: `ficha_desempeno.json`, `historial*.parquet`, `modelos_finales/` |
-| `src/forecasting/diagnostics.py` | Régimen de cada casilla y los seis insumos de §8.8 | Receta, canal, búsqueda | `diag_*.csv` |
+| `src/forecasting/diagnostics.py` | Régimen de cada casilla y los seis insumos de §8.8 | Receta, canal, búsqueda (pasar la del conjunto de la receta, `--busqueda data/processed/forecasting/sin_clima`; el valor por defecto es la búsqueda completa) | `diag_*.csv` |
 | `src/forecasting/reports.py` | Reportes derivables de desarrollo y prueba | Búsquedas, `prueba/`, receta, canal | Tablas CSV y `manifiesto_reportes.json` |
 | `src/forecasting/figures_reports.py` | Figuras PNG y SVG de los reportes | Tablas de `reports.py` | `reports/forecasting/figures/<fecha>/` |
 
@@ -127,26 +127,31 @@ La dependencia va de `src/forecasting/` a `src/epidemiology/`, nunca al revés. 
 - **Semillas.** Una semilla global, 20261112, la misma en los seis municipios: `semilla_muestreo` para sortear los candidatos de LightGBM y `semilla_modelo` como `random_state` de todos los ajustes. LightGBM corre con un hilo y en modo determinista, así que dos ajustes iguales dan las mismas probabilidades bit a bit.
 - **Hash de la receta.** `configs/receta_congelada.yaml` lleva un SHA-256 de su propio contenido (sin el campo del hash), calculado sobre un JSON canónico: reordenar el YAML no lo cambia y editar un valor lo invalida. La receta registra también el commit del código, el commit del contrato y la versión del canal. La bitácora de la prueba, el manifiesto de los modelos finales y las etiquetas de MLflow citan ese hash.
 - **Identidad de las búsquedas.** Cada búsqueda tiene un `busqueda_id` derivado de su manifiesto (candidatos, hash de los ejemplos, secciones de la configuración y commit). Una búsqueda no se mezcla con otra en la misma carpeta ni se reanuda después de un commit nuevo.
-- **Árbol limpio.** Las líneas de comandos que producen evidencia se niegan a correr con cambios sin commit en `src/` o `configs/`, y nunca sobrescriben una salida. Cada commit de evidencia cita el commit del que se generó.
-- **Verificación independiente.** Los scripts de [`verificacion/`](verificacion/) no importan nada de `src/`: recalculan desde el contrato las cifras que las pruebas de aceptación tienen escritas como literales.
+- **Árbol limpio.** Las líneas de comandos que producen evidencia se niegan a correr con cambios sin commit en `src/` o `configs/`, salvo `diagnostics`, que no lo comprueba, y `build_channel`, que lo registra como `src_dirty` en su manifiesto. Ninguna sobrescribe una salida. Cada commit de evidencia cita el commit del que se generó.
+- **Bytes de la evidencia.** `.gitattributes` desactiva la conversión de fin de línea en `reports/**/evidence/**` y en `docs/forecasting/verificacion/*.py`, de modo que los hashes citados (manifiestos y md5 de los scripts en las pruebas congeladas) se reproducen sobre la copia de trabajo en cualquier sistema. Las copias de DVC de `resumen_prueba.json`, `ficha_desempeno.json` y `modelos_finales/manifiesto.json` se escribieron en Windows con CRLF y difieren de las de git solo en el fin de línea.
+- **Evidencia del canal (F1).** El comando que documenta `reports/epidemiology/evidence/channel_20261111/README.md` (`scripts/describe_channel_epico.py --out-dir reports/epidemiology/evidence/channel_20261111`) sobrescribe la evidencia versionada, porque el script no comprueba si la carpeta existe. Para reproducirla se escribe en una carpeta nueva (`--out-dir reports/epidemiology/runs/canal_<fecha>`, ignorada por git) y se compara.
+- **Verificación independiente.** Los scripts de [`verificacion/`](verificacion/) no importan nada de `src/`: recalculan desde el contrato las cifras que las pruebas de aceptación tienen escritas como literales, y las del análisis integrado.
 
   | Script | Qué contrasta |
   |---|---|
   | `descriptivos_d3.py` | Cifras de la variable objetivo y del canal (D1.1, D3, D4) |
-  | `caso_f2.py` | Las 15 variables de un municipio y una semana (F2) |
-  | `tamanos_d71.py`, `caso_f3_hueco.py` | Filas de entrenamiento por ensayo y líneas base con el corte de D7.1 (F3) |
+  | `caso_f2.py` | Las 15 variables de un municipio y una semana (F2): los casos literales de `tests/acceptance/test_f2_dataset.py` |
+  | `tamanos_d71.py`, `caso_f3_hueco.py` | Filas de entrenamiento por ensayo y líneas base con el corte de D7.1 (F3); `caso_f3_hueco.py` da el caso literal de `tests/acceptance/test_f3_baselines.py` |
   | `eventos_d8.py` | Inicios de brote evaluables por periodo (F4) |
   | `umbrales_d9.py` | Umbrales de las reglas de conteo de victorias (F5a) |
   | `caso_f6.py`, `caso_f6b.py` | Selección, τ, paso 0 y ablación (F6, F6b) |
-  | `caso_f7_diagnostico.py` | Régimen, casillas y resúmenes del diagnóstico (F7) |
+  | `caso_f7_diagnostico.py` | Régimen, casillas y resúmenes del diagnóstico (F7). Su uso documentado y su `--tau` por defecto (0,10) corresponden a la receta sustituida; para la receta vigente (literales de `test_f7b_diagnostico_desarrollo.py`): `--busqueda data/processed/forecasting/sin_clima --familia logistica --tau 0.05` |
+  | `caso_u75.py` | Reportes derivables de U7.5: clasificación en τ, Murphy, calibración anual, eventos y razón de alertas (contraste independiente previo a congelar `test_f7c_reportes_real.py` y `test_f7c_identidades_real.py`) |
+  | `analisis_integrado_exploratorio.py` | Cifras exploratorias [X] de `analisis_resultados.md` y contraste independiente parcial de U7.5 (480 cantidades) |
+  | `verificar_cifras_analisis.py` | Cada cifra de `analisis_resultados.md` que procede de la evidencia, con un solo redondeo (245 comprobaciones) |
 
-  Se ejecutan con `python -I` (aislado) y la ruta de los datos; el uso exacto está al inicio de cada script.
+  Se ejecutan desde la raíz con el Python del entorno y en modo aislado, por ejemplo `.venv/Scripts/python.exe -X utf8 -I docs/forecasting/verificacion/<script>.py …`, con la ruta de los datos; las opciones están al inicio de cada script (algunos usos antiguos muestran solo el nombre del archivo o `python`). Los md5 que citan las pruebas congeladas son los de `caso_f6b.py` y `caso_f7_diagnostico.py`; `caso_f6.py` queda fijado porque `caso_f6b.py` lo importa.
 
 ## 5. Gobernanza
 
 - **Receta congelada y bitácora.** La receta la genera la selección como borrador y la aprueba el responsable de la implementación (nombre y fecha en el campo `aprobacion`). La prueba solo corre con una receta válida, y cada ejecución queda en `reports/forecasting/bitacora_prueba.jsonl` en el momento de iniciar (un intento fallido también cuenta).
 - **Prueba única.** Ningún sistema (modelo, B1, B2, ablación ni alerta del canal) se puntúa sobre semanas objetivo de 2023–2025 antes de la receta. La prueba se ejecutó una vez; una segunda ejecución exige `--razon` y queda registrada. Ninguna métrica de prueba cambia una decisión.
-- **Pruebas de aceptación congeladas.** Cada fase escribe sus pruebas de aceptación (`tests/acceptance/test_f<fase>_*.py`) con cifras literales de los scripts independientes; el responsable de la implementación revisa sus afirmaciones y se congelan en un commit propio antes de implementar. Después se añade una regla `Edit(...)` de denegación en `.claude/settings.json`. La regla previene ediciones de la herramienta de programación; git verifica: estos archivos no deben aparecer en `git diff` ni en `git log` posteriores a su commit de congelamiento. `tests/acceptance/conftest.py` solo puede ganar opciones nuevas.
+- **Pruebas de aceptación congeladas.** Cada fase escribe sus pruebas de aceptación (`tests/acceptance/test_f<fase>_*.py`) con cifras literales de los scripts independientes; el responsable de la implementación revisa sus afirmaciones y se congelan en un commit propio antes de implementar. Después se añade una regla `Edit(...)` de denegación en `.claude/settings.json`; la verificación la hace git: estos archivos no deben aparecer en `git diff` ni en `git log` posteriores a su commit de congelamiento. `tests/acceptance/conftest.py` solo puede ganar opciones nuevas.
 - **Pruebas sustituidas (DV-02).** Cuando una enmienda vuelve obsoleta una prueba congelada, la prueba no se edita: `tests/conftest.py` la marca como `sustituida_dv02` y la omite con una razón que nombra su reemplazo, de modo que aparece como omitida en todo informe. El reemplazo va en un archivo con nombre propio (`test_f7b_*`) y su propia regla.
 - **Legado congelado.** `ewt`, `excess_label`, `pilot_weekly_labels.parquet`, `src/epidemiology/ewt.py`, `src/epidemiology/labels.py` y los descriptores DVC existentes no se modifican: reproducen el informe de avance y su auditoría.
 - **Cómo proponer una enmienda.**
@@ -181,10 +186,28 @@ La dependencia va de `src/forecasting/` a `src/epidemiology/`, nunca al revés. 
 | D0–D10 | Decisiones del contrato: D0 alcance territorial; D1 conteo, calendario y canal; D2 umbral de exceso (U1e); D3 variable objetivo; D4 emisión, información disponible y horizonte; D5 líneas base y modelos; D6 variables; D7 validación y selección; D8 métricas y regla de decisión; D9 incertidumbre y reglas de comparación; D10 salida para el usuario |
 | D*x.y* | Enmienda de una decisión: D1.1 parametrización única del canal; D7.1 entrenamiento cerrado en la primera emisión de cada ensayo; D7.2 conjunto de variables como paso de selección; D9.1 análisis diagnóstico integrado |
 | DV-NN | Desviación registrada durante la implementación: DV-01 (corte de entrenamiento, origen de D7.1), DV-02 (receta sustituida por D7.2 antes de la prueba), DV-03 (edición editorial de los documentos) |
-| F0–F8 | Fases de la implementación (§2). Sufijos: F5a/F5b (arnés y búsqueda), F6b (D7.2), F7b (pruebas de F7 que sustituyen a las de DV-02), F7c (pruebas de U7.5) |
+| F0–F8 | Fases de la implementación (§2). Sufijos: F5a/F5b (arnés y búsqueda), F6b (D7.2), F7b (pruebas que reemplazan a las de F7 sustituidas por DV-02), F7c (pruebas de U7.5) |
 | U*x.y* | Unidad de trabajo *y* de la fase *x*: uno o dos requisitos del contrato y un commit |
 | contrato §10.*n* | Requisito *n* de la lista acumulada del contrato |
-| [H], [C], [D], [I], [R], [P] | Marcas de los documentos: hecho verificado, cálculo reproducible con un script, decisión, inferencia, recomendación, pendiente |
+
+**Decisiones de plan de las unidades.** No son decisiones del contrato (D0–D10). Se citan así en el código y en las pruebas congeladas de F6b, F7 y F7c, y se reconstruyen aquí desde esos archivos:
+
+| Identificador | Qué fija | Dónde se cita |
+|---|---|---|
+| F7, decisión 1 | La ablación del clima de D5 (contrato §4.4): la familia final con el otro conjunto de variables | `desviaciones.md` (DV-02, «decisión D1»), `reports/forecasting/INDICE.md`, `tests/forecasting/test_search.py` («F7, D1») |
+| U7.1-D2 | El historial de desarrollo usa las predicciones guardadas de la configuración de la receta, con el rótulo «usado para elegir» | `src/forecasting/artifacts.py`, `tests/acceptance/test_f7_artefactos.py`, `test_f7b_prueba_real.py` |
+| U7.1-D3 | El diagnóstico de desarrollo usa la configuración común fuera de año, que cambia por año; sus cifras de eventos se reportan como salen, aunque difieran de las de la curva de τ | `tests/acceptance/test_f7_diagnostico_desarrollo.py`, `test_f7b_diagnostico_desarrollo.py`, `src/forecasting/reports.py` («as diagnostics.py, D3») |
+| U7.1-D4 | El estado de alerta se calcula por periodo y no cruza de desarrollo a prueba | `src/forecasting/artifacts.py`, `tests/acceptance/test_f7_artefactos.py`, `tests/forecasting/test_artifacts.py` |
+| U7.5-D1 | Intervalos de confiabilidad: 10 intervalos de igual frecuencia (`pd.qcut`), recalculados por año | `tests/acceptance/test_f7c_formulas.py` |
+| U7.5-D2 | Descomposición de Murphy con esos intervalos; residuo WBV − 2·WBC | `tests/acceptance/test_f7c_formulas.py` |
+| U7.5-D3 | Clasificación en τ: emisión positiva si p ≥ τ; NaN cuando el denominador es 0 | `tests/acceptance/test_f7c_formulas.py` |
+| U7.5-D4 | Razón de alertas de `events._summarize` (cuenta inicios, así que puede superar 1) y duraciones descriptivas | `tests/acceptance/test_f7c_formulas.py`, `docs/forecasting/verificacion/analisis_integrado_exploratorio.py` |
+| U7.5-D5, sentido (a) | Habilidad pareada por casilla municipio-año, con los dos agregados | `tests/acceptance/test_f7c_formulas.py` |
+| U7.5-D5, sentido (b) | Insumos de cada periodo: en desarrollo, la receta y la ablación con su configuración común fuera de año y las líneas base guardadas; en prueba, los cuatro sistemas de `predicciones_prueba.parquet` | `tests/acceptance/test_f7c_identidades_real.py`, `src/forecasting/reports.py` («decision D5 of U7.5»). El plan usa «D5» con dos sentidos; ambos se conservan tal como están en los archivos |
+| PARADA 2 (plan de F6b) | Reconstruida a partir del docstring de `test_f6breal_seleccion.py`: punto de detención en que el responsable de la implementación revisó la selección real de D7.2 y su verificación independiente (`caso_f6b.py`) antes de congelar esa prueba | `tests/acceptance/test_f6breal_seleccion.py` |
+
+No se encontró en el repositorio ninguna U7.1-D1 ni U7.1-D5 con sentido propio.
+| [H], [C], [D], [I], [R], [P], [X] | Marcas de los documentos: hecho verificado, cálculo reproducible con un script, decisión, inferencia, recomendación, pendiente y exploratorio (cálculo no declarado antes de abrir la prueba; describe, no concluye) |
 
 **Tiempo y canal**
 
@@ -212,7 +235,7 @@ La dependencia va de `src/forecasting/` a `src/epidemiology/`, nunca al revés. 
 - **Pre-registro:** candidatos, rejillas y semillas fijados antes de la búsqueda (sección `busqueda` de `configs/forecasting.yaml`). **Tabla única:** puntajes de todos los candidatos por municipio y año; fuente de verdad de la selección.
 - **Receta congelada:** la configuración elegida en desarrollo (familia, conjunto de variables, hiperparámetros por municipio, τ, k, W, ablación), con procedencia, aprobación y hash. **Barrera de prueba:** `guard.py`. **Bitácora:** registro de ejecuciones de la prueba. **Prueba única:** la evaluación 2023–2025, ejecutada una vez.
 - **Ficha de desempeño:** resultados de prueba que sirve la API. **Historial fuera de muestra:** predicciones del origen móvil 2019–2025; nunca incluye el modelo final. **Modelo final:** entrenado con todas las filas, solo para emisiones posteriores a la última verdad conocida.
-- **«Usado para elegir»:** rótulo de todo resultado de desarrollo. **`sustituida_dv02`:** marca de una prueba congelada que sustituyó otra (§5).
+- **«Usado para elegir»:** rótulo de todo resultado de desarrollo. **`sustituida_dv02`:** marca de una prueba congelada que una enmienda volvió obsoleta; se omite y nombra su reemplazo (§5).
 
 **Cómo leer los hashes**
 
@@ -226,10 +249,20 @@ La dependencia va de `src/forecasting/` a `src/epidemiology/`, nunca al revés. 
 
 ## 8. Pendientes (F8)
 
-- Registro de los seis modelos finales en el registro de modelos de MLflow como `DengueAlertas_<municipio>`, con las etiquetas de la especificación §9, de forma compatible con el descubrimiento de modelos de `src/api.py`.
+- Registro de los seis modelos finales en el registro de modelos de MLflow como `DengueAlertas_<Municipio>` (nombre del municipio; propuesta de la especificación §9), con las etiquetas de la especificación §9, de forma compatible con el descubrimiento de modelos de `src/api.py`.
 - API: `/predict`, `/predict/upload`, `/historial` y `/desempeno` según [`api_salida_d10.md`](api_salida_d10.md), incluido el conflicto del parámetro `threshold` de `/predict` con contrato §9.7 (especificación §10) y la validación del contrato de entrada de datos subidos (contrato §3.3).
 - Frontend con las cuatro vistas de contrato §9.4 y la URL de la API como variable.
 - Secciones de despliegue del README raíz: enlace a la aplicación, uso de la API, ejemplos de entrada y salida (plantilla CSV y respuesta JSON) y credenciales de ejemplo (contrato §10, punto 21).
 - Pruebas de aceptación de F8 (contrato §10, puntos 19 y 20), escritas y congeladas antes de implementar.
+- Revisión de la API actual (`src/api.py`, anterior al MVP), según la auditoría de coherencia del 2026-11-13:
+  - sirve los modelos `ModeloPrueba` y `DengueAlertas_*` de otra etapa (Cali, Bucaramanga, Cartagena, Ibagué y Villavicencio), con `MODEL_THRESHOLD` = 0,205, sin los seis pilotos ni la receta congelada;
+  - **`/predict` rellena con 0,0 las variables que faltan, ignora los errores de conversión de tipos y, si el modelo no da probabilidad, usa una probabilidad sustituta de 0,85 o 0,15 según la clase**: esa `probability` no es una probabilidad del modelo;
+  - carga los modelos de forma secuencial (no «en paralelo», como dice su comentario), y cuántos carga depende de lo que encuentra en MLflow;
+  - el mapa de municipios usa códigos de departamento tipo ISO 3166-2, no DANE, y no cita la fuente de la densidad;
+  - escribe `logs/api_<stage>.jsonl` con las entradas completas (carpeta ignorada por git desde la auditoría);
+  - sus docstrings y comentarios están en español sin tildes, aunque la convención del código es el inglés;
+  - la ficha versionada trae claves fuera de la convención de `api_salida_d10.md` §2 (`mcnemar.nivel`, `B2`/`B1`, `municipality_code`), que la API normaliza al servirla (`api_salida_d10.md` §7).
 
-**Otros pendientes:** análisis cualitativo de contrato §8.8 y contraste de H-R y H-E, a partir de la evidencia ya generada.
+El análisis cualitativo de §8.8 y el contraste de H-R y H-E están en [`analisis_resultados.md`](analisis_resultados.md) (03891f3).
+
+**Sensibilidades no ejecutadas en el MVP [P].** Quedan como posible desarrollo posterior, sin compromiso de realizarlas: la GRU opcional (contrato §4.2), los horizontes h ∈ {2, 4, 12} (contrato §3.6), el canal U3a y las ventanas de 3 o 7 años (`registro_decisiones.md`, D2), la validación externa (`registro_decisiones.md`, D0) y el contraste del canal con epiCo en R (contrato §10.1).

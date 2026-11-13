@@ -2,7 +2,7 @@
 
 **Proyecto:** «Alerta temprana de excesos en canales endémicos de dengue en Colombia mediante Machine Learning».
 **Ámbito:** repositorio `MaiaMLOps/DengueAlertas` · Maestría en Inteligencia Artificial, Universidad de los Andes.
-**Lecturas principales:** `README.md`, `docs/forecasting/README.md`, `docs/contexto_metodologico.md`, `docs/epidemiology_labels.md`, `docs/pilot_selection.md`, `docs/data_dictionary.md` y, cuando corresponda, `docs/data_pipeline.md`.
+**Lecturas principales:** `README.md`, `docs/forecasting/README.md`, `docs/contexto_metodologico.md` (documento histórico: estado al 2026-10-21), `docs/epidemiology_labels.md`, `docs/pilot_selection.md`, `docs/data_dictionary.md` y, cuando corresponda, `docs/data_pipeline.md`.
 
 ## 1. Alcance y estado
 
@@ -13,7 +13,7 @@
 - Integración de SIVIGILA evento 210 y covariables semanales (`src/data/`): panel maestro `data/processed/master_weekly_screening.parquet` (78 municipios × 992 semanas = 77.376 filas, 15 columnas).
 - Selección descriptiva de **seis pilotos**: Cúcuta `54001`, Barranquilla `08001`, Neiva `41001`, Villavicencio `50001`, Cali `76001` y Soledad `08758` (`src/pilot_selection/`, `docs/pilot_selection.md`). Derivado `data/processed/pilot_municipalities_weekly.parquet` (5.952 × 15, sin etiquetas ni rezagos).
 - Etapa epidemiológica (`src/epidemiology/`): etiqueta EWT de legado en `data/processed/epidemiology/pilot_weekly_labels.parquet` (5.952 × 18), con su manifiesto `run_manifest.json` y evidencia en `reports/epidemiology/evidence/labels_20261021/`.
-- MVP de pronóstico (`src/forecasting/`, rama `feature/forecasting-mvp`): fases F0–F7 y reportes derivables (U7.5) cerrados; prueba única ejecutada. Pendiente: F8 (registro de modelos, API y frontend). Guía: `docs/forecasting/README.md`; estado de cada salida: `reports/forecasting/INDICE.md`.
+- MVP de pronóstico (`src/forecasting/`, en `main` desde el PR #8): fases F0–F7, reportes derivables (U7.5) y análisis integrado de §8.8 (`docs/forecasting/analisis_resultados.md`) cerrados; prueba única ejecutada. Pendiente: F8 (registro de modelos, API y frontend). Guía: `docs/forecasting/README.md`; estado de cada salida: `reports/forecasting/INDICE.md`.
 
 El repositorio también contiene el frontend React/Vite, la API FastAPI y la infraestructura MLOps del equipo.
 
@@ -21,7 +21,7 @@ El repositorio también contiene el frontend React/Vite, la API FastAPI y la inf
 
 **Contrato epidemiológico de legado:** conteo retrospectivo `confirmed_records_screening`; EWT municipal = `exp(mean(log(C + 0.001))) - 0.001` con los cinco años anteriores, incluidos años epidémicos; semanas W-SUN con el año del lunes inicial y ordinal de sus lunes desde uno; ordinal 53 histórico ausente sustituido por 52; etiqueta estricta `conteo > EWT`; 2007–2011 y la semana parcial 2025-12-29 no elegibles. Detalles en `docs/epidemiology_labels.md`.
 
-**Contrato predictivo:** emisión y horizonte, variables, particiones, líneas base, métricas y regla de decisión (D0–D10) están fijados en `docs/forecasting/contrato_predictivo.md`, y su implementación en `docs/forecasting/especificacion_implementacion.md`. Si este archivo los contradice, prevalecen ellos.
+**Contrato predictivo:** emisión y horizonte, variables, particiones, líneas base, métricas y regla de decisión (D0–D10) están fijados en `docs/forecasting/contrato_predictivo.md`, y su implementación en `docs/forecasting/especificacion_implementacion.md`. Si este archivo los contradice, prevalecen ellos. Esos dos documentos y `docs/forecasting/registro_decisiones.md` son pre-registro: no se reescriben, se corrigen con una errata fechada al final o con una DV, y `docs/forecasting/desviaciones.md` solo crece (`CLAUDE.md`, regla 8).
 
 ## 2. Decisiones
 

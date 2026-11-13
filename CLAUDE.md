@@ -13,7 +13,8 @@ Este archivo añade a `AGENTS.md` las reglas del pronóstico (`src/forecasting/`
 | `docs/forecasting/especificacion_implementacion.md` | Cómo se construye: módulos, fases, pruebas de aceptación y configuración |
 | `docs/forecasting/api_salida_d10.md` | Esquema de salida de la API |
 | `docs/forecasting/registro_decisiones.md` y `desviaciones.md` | Por qué se decidió así y qué cambió durante la implementación |
-| `docs/forecasting/verificacion/*.py` | Cálculos independientes de las cifras de aceptación |
+| `docs/forecasting/verificacion/*.py` | Cálculos independientes de las cifras de aceptación y del análisis integrado |
+| `docs/forecasting/analisis_resultados.md` | Análisis integrado de §8.8 (subordinado a la evidencia) |
 | `reports/forecasting/INDICE.md` | Estado de cada carpeta de datos, evidencia y figuras |
 
 Si la especificación contradice al contrato, manda el contrato. La metodología (D0–D10 y sus enmiendas) está cerrada: si algo resulta inviable, se detiene la parte afectada, se explica el problema y se espera la decisión del responsable de la implementación. Toda desviación aprobada se registra en `docs/forecasting/desviaciones.md` antes de continuar.
@@ -27,6 +28,7 @@ Si la especificación contradice al contrato, manda el contrato. La metodología
 5. **Receta congelada.** `configs/receta_congelada.yaml` no se edita: su hash SHA-256 cubre todo el contenido y la barrera rechaza una receta alterada.
 6. **Registro completo.** Se registran todos los candidatos, las líneas base, la ablación y las semillas, no solo el elegido.
 7. **Nada se decide mirando la prueba.** No se ajustan umbrales, ventanas, k, W ni τ con datos fuera de lo que fija el contrato.
+8. **Documentos pre-registrados.** `contrato_predictivo.md`, `registro_decisiones.md` y `especificacion_implementacion.md` no se reescriben: se corrigen con una errata fechada al final del documento o con una DV. `desviaciones.md` solo crece.
 
 ## Entorno
 
@@ -34,7 +36,7 @@ Si la especificación contradice al contrato, manda el contrato. La metodología
 - **Dependencias:** `requirements/forecasting.txt` (directas) y `requirements/forecasting.lock.txt` (entorno verificado, con DVC). No instalar nada sin aprobación.
 - **DVC:** `.venv/Scripts/dvc.exe`. `status` sin `-c` es local. Los comandos contra el remoto (`pull`, `fetch`, `push`, `status -c`) piden la contraseña por teclado y se ejecutan en una terminal interactiva. `add` y `push` requieren aprobación.
 - **Credenciales:** `.env` contiene las credenciales de Cloudflare Access para MLflow (plantilla: `.env.example`). **No se lee, no se imprime y su contenido no se copia** en mensajes, código, logs ni commits; los scripts lo cargan con `python-dotenv`. Las credenciales de DVC están solo en `.dvc/config.local`.
-- **MLflow:** solo a través de `src/forecasting/tracking.py`, que añade los encabezados de Cloudflare Access. Si `.env` falta o el servidor no responde, se informa y se usa el modo `local` de `configs/forecasting.yaml` (especificación §9). No se inventan credenciales ni se desactiva la verificación TLS.
+- **MLflow:** solo a través de `src/forecasting/tracking.py`, que añade los encabezados de Cloudflare Access. Si `.env` falta o el servidor no responde, se informa y se detiene: no hay respaldo automático, y cambiar `seguimiento.modo` a `local` en `configs/forecasting.yaml` (especificación §9) requiere aprobación. No se inventan credenciales ni se desactiva la verificación TLS.
 
 ## Pruebas
 
@@ -72,7 +74,7 @@ Si la especificación contradice al contrato, manda el contrato. La metodología
 - **Ubicación:** código nuevo en `src/forecasting/` y `src/epidemiology/channel_epico.py`; pruebas en `tests/forecasting/` y `tests/acceptance/`. Fuera de esas rutas (documentación, `.gitignore`, `requirements/`, `configs/`, API, frontend) solo si la tarea aprobada lo incluye.
 - **Nombres:** los que fija el contrato se usan tal cual (variables como `zona_t` o `posicion_4s`; columnas `epico_central`, `epico_upper`, `target_u1e`, `channel_zone`; campos de la API). Lo demás sigue el estilo existente: identificadores y docstrings en inglés, documentación en español.
 - **Configuración:** los parámetros van en `configs/forecasting.yaml` y se validan con Pydantic al cargarse. Ningún parámetro del contrato se escribe en el código.
-- **Datos y resultados:** los Parquet y artefactos van con DVC en `data/processed/`; la evidencia pequeña, en `reports/forecasting/evidence/<fecha>/` con excepciones explícitas en `.gitignore`. Las líneas de comandos nunca sobrescriben una salida y se niegan a correr con cambios sin commit en `src/` o `configs/`.
+- **Datos y resultados:** los Parquet y artefactos van con DVC en `data/processed/`; la evidencia pequeña, en `reports/forecasting/evidence/<nombre>_<fecha>/` con excepciones explícitas en `.gitignore`. Las líneas de comandos nunca sobrescriben una salida y se niegan a correr con cambios sin commit en `src/` o `configs/` (salvo `diagnostics`, que no lo comprueba, y `build_channel`, que lo registra en su manifiesto).
 - **Errores:** validar las entradas y fallar con mensajes claros. No capturar excepciones para ocultarlas.
 - **Commits:** formato `tipo(alcance): descripción` en español, con tipos `feat`, `fix`, `test`, `docs`, `chore` y `refactor` (por ejemplo `feat(canal): …`, `test(aceptacion): …`). Un commit por unidad de trabajo, con el requisito citado en el cuerpo (`contrato §10.7`). No se hacen commits, pushes, `dvc push`, instalaciones ni merges sin aprobación explícita.
 

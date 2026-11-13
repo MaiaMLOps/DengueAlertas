@@ -1,8 +1,8 @@
 # Especificación de la salida de la API — DengueAlertas (v0.1)
  
-**Estado:** borrador del 2026-11-10, derivado de `contrato_predictivo.md` §9 (D10). Sirve para que el frontend avance con datos simulados mientras se entrenan los modelos.
+**Estado:** v0.1 del 2026-11-10, derivado de `contrato_predictivo.md` §9 (D10). La receta está congelada (`configs/receta_congelada.yaml`: regresión logística sin clima, τ = 0,05) y la ficha de desempeño ya existe (`data/processed/forecasting/prueba/ficha_desempeno.json`; copia en `reports/forecasting/evidence/prueba_20261112/`). La implementación de la API es parte de F8.
 **Para:** el equipo de frontend, el responsable de infraestructura y API, y la implementación del pipeline.
-**Regla de cambios:** ver §10. Los nombres de campo, los tipos y los valores permitidos son estables; los valores numéricos, τ, la familia del modelo y las versiones se llenan cuando la receta se congele.
+**Regla de cambios:** ver §10. Los nombres de campo, los tipos y los valores permitidos son estables; los valores numéricos, τ, la familia del modelo y las versiones se toman de la receta congelada y de la ficha.
  
 ## 1. Para qué sirve
  
@@ -17,6 +17,7 @@ La API entrega lo que muestra la interfaz (`contrato_predictivo.md` §9.3) y nad
 - **Central y U1e del canal:** número con hasta 5 decimales (redondeo de epiCo). El frontend redondea al mostrar.
 - **Ausencias:** `null`; nunca se omite un campo.
 - **Nombres:** español, `snake_case`, sin tildes.
+
 **Valores permitidos (enumeraciones):**
  
 | Campo | Valores | Significado |
@@ -26,6 +27,7 @@ La API entrega lo que muestra la interfaz (`contrato_predictivo.md` §9.3) y nad
 | `origen` | `modelo_final`, `prueba_origen_movil`, `desarrollo_origen_movil`, `carga_usuario` | De dónde sale cada predicción (`contrato_predictivo.md` §9.4) |
 | `periodo` | `desarrollo`, `prueba` | Partición de `contrato_predictivo.md` §6.1 |
 | `nivel_conclusion` | `mejora_consistente`, `tendencia_favorable`, `sin_mejora` | `contrato_predictivo.md` §8.4 |
+| `nivel_descriptivo` | `favorable`, `mixto`, `desfavorable` | Nivel por municipio en prueba (`contrato_predictivo.md` §8.8, D9.1) |
 | `tipo_evento` | `inicio_avisado`, `inicio_no_avisado`, `falsa_alarma`, `alerta_continuidad`, `inicio_censurado`, `alerta_censurada` | `contrato_predictivo.md` §7.4 |
 | `sistema` | `modelo`, `canal` | Quién emite la alerta |
  
@@ -34,6 +36,7 @@ La API entrega lo que muestra la interfaz (`contrato_predictivo.md` §9.3) y nad
 - `senal_en_observacion`: la emisión actual es ≥ τ, pero la anterior no.
 - `alerta_confirmada`: las dos últimas emisiones son ≥ τ (k = 2).
 - `continuidad_epidemica`: hay alerta y la zona observada en la semana de emisión ya es `epidemia`.
+
 ## 3. Endpoints
  
 | Método y ruta | Uso | Cálculo |
@@ -53,6 +56,7 @@ FastAPI genera la documentación interactiva en `/docs` a partir de modelos Pyda
 **Parámetros:**
 - `municipio`: obligatorio.
 - `semana_emision`: opcional; por defecto, la última semana completa de la base (2025-12-22).
+
 Solo admite semanas de la ventana vigente: posteriores al 2025-10-27 y hasta el 2025-12-22. Para otra fecha responde el error `fuera_de_ventana_vigente` e indica usar `/historial`. Nunca devuelve predicciones del modelo final para semanas con verdad conocida (`contrato_predictivo.md` §9.4).
  
 **Campos de la respuesta:**
@@ -88,7 +92,7 @@ Solo admite semanas de la ventana vigente: posteriores al 2025-10-27 y hasta el 
   "probabilidad": 0.4123,
   "referencias": {"b2_estado_canal": 0.1832, "b1_climatologia_estacional": 0.2410},
   "decision": {
-    "tau": 0.35, "k": 2, "estado_alerta": "alerta_confirmada",
+    "tau": 0.05, "k": 2, "estado_alerta": "alerta_confirmada",
     "emisiones_consecutivas_sobre_tau": 2, "parametros_congelados": true
   },
   "canal_actual": {"casos": 38, "central": 22.14, "u1e": 41.73, "zona": "alerta"},
@@ -98,10 +102,10 @@ Solo admite semanas de la ventana vigente: posteriores al 2025-10-27 y hasta el 
     {"semana": "2026-02-16", "casos": null, "central": 30.21, "u1e": 52.88, "zona": null, "tipo": "futura"}
   ],
   "trayectoria": [
-    {"semana_emision": "2025-10-06", "semana_objetivo": "2025-12-01", "probabilidad": 0.1210, "sobre_tau": false, "origen": "prueba_origen_movil"},
+    {"semana_emision": "2025-10-06", "semana_objetivo": "2025-12-01", "probabilidad": 0.1210, "sobre_tau": true, "origen": "prueba_origen_movil"},
     {"semana_emision": "2025-12-22", "semana_objetivo": "2026-02-16", "probabilidad": 0.4123, "sobre_tau": true, "origen": "modelo_final"}
   ],
-  "versiones": {"receta": "receta-2026-11-xx", "familia": "regresion_logistica", "modelo": "models:/dengue_h8_41001/1", "datos": "dvc:xxxxxxxx"},
+  "versiones": {"receta": "de74d4ab…fda5", "familia": "logistica", "modelo": "models:/DengueAlertas_Neiva/1", "datos": "dvc:xxxxxxxx"},
   "advertencias": [
     {"codigo": "retrospectivo", "texto": "Pronóstico retrospectivo con datos consolidados."},
     {"codigo": "sin_aval_ins", "texto": "No reemplaza la vigilancia oficial ni tiene aval del INS."},
@@ -115,6 +119,7 @@ Solo admite semanas de la ventana vigente: posteriores al 2025-10-27 y hasta el 
  
 - **Permanentes** (siempre presentes; `contrato_predictivo.md` §9.5): `retrospectivo`, `sin_aval_ins`, `probabilidad_no_certeza`, `semanas_incompletas`.
 - **Condicionales:** `parametros_modificados` (τ o k distintos de la receta: la ficha de desempeño no aplica).
+
 ## 5. `POST /predict/upload`
  
 **Entrada:** formulario `multipart/form-data` con el campo `archivo` (CSV, UTF-8, separador coma, decimal punto).
@@ -162,7 +167,7 @@ Solo admite semanas de la ventana vigente: posteriores al 2025-10-27 y hasta el 
 {
   "version_esquema": "0.1",
   "municipio": {"codigo": "54001", "nombre": "San José de Cúcuta"},
-  "tau": 0.35,
+  "tau": 0.05,
   "filas": [
     {"semana_emision": "2023-11-20", "semana_objetivo": "2024-01-15", "periodo": "prueba", "origen": "prueba_origen_movil",
      "probabilidad": 0.5210, "b2_estado_canal": 0.1832, "b1_climatologia_estacional": 0.3105, "estado_alerta": "alerta_confirmada",
@@ -191,7 +196,8 @@ Solo admite semanas de la ventana vigente: posteriores al 2025-10-27 y hasta el 
 - `curva_amoc`: lista con `tau`, `deteccion`, `falsas_alarmas_por_municipio_anio` y `anticipacion_mediana_semanas`.
 - `casillas`: lista con `municipio`, `anio`, `brier_modelo`, `brier_b2`, `brier_b1`, `logloss_modelo`, `logloss_b2` y `gana_vs_b2`.
 - `notas`: textos fijos. Por ejemplo, para Cali: «No hubo inicios de brote en 2023–2025: solo se miden falsas alarmas».
-Hasta que se ejecute la prueba, los valores numéricos son `null` y el frontend muestra «pendiente».
+
+**Ficha por municipio.** En la ficha generada (`ficha_desempeno.json`), por municipio `conclusion.nivel_conclusion` es `null` y se informa `nivel_descriptivo` (con `nivel_descriptivo_brier` y `nivel_descriptivo_logloss`; `contrato_predictivo.md` §8.8); `mcnemar.nivel_conclusion` es `null`. La ficha también trae campos adicionales (compatibles según §10) y algunas claves fuera de la convención de §2: `mcnemar.nivel` con el valor «sin mejora» (con espacio), las claves `B2` y `B1` en mayúscula y `municipality_code`. La ficha versionada no se regenera: en F8 la API normaliza estos campos al servirlos.
  
 ## 8. Errores
  
@@ -204,7 +210,9 @@ Formato único:
 Códigos HTTP: 404 (municipio desconocido), 422 (parámetros o archivo inválidos) y 500 (error interno, con un mensaje genérico).
  
 ## 9. Configuración (variables de entorno)
- 
+
+**Sustituida por la especificación §10** (`FORECAST_HORIZON`, `MODEL_THRESHOLD`, `ALERT_K`, `DATA_VERSION`, `MODEL_NAME`, `STAGE`; la URL de la API en el frontend se define en F8). La tabla siguiente se conserva como registro.
+
 | Variable | Por defecto | Uso |
 |---|---|---|
 | `DENGUE_HORIZONTE` | 8 | Solo valores con modelo entrenado |
@@ -219,9 +227,9 @@ Los nombres definitivos deben armonizarse con los de `src/api.py` y documentarse
 ## 10. Qué puede cambiar y cómo
  
 - **Estable:** nombres de campo, tipos y enumeraciones. Un cambio aquí sube `version_esquema` y se avisa al frontend.
-- **Se llena al congelar la receta:** τ, la familia y las versiones. En los datos simulados, usar τ = 0,35 como valor provisional.
+- **Tomado de la receta congelada:** τ = 0,05, la familia (`logistica`) y las versiones. Los datos simulados usan τ = 0,05.
 - **Compatible:** agregar campos nuevos sin quitar ni renombrar los existentes.
-- **Si la familia elegida es la GRU,** el esquema no cambia.
+
 ## 11. Datos simulados para el frontend
  
 Para que los datos simulados se parezcan a los reales, deben respetar estas invariantes, que también sirven como pruebas de la API:

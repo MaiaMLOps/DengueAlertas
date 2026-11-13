@@ -3,7 +3,7 @@
 Esta implementación reproduce exclusivamente el screening histórico autorizado:
 evento 210, `confirmados = 1`, territorio de ocurrencia (`COD_DPTO_O` +
 `COD_MUN_O`), fecha de síntomas `INI_SIN` y ventana inclusiva
-2007-01-01–2025-12-31. La regla es provisional y no define el desenlace final.
+2007-01-01–2025-12-31. La regla es provisional (adoptada después para las etiquetas y el canal) y no define el desenlace final.
 No construye etiquetas, canales endémicos, rezagos, ventanas predictivas,
 particiones temporales ni modelos.
 
@@ -13,8 +13,8 @@ Desde la raíz del repositorio, en un entorno con las dependencias de
 `requirements/data.txt`:
 
 ```powershell
-python -m src.data --sivigila-dir "../Datos SIVIGILA" --covariates "../Covariables/covariates_weekly_78_2007_2025.xlsx" --output "data/processed/master_weekly_screening.parquet" --report "reports/data_quality/integration_quality.json"
-python -m pytest tests/data -q
+.venv/Scripts/python.exe -m src.data --sivigila-dir "../Datos SIVIGILA" --covariates "../Covariables/covariates_weekly_78_2007_2025.xlsx" --output "data/processed/master_weekly_screening.parquet" --report "reports/data_quality/integration_quality.json"
+.venv/Scripts/python.exe -m pytest tests/data -q
 ```
 
 Las versiones utilizadas están fijadas en `requirements/data.txt` y
@@ -127,9 +127,9 @@ Se requiere un sistema de archivos que admita enlaces duros, como NTFS local;
 si no los admite, la ejecución falla sin recurrir a una escritura directa del
 nombre final.
 
-Un ejecutor aislado puede prohibir la creación de enlaces duros aunque NTFS la
-admita. En esta revisión ese bloqueo se observó en el aislamiento de Codex; las
-pruebas de publicación se ejecutaron con permiso explícito fuera del aislamiento.
+Un entorno de ejecución aislado (sandbox) puede prohibir la creación de enlaces duros
+aunque NTFS la admita (`WinError 5`). En esta revisión las pruebas de publicación se
+ejecutaron fuera de ese aislamiento, con permiso explícito.
 Ese permiso del ejecutor no equivale a requerir privilegios de administrador para
 la ejecución normal en un directorio local con permisos suficientes.
 
@@ -162,7 +162,9 @@ nulos y rangos; exclusiones por archivo; anomalías temporales; aportes entre
 archivos; conciliación de uniones; controles de aceptación; resumen por municipio;
 checksum y lectura de comprobación del Parquet generado.
 
-Los derivados y reportes JSON quedan excluidos de Git. El código, pruebas,
+Los derivados y reportes JSON quedan excluidos de Git, salvo el reporte validado
+`reports/data_quality/integration_quality_fixed_20261020.json`, que se versiona desde
+el 2026-11-13 (solo contiene agregados: perfiles, conteos, rangos y hashes). El código, pruebas,
 dependencias y esta documentación son versionables. `.gitignore` es una
 protección preventiva; no impide que alguien fuerce manualmente un agregado.
 
@@ -178,5 +180,11 @@ Los 78 son candidatos seleccionados retrospectivamente. Posteriormente se adopta
 seis pilotos y se implementaron sus etiquetas históricas y elegibilidad en una
 etapa independiente (`pilot_selection.md` y `epidemiology_labels.md`). Este pipeline
 conserva su alcance original: panel retrospectivo con conteos de screening, no
-etiquetas ni matriz supervisada. Disponibilidad histórica simulada y diseño
-predictivo continúan pendientes.
+etiquetas ni matriz supervisada. El diseño predictivo se fijó después en
+`docs/forecasting/contrato_predictivo.md`, sobre el canal de epiCo.
+
+La advertencia «final municipalities remain undecided» que el pipeline escribe en los
+metadatos del Parquet maestro y en el reporte de integración es histórica: los seis
+pilotos se fijaron el 2026-10-20 (`pilot_selection.md`). No se corrige en
+`src/data/pipeline.py` porque el hash de ese archivo está registrado en el reporte de
+integración y en el manifiesto de la evidencia de etiquetas.

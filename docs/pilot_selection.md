@@ -2,12 +2,12 @@
 
 **Nota de actualización, 2026-10-21:** este documento describe la etapa territorial
 cerrada. La construcción y caracterización epidemiológica posterior también se
-completó localmente; véase `epidemiology_labels.md`. El derivado territorial de
+completó e integró a `main` (PR #5); véase `epidemiology_labels.md`. El derivado territorial de
 15 columnas permanece intacto y separado del nuevo producto de 18 columnas.
 
 **Decisión del equipo:** 2026-10-20 (hora de Colombia).  
 **Estado:** selección de seis municipios piloto **terminada**; código, evidencia y dataset derivado incorporados a `main` mediante **PR #4**, fusionado el 2026-10-21 01:12 UTC (`5cae9f8a`).  
-**Referencia de cierre:** `Informe_final_seleccion_municipios_piloto_DengueAlertas.docx`. Consultar también `contexto_metodologico.md` y `data_dictionary.md`.
+**Referencia de cierre:** `Informe_final_seleccion_municipios_piloto_DengueAlertas.docx` (documento del equipo, no versionado en este repositorio). Consultar también `contexto_metodologico.md` y `data_dictionary.md`.
 
 ## 1. Propósito y decisión territorial
 
@@ -28,14 +28,14 @@ La lista adoptada está codificada una sola vez como `PILOTS` en `src/pilot_sele
 
 ## 2. Datos de partida y convenciones
 
-El insumo es `data/processed/master_weekly_screening.parquet`, reconstruido previamente desde registros del evento 210 de SIVIGILA y covariables ERA5-Land, CHIRPS y DANE. Contiene **77.376 filas, 15 columnas, 78 municipios y 992 semanas por municipio** entre 2007 y 2025. El conteo `confirmed_records_screening` usa la regla retrospectiva provisional de registros con `confirmados = 1`.
+El insumo es `data/processed/master_weekly_screening.parquet`, reconstruido previamente desde registros del evento 210 de SIVIGILA y covariables ERA5-Land, CHIRPS y DANE. Contiene **77.376 filas, 15 columnas, 78 municipios y 992 semanas por municipio** entre 2007 y 2025. El conteo `confirmed_records_screening` usa la regla retrospectiva provisional de registros con `confirmados = 1` (adoptada después para las etiquetas y el canal).
 
 La clave de una posición es `municipality_code` (texto DIVIPOLA de cinco dígitos) + `week_start` (lunes de inicio). La convención semanal es **lunes–domingo (W-SUN)**, sin equivalencia verificada con la numeración epidemiológica oficial. Los ceros indican falta de registros elegibles en el extracto, **no** ausencia certificada de dengue.
 
 **Diferencia de tratamientos:**
 
 - Para el **análisis descriptivo**, se excluyó la semana parcial iniciada el 2025-12-29 (tres días). Se examinaron **991 semanas completas por municipio**, **77.298 posiciones** y **636.865 registros elegibles** en el conjunto de 78.
-- En el **dataset derivado de seis municipios**, se conservaron todas las **992 semanas** de cada uno, incluyendo seis posiciones parciales, para preservar un subconjunto fiel del maestro. El tratamiento posterior de esa semana para las etiquetas sigue pendiente.
+- En el **dataset derivado de seis municipios**, se conservaron todas las **992 semanas** de cada uno, incluyendo seis posiciones parciales, para preservar un subconjunto fiel del maestro. En las etiquetas de legado y en el canal de epiCo esa semana no es elegible.
 
 Los años de los resúmenes corresponden al año del lunes inicial; no se divide una semana en dos años. La sensibilidad histórica filtra semanas iniciadas entre 2007 y 2022, con **835 semanas por municipio**. No es una partición de entrenamiento/prueba.
 
@@ -64,7 +64,7 @@ Reglas relevantes: `active_pct` es la proporción de semanas con registros elegi
 | Municipios con máximo anual bruto en 2023–2025 | 54 de 78 |
 | Municipios con máximo anual bruto en 2024 | 34 de 78 |
 
-La Figura 1 del informe final muestra la distribución de años de máximo volumen, concentrada en años recientes, especialmente 2024. Esto motivó la comprobación de sensibilidad histórica. La **Figura 2, página 5**, reúne las curvas semanales de Cúcuta, Barranquilla, Neiva, Villavicencio, Cali y Soledad, conservando escalas Y independientes: sus alturas no deben compararse entre municipios sin observar los ejes.
+La Figura 1 del informe final muestra la distribución de años de máximo volumen, concentrada en años recientes, especialmente 2024. Esto motivó la comprobación de sensibilidad histórica. La **Figura 2, página 5** (del informe final, no versionado; la figura equivalente versionada es `reports/pilot_selection/evidence/selection_20261020/weekly_comparison_6.png`), reúne las curvas semanales de Cúcuta, Barranquilla, Neiva, Villavicencio, Cali y Soledad, conservando escalas Y independientes: sus alturas no deben compararse entre municipios sin observar los ejes.
 
 **Seis pilotos, 991 semanas completas por municipio:**
 
@@ -83,12 +83,12 @@ La exploración consideró alternativas como Bucaramanga, Guadalajara de Buga, V
 
 ## 5. Implementación, evidencia y trazabilidad
 
-**Módulo:** `src/pilot_selection/`, independiente de `src/data/`. Contiene `config.py`, `analysis.py`, `plots.py`, `reporting.py`, `subset.py`, `__main__.py` y utilidades. Pruebas en `tests/pilot_selection/`; dependencias en `requirements/pilot-selection.txt`.
+**Módulo:** `src/pilot_selection/`, independiente de `src/data/`. Contiene `config.py`, `analysis.py`, `plots.py`, `reporting.py`, `subset.py`, `__main__.py` e `__init__.py`. Pruebas en `tests/pilot_selection/`; dependencias en `requirements/pilot-selection.txt`.
 
 Desde la raíz del repositorio y con las dependencias correspondientes, la exploración puede ejecutarse sin sobrescribir salidas existentes:
 
 ```bash
-python -m src.pilot_selection --input data/processed/master_weekly_screening.parquet --output-dir reports/pilot_selection/runs/nueva_exploracion --figures
+.venv/Scripts/python.exe -m src.pilot_selection --input data/processed/master_weekly_screening.parquet --output-dir reports/pilot_selection/runs/nueva_exploracion --figures
 ```
 
 La evidencia de cierre se conserva en `reports/pilot_selection/evidence/selection_20261020/`:
@@ -125,14 +125,14 @@ El descriptor DVC está en `main` desde el **PR #4**. La transferencia a `vps-st
 Regeneración local (solo cuando la salida no existe):
 
 ```bash
-python -m src.pilot_selection.subset
+.venv/Scripts/python.exe -m src.pilot_selection.subset
 ```
 
 Comprobaciones sintéticas y de regresión contra el maestro disponible:
 
 ```bash
-python -m pytest tests/pilot_selection/test_subset.py -q
-python -m pytest tests/pilot_selection/test_subset.py -q --master-parquet data/processed/master_weekly_screening.parquet
+.venv/Scripts/python.exe -m pytest tests/pilot_selection/test_subset.py -q
+.venv/Scripts/python.exe -m pytest tests/pilot_selection/test_subset.py -q --master-parquet data/processed/master_weekly_screening.parquet
 ```
 
 La implementación valida claves, fechas, seis municipios, 992 semanas, tipos, valores, semana parcial, metadatos y conservación del maestro. Rechaza sobrescrituras. No garantiza transacción indivisible ante corte abrupto durante la escritura; requiere ejecución finalizada y verificaciones aprobadas para certificar un nuevo archivo.
@@ -140,9 +140,10 @@ La implementación valida claves, fechas, seis municipios, 992 semanas, tipos, v
 ## 7. Limitaciones y estado científico posterior
 
 - **Sesgo de selección retrospectiva:** tanto los 78 candidatos como la selección de seis pilotos se hicieron con conocimiento de todo el periodo 2007–2025; la sensibilidad hasta 2022 no constituye selección prospectiva ni una partición de evaluación.
-- **Persistencia no es suficiencia de positivos:** las semanas con registros no indican cuántas semanas superarán un umbral de canal endémico que aún no se ha definido.
+- **Persistencia no es suficiencia de positivos:** las semanas con registros no indican cuántas semanas superarán un umbral de canal endémico (U1e de epiCo, fijado después en el contrato predictivo).
 - **Naturaleza de los datos:** confirmaciones finales, ceros de registro, no deduplicación entre episodios y anomalías de fechas 2013; los aumentos representados no son automáticamente brotes.
 - **Tiempo y validez externa:** W-SUN no se acreditó como calendario INS; se desconoce disponibilidad histórica exacta de conteos/clima; la muestra intencional no representa nacionalmente a Colombia.
-- **Siguiente desarrollo científico:** definir y justificar una referencia endémica local y la variable objetivo, distinguir estado observado de pronóstico, caracterizar etiquetas por municipio y posteriormente establecer horizontes, rezagos, particiones temporales y modelos independientes. Ninguno de esos parámetros ha sido fijado por esta etapa.
+- **Siguiente desarrollo científico:** definir y justificar una referencia endémica local y la variable objetivo, distinguir estado observado de pronóstico, caracterizar etiquetas por municipio y posteriormente establecer horizontes, rezagos, particiones temporales y modelos independientes. Ninguno de esos parámetros ha sido fijado por esta etapa; se resolvieron después en `docs/forecasting/contrato_predictivo.md`.
+- **Autoridad de la selección en el manifiesto:** el campo `selection_authority` de `reports/pilot_selection/evidence/selection_20261020/run_manifest.json` («team decision communicated by user») significa decisión explícita del equipo. `src/pilot_selection/reporting.py`, que escribe ese texto, no se edita porque su hash está registrado en ese manifiesto.
 
 La selección territorial **está cerrada como decisión vigente del equipo** para el prototipo. No debe recalcularse automáticamente por una métrica o por el desempeño de futuros modelos; cualquier cambio requiere justificación explícita.

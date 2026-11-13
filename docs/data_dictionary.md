@@ -2,7 +2,7 @@
 
 **Fecha de comprobación:** maestro 2026-10-20; cierre del derivado epidemiológico 2026-10-21.
 
-**Producto:** panel retrospectivo integrado bajo la regla provisional de screening;
+**Producto:** panel retrospectivo integrado bajo la regla provisional de screening (adoptada después para las etiquetas y el canal);
 77.376 filas y 15 columnas. Cada fila representa un municipio candidato y un
 intervalo semanal. El maestro no contiene etiquetas epidemiológicas ni ejemplos
 supervisados. El derivado territorial de seis municipios conserva esos 15 campos;
@@ -12,7 +12,7 @@ el producto epidemiológico añade tres campos, definidos al final de este docum
 
 Este diccionario traduce y desarrolla las definiciones existentes en los metadatos
 `denguealertas.data_dictionary`, `denguealertas.rule` y `denguealertas.warnings` del
-[Parquet maestro](../data/processed/master_weekly_screening.parquet), contrastadas
+Parquet maestro (`data/processed/master_weekly_screening.parquet`, versionado con DVC), contrastadas
 con las secciones `data_dictionary`, `rule`, `warnings`, `panel` y `output` del
 [reporte de calidad validado](../reports/data_quality/integration_quality_fixed_20261020.json).
 Las tres definiciones de metadatos coinciden con las del reporte.
@@ -24,8 +24,9 @@ Su SHA-256 coincide con el del Parquet maestro inspeccionado:
 ccc0ab5360e29cabb8b1f5d3a0feb7fe0f00dffba195c7f55ffe83c9d0a73c5e
 ```
 
-Los datos y reportes son artefactos locales excluidos de Git; estos enlaces
-requieren que estén presentes en las ubicaciones indicadas. La procedencia
+El Parquet maestro no está en Git: se recupera con `dvc pull` (descriptor
+`data/processed/master_weekly_screening.parquet.dvc`). El reporte de calidad validado
+está versionado en Git desde el 2026-11-13 y solo contiene agregados. La procedencia
 científica y los límites de las covariables se describen en
 [contexto_metodologico.md](contexto_metodologico.md); las transformaciones de
 integración, en [data_pipeline.md](data_pipeline.md). Este documento no introduce
@@ -250,13 +251,15 @@ manifiesto y de las cachés Parquet tampoco repite la auditoría de los Excel
 epidemiológicos originales.
 
 Este diccionario describe hechos de la integración y del derivado epidemiológico.
-La referencia, etiquetas y elegibilidad se aprobaron e implementaron para los seis
-pilotos. Siguen pendientes la disponibilidad histórica simulada, horizontes,
-características predictoras, rezagos y diseño de evaluación.
+La referencia EWT, las etiquetas y la elegibilidad de legado se implementaron para los
+seis pilotos. El diseño predictivo (emisión, horizonte, variables y evaluación) se fijó
+después en `docs/forecasting/contrato_predictivo.md`.
 La completitud de esta tabla no demuestra disponibilidad prospectiva ni utilidad
 predictiva de sus columnas.
 
 ## Derivado epidemiológico consolidado de 18 columnas
+
+> **Legado.** `ewt` y `excess_label` se conservan congelados para reproducir el informe de avance; el pronóstico usa `target_u1e` del canal de epiCo y no lee este Parquet.
 
 **Ruta:** `data/processed/epidemiology/pilot_weekly_labels.parquet`.
 **Procedencia:** copia binaria de
@@ -292,3 +295,23 @@ columnas originales. El indicador de ausencia de registros sigue siendo diferent
 de la elegibilidad y de una etiqueta negativa. La etiqueta indica superación de
 una referencia central retrospectiva, no brote oficial, pronóstico o probabilidad.
 Definición, estabilidad numérica y reproducción: `epidemiology_labels.md`.
+
+## Producto del canal de epiCo (vigente)
+
+**Ruta:** `data/processed/epidemiology/pilot_weekly_channel.parquet` (DVC), con su manifiesto adyacente
+`pilot_weekly_channel_manifest.json` (git). **Origen:** `data/processed/pilot_municipalities_weekly.parquet`, no el
+derivado de 18 columnas; lo construye `src/forecasting/build_channel.py` (F1). Conserva las 15 columnas del panel y
+añade cinco:
+
+| Columna | Definición |
+|---|---|
+| `epico_central` | Línea central de epiCo: media geométrica desplazada de la misma semana ordinal en los cinco años previos, redondeada a 5 decimales; nula si la semana no es elegible |
+| `epico_upper` | Límite superior U1e: central × exp(\|qt(α; n − 1)\| · gsd / √n), 0 si la central es 0; nulo si no es elegible |
+| `target_u1e` | 1 si `confirmed_records_screening` > `epico_upper`; 0 en otro caso si es elegible; nulo si no lo es |
+| `channel_zone` | `seguridad` (C ≤ central), `alerta` (central < C ≤ U1e) o `epidemia` (C > U1e); nula si no es elegible |
+| `channel_eligible` | Verdadero solo en semanas completas desde 2012 con cinco referencias históricas válidas |
+
+Parámetros y requisitos: `docs/forecasting/contrato_predictivo.md` §1 y §10.2. Descripción y figuras:
+`reports/epidemiology/evidence/channel_20261111/`; en `scripts/describe_channel_epico.py`, el orden de los pilotos
+sigue `PILOTS` de `src/pilot_selection/config.py` (su comentario cita `AGENTS.md`; el script no se edita porque su hash
+está en el README de esa evidencia).

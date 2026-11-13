@@ -1,10 +1,9 @@
 # EWT y etiquetas epidemiológicas semanales
 
-> **Legado (2026-11-10).** `ewt` y `excess_label` se conservan congelados para reproducir el informe de avance y la auditoría. No son el objetivo del MVP de pronóstico: este usa el canal de epiCo (`epico_central`, `epico_upper`, `target_u1e`), definido en `docs/forecasting/contrato_predictivo.md` y construido desde `pilot_municipalities_weekly.parquet`, no desde `pilot_weekly_labels.parquet`. Lo dicho abajo sobre el versionamiento pendiente quedó superado: el producto y su descriptor DVC están en `main` (PR #5).
+> **Legado (2026-11-10).** `ewt` y `excess_label` se conservan congelados para reproducir el informe de avance y la auditoría. No son el objetivo del MVP de pronóstico: este usa el canal de epiCo (`epico_central`, `epico_upper`, `target_u1e`), definido en `docs/forecasting/contrato_predictivo.md` y construido desde `pilot_municipalities_weekly.parquet`, no desde `pilot_weekly_labels.parquet`. Lo dicho abajo sobre el versionamiento pendiente quedó superado: el producto y su descriptor DVC están en `main` (PR #5). La evidencia `reports/epidemiology/evidence/labels_20261021/` describe el cierre del 2026-10-21; su README conserva el estado y la redacción de ese momento (incluida una referencia a la herramienta de ejecución aislada en Windows) porque su SHA-256 está en `run_manifest.json` y `src/epidemiology/reference_diagnostic_report.py` lo verifica. Por la misma razón (hash registrado en los manifiestos) no se editan los docstrings de `src/epidemiology/` que describen esta etapa como el contrato metodológico vigente o como «separate from forecasting»: el paquete contiene también el canal de epiCo que usa el pronóstico.
 
-Contrato aprobado por el equipo el 2026-10-21, implementado, probado y caracterizado.
-El cierre local prepara los artefactos para su posterior versionamiento manual;
-no acredita commit, integración a `main`, registro DVC ni transferencia remota.
+Contrato de legado aprobado por el equipo el 2026-10-21, implementado, probado,
+caracterizado e integrado a `main` (PR #5) con descriptor DVC.
 Estas decisiones posteriores completan las etapas de integración y selección.
 El producto asigna estados retrospectivos observados;
 no contiene pronósticos, horizontes, rezagos, modelos ni episodios persistentes.
@@ -72,14 +71,14 @@ y referencias. No se agregan columnas auxiliares de año, ordinal o referencia.
 
 Usar Python 3.11 con `requirements/data.txt` y `requirements/data-test.txt`.
 Las figuras y la caracterización requieren además `requirements/pilot-selection.txt`.
-Todas estas dependencias ya estaban instaladas; no se instalaron otras. En el equipo inspeccionado, este entorno
-corresponde a `python`; `.venv` contiene DVC, no las dependencias de cálculo.
+Se usa el Python 3.11 de `.venv` (`.venv/Scripts/python.exe` en Windows), que contiene las versiones fijadas en
+`requirements/data.txt`, `data-test.txt` y `pilot-selection.txt` (ver `requirements/forecasting.lock.txt`).
 
 ```powershell
-python -B -m pytest tests/epidemiology -q -p no:cacheprovider
-python -B -m pytest tests/epidemiology/test_local_regression.py -q -p no:cacheprovider --pilot-parquet data/processed/pilot_municipalities_weekly.parquet
-python -B -m pytest tests/epidemiology -q -p no:cacheprovider --pilot-parquet data/processed/pilot_municipalities_weekly.parquet --labels-parquet data/processed/epidemiology/pilot_weekly_labels.parquet
-python -B -m src.epidemiology --output-dir data/processed/epidemiology/nueva_revision
+.venv/Scripts/python.exe -B -m pytest tests/epidemiology -q -p no:cacheprovider
+.venv/Scripts/python.exe -B -m pytest tests/epidemiology/test_local_regression.py -q -p no:cacheprovider --pilot-parquet data/processed/pilot_municipalities_weekly.parquet
+.venv/Scripts/python.exe -B -m pytest tests/epidemiology -q -p no:cacheprovider --pilot-parquet data/processed/pilot_municipalities_weekly.parquet --labels-parquet data/processed/epidemiology/pilot_weekly_labels.parquet
+.venv/Scripts/python.exe -B -m src.epidemiology --output-dir data/processed/epidemiology/nueva_revision
 ```
 
 Las regresiones locales son optativas. La del insumo contrasta cada EWT con una fórmula Decimal de
@@ -100,7 +99,7 @@ superación de esta referencia central no equivale a un brote oficial.
 
 ## Caracterización descriptiva del producto existente
 
-La caracterización lee el Parquet preliminar ya guardado y su manifiesto. No
+La caracterización lee el Parquet consolidado (copia binaria del preliminar) y su manifiesto. No
 ejecuta `label_weeks`, no exporta otro dataset etiquetado y no cambia elegibilidad
 ni parámetros. Antes de agregar resultados, verifica los hashes, la conservación
 de los campos originales, cada EWT con Decimal de 60 dígitos y cada comparación
@@ -109,9 +108,9 @@ binaria con la identidad entera exacta
 La tolerancia de verificación del valor flotante no se usa para asignar etiquetas.
 
 ```powershell
-python -B -m pytest tests/epidemiology -q -p no:cacheprovider
-python -B -m src.epidemiology.characterization_report --output-dir reports/epidemiology/runs/nueva_caracterizacion
-python -B -m src.epidemiology.reference_diagnostic_report --output-dir reports/epidemiology/runs/nueva_revision_referencias
+.venv/Scripts/python.exe -B -m pytest tests/epidemiology -q -p no:cacheprovider
+.venv/Scripts/python.exe -B -m src.epidemiology.characterization_report --output-dir reports/epidemiology/runs/nueva_caracterizacion
+.venv/Scripts/python.exe -B -m src.epidemiology.reference_diagnostic_report --output-dir reports/epidemiology/runs/nueva_revision_referencias
 ```
 
 `characterization.py` calcula tablas globales, municipales y anuales, estadísticas
@@ -156,23 +155,21 @@ descriptivos, se obtienen de todas las semanas elegibles y no alteran etiquetas.
 Las asociaciones son parcialmente mecánicas por la definición `conteo > EWT`;
 no prueban causalidad ni valor predictivo. No se construyeron episodios nuevos.
 
-## Versionamiento pendiente y etapa siguiente
+## Versionamiento y relación con el pronóstico
 
-El contenido Parquet permanece excluido de Git y se gestionará posteriormente
-mediante DVC. Todavía no se creó su descriptor
-`data/processed/epidemiology/pilot_weekly_labels.parquet.dvc` ni se verificó una
-transferencia de este producto al remoto. `.gitignore` admite exclusivamente ese
-futuro descriptor y el manifiesto adyacente, además de los CSV/PNG/SVG/JSON/README
+El contenido Parquet permanece excluido de Git y se versiona con DVC mediante
+`data/processed/epidemiology/pilot_weekly_labels.parquet.dvc`. `.gitignore` admite
+ese descriptor y el manifiesto adyacente, además de los CSV/PNG/SVG/JSON/README
 de la evidencia final. No habilita datos originales ni corridas temporales.
 
-Las reglas de `.gitattributes` se limitan a la evidencia final y al manifiesto
-adyacente del dataset: `-text` evita conversiones automáticas LF/CRLF y conserva
-los bytes de CSV/JSON/SVG/README que sustentan sus hashes. No se modifica la
-política de finales de línea del resto del repositorio. Los hashes de código y
+Las reglas de `.gitattributes` cubren la evidencia versionada (`reports/**/evidence/**`),
+los scripts de verificación del pronóstico y los manifiestos con hash registrado:
+`-text` evita conversiones automáticas LF/CRLF y conserva los bytes de
+CSV/JSON/SVG/README que sustentan sus hashes. No se modifica la política de
+finales de línea del resto del repositorio. Los hashes de código y
 documentación son huellas del entorno de ejecución; una normalización posterior
 de esos archivos debe distinguirse de una modificación del Parquet o de la evidencia.
 
-El equipo realizará manualmente el registro Git/DVC después de revisar el cierre.
 No agregar el Parquet con `git add -f`, no agregar las figuras exploratorias sueltas
 y no compartir configuraciones locales o credenciales. La copia binaria final no
 autoriza regenerar/sustituir productos existentes. Si se pierde el preliminar local,
@@ -181,14 +178,14 @@ el registro de promoción y las instantáneas de manifiestos conservan su proced
 Para ejecutar juntas las suites de integración, selección y epidemiología:
 
 ```powershell
-python -B -m pytest tests/data tests/pilot_selection tests/epidemiology -q -p no:cacheprovider --import-mode=importlib --master-parquet data/processed/master_weekly_screening.parquet --pilot-parquet data/processed/pilot_municipalities_weekly.parquet --labels-parquet data/processed/epidemiology/pilot_weekly_labels.parquet
+.venv/Scripts/python.exe -B -m pytest tests/data tests/pilot_selection tests/epidemiology -q -p no:cacheprovider --master-parquet data/processed/master_weekly_screening.parquet --pilot-parquet data/processed/pilot_municipalities_weekly.parquet --labels-parquet data/processed/epidemiology/pilot_weekly_labels.parquet
 ```
 
-`--import-mode=importlib` evita la colisión entre los archivos homónimos
-`test_local_regression.py` de dos suites, sin renombrarlos. Las pruebas de
-publicación de `src/data/` requieren enlaces duros: el aislamiento de Codex en
-Windows puede bloquearlos con `WinError 5`; en ese caso requieren ejecución fuera
-del aislamiento con permiso. No se cambia la publicación segura para eludir esa
+`pytest.ini` aplica `--import-mode=importlib`, que evita la colisión entre los archivos
+homónimos `test_local_regression.py` de dos suites, sin renombrarlos. Las pruebas de
+publicación de `src/data/` requieren enlaces duros: un entorno de ejecución aislado en
+Windows puede bloquearlos con `WinError 5`; en ese caso se ejecutan fuera del
+aislamiento, con permiso. No se cambia la publicación segura para eludir esa
 restricción ni se requieren privilegios de administrador para NTFS local normal.
 
 En el cierre del 2026-10-21, esta ejecución conjunta terminó con **174 pruebas
@@ -197,7 +194,7 @@ consolidado. Los 18 CSV recalculados coincidieron exactamente con las corridas
 validadas. La copia final mantiene 4.380 elegibles, 2.870 positivas, 1.510 negativas,
 271 rachas, 20 prolongadas, 569 elegibles y 530 positivas con algún cero histórico.
 
-Quedan pendientes fecha de emisión, horizontes, disponibilidad histórica simulada,
-características y rezagos, entrenamiento, particiones y evaluación cronológica y
-despliegue del predictor. La infraestructura existente no demuestra que estos
+El diseño predictivo (emisión, horizonte, variables, particiones y evaluación) se fijó
+después en `docs/forecasting/contrato_predictivo.md`, sobre el canal de epiCo y no sobre
+esta etiqueta; el despliegue del predictor es parte de F8. La infraestructura existente no demuestra que estos
 estados históricos sean predicciones ni que el predictor esté operativo.

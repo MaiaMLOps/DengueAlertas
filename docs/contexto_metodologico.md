@@ -1,5 +1,7 @@
 # Contexto metodológico y estado de decisiones — DengueAlertas
 
+> **Documento histórico:** describe el estado al 2026-10-21; el método vigente está en `docs/forecasting/`. La etiqueta EWT (`excess_label`) que aquí se describe es legado congelado: el objetivo del pronóstico es `target_u1e` del canal de epiCo (`docs/forecasting/contrato_predictivo.md`). Las menciones a decisiones o versionamiento pendientes se refieren a esa fecha.
+
 **Actualizado:** 2026-10-21 (hora de Colombia; cierre epidemiológico local, pendiente de versionamiento manual).
 **Proyecto:** «Alerta temprana de excesos en canales endémicos de dengue en Colombia mediante Machine Learning».  
 **Equipo:** Maestría en Inteligencia Artificial, Universidad de los Andes; proyecto colaborativo con acompañamiento BIOMAC.  
@@ -107,27 +109,27 @@ de un descriptor DVC o transferencia remota del nuevo Parquet.
 
 **Interpretación de la selección y las etiquetas.** Alta persistencia de registros no garantiza episodios independientes suficientes para pronóstico. Se caracterizaron las etiquetas municipales, pero las semanas positivas y sus rachas no son brotes oficialmente declarados. Los seis pilotos no son una muestra probabilística ni necesariamente equivalentes en dificultad predictiva. Las asociaciones entre conteos, EWT y etiquetas son parcialmente mecánicas por su propia definición; no acreditan causalidad o valor predictivo.
 
-## 4. Contrato epidemiológico aprobado y decisiones pendientes
+## 4. Contrato epidemiológico de legado (etiqueta EWT) y estado posterior
 
 | Tema | Estado |
 |---|---|
 | Conteo de esta etapa | Se adoptó `confirmed_records_screening`, evento 210 y confirmación final; no certifica personas/episodios únicos |
 | Referencia EWT | Media geométrica desplazada con ε=0,001, cinco años anteriores, incluidos años epidémicos sin excluirlos ni sustituirlos |
 | Calendario | W-SUN; año del lunes inicial; ordinal de lunes desde 1; ordinal 53 ausente en un año histórico sustituido por su ordinal 52; sin redistribuir cruces de año |
-| Variable objetivo | `excess_label=1` solo si `conteo > EWT`, 0 si elegible y no lo supera; no exige persistencia ni exceder un límite epidémico superior |
+| Etiqueta de legado | `excess_label=1` solo si `conteo > EWT`, 0 si elegible y no lo supera; no exige persistencia ni exceder un límite epidémico superior. Se conserva congelada para reproducir el informe de avance; **no** es el objetivo del pronóstico, que usa `target_u1e` del canal de epiCo (`docs/forecasting/contrato_predictivo.md`) |
 | Elegibilidad | Inicialización 2007–2011 y semana parcial 2025-12-29 sin etiqueta; EWT/etiqueta nulos; 2012 primer año elegible |
 | Disponibilidad retrospectiva | Falta fijar fecha de emisión y reconocer retrasos/ajustes de SIVIGILA y latencias climáticas |
 | Predicción supervisada | Horizonte, ventanas, rezagos y matriz de entrada aún no fijados |
 | Entrenamiento y evaluación | Baselines, modelos, cortes cronológicos, métricas, calibración y umbral de decisión aún no fijados |
 | Despliegue del predictor | API/frontend existen, pero todavía no hay un modelo de dengue validado conectado al producto |
 
-El EWT aprobado es `exp(mean(log(C + 0.001))) - 0.001` para las cinco semanas
+El EWT de legado es `exp(mean(log(C + 0.001))) - 0.001` para las cinco semanas
 históricas alineadas del mismo municipio. Se evalúa de forma estable con
 `0.001 * expm1(mean(log1p(C/0.001)))`; historias constantes e identidades enteras
 exactas evitan residuos que cambiarían una igualdad. No se redondea el EWT ni se
 añade tolerancia o mínimo epidemiológico. Véase `epidemiology_labels.md`.
 
-El artículo de **Umaña et al. (2026)** (*Endemic Channel Parametrization in Dengue Surveillance*) apoya el estudio de referencias históricas y ceros; **no valida pronósticos de ML**. Las alternativas de ventanas y horizontes de la propuesta inicial no se adoptan automáticamente. El contrato vigente de cinco años y ε=0,001 se implementó por decisión explícita del equipo.
+El artículo de **Umaña et al. (2026)** (*Endemic Channel Parametrization in Dengue Surveillance*) apoya el estudio de referencias históricas y ceros; **no valida pronósticos de ML**. Las alternativas de ventanas y horizontes de la propuesta inicial no se adoptan automáticamente. El contrato de legado de cinco años y ε=0,001 se implementó por decisión explícita del equipo.
 
 La **asignación retrospectiva del estado epidemiológico** está implementada y
 caracterizada. Su **anticipación futura** sigue pendiente: no se han elegido
@@ -143,13 +145,13 @@ retrasos y revisiones de SIVIGILA ni la disponibilidad del clima.
 - `src/data/` integra fuentes; `src/pilot_selection/` genera análisis territorial y derivado; `tests/` contiene comprobaciones; `docs/` y `reports/pilot_selection/evidence/` recogen metodología y evidencia. No se exige volver a generar las fuentes de origen para estudiar el desenlace.
 - `src/epidemiology/` calcula y caracteriza estados semanales; `tests/epidemiology/` incluye pruebas sintéticas y regresiones locales optativas. El nuevo Parquet se preparó para DVC, todavía sin descriptor ni transferencia. Los CSV/PNG/SVG, README y manifiestos finales se prepararon para Git; las corridas temporales permanecen ignoradas. El versionamiento y la integración se realizarán manualmente después de la revisión.
 - MLflow y los servicios de aplicación forman parte de la infraestructura del equipo, pero no hay aún entrenamiento/registro de un predictor epidemiológico definitivo que pueda inferirse de su existencia.
-- ChatGPT apoya discusión científica y tutoría; Codex ejecuta tareas autorizadas sobre el repositorio local. El usuario supervisa las decisiones científicas, desea comprender los propósitos y flujo de los módulos y prefiere **prompts breves, implementación modular y sin sobreingeniería**.
+- Las decisiones científicas las toma y supervisa el equipo. La implementación es modular, explica el propósito y el flujo de cada módulo y evita la complejidad innecesaria.
 
 ## 6. Fuentes y prioridad de evidencia
 
-- `docs/pilot_selection.md` y el informe **«Informe_final_seleccion_municipios_piloto_DengueAlertas.docx»**: decisión y resultados territoriales.
+- `docs/pilot_selection.md` y el informe **«Informe_final_seleccion_municipios_piloto_DengueAlertas.docx»** (documento del equipo, no versionado en este repositorio): decisión y resultados territoriales.
 - `docs/data_pipeline.md`, `docs/data_dictionary.md` y los informes técnicos de **SIVIGILA** y **covariables**: construcción e interpretación de las 15 columnas.
 - Umaña et al. (2026): soporte científico para estudiar la parametrización del canal endémico, sin trasladar automáticamente sus métodos a las etiquetas del proyecto.
-- `Base científica y estado del arte.docx` y propuesta académica original: antecedentes; algunas opciones reflejan un alcance anterior.
+- `Base científica y estado del arte.docx` (documento del equipo, no versionado en este repositorio) y propuesta académica original: antecedentes; algunas opciones reflejan un alcance anterior.
 
 Ante discrepancias, distinguir lo observado de lo inferido y usar primero las decisiones expresas más recientes del equipo y la evidencia reproducible actual. Cambios científicos importantes requieren justificación y aprobación.

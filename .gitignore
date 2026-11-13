@@ -36,7 +36,12 @@ env/
 **/sivigila_*
 **/Datos_*_210.xlsx
 /reports/data_quality/*.json
+# Validated integration quality report of the master panel (aggregates only; cited by docs/data_dictionary.md).
+!/reports/data_quality/integration_quality_fixed_20261020.json
 .pytest_cache/
+
+# Local API logs (src/api.py writes logs/api_<stage>.jsonl with request payloads).
+/logs/
 
 # Allow DVC tracking files directly in processed; keep datasets and subdirectories ignored.
 !/data/processed/

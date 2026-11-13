@@ -1,6 +1,9 @@
-# Preserve the exact evidence bytes and their recorded SHA-256 across Git checkouts.
-/reports/epidemiology/evidence/labels_20261021/* -text
+# Preserve exact bytes of all versioned evidence (reports/**/evidence/), of the independent verification
+# scripts (docs/forecasting/verificacion/, whose md5 is cited by frozen acceptance tests) and of the manifests
+# whose hashes are recorded.
+/reports/**/evidence/** -text
+/docs/forecasting/verificacion/*.py -text
 /data/processed/epidemiology/run_manifest.json -text
-/reports/forecasting/evidence/** -text
+/reports/data_quality/integration_quality_fixed_20261020.json -text
 
 reports/epidemiology/evidence/labels_20261021/*.svg binary

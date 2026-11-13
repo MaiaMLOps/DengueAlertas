@@ -1,0 +1,3999 @@
+{
+  "status": "passed",
+  "created_at_utc": "2026-10-20T18:32:30.079055+00:00",
+  "rule": {
+    "status": "authorized_provisional_historical_screening",
+    "event": "210",
+    "confirmed": "1",
+    "territory": "COD_DPTO_O + COD_MUN_O (occurrence)",
+    "date": "INI_SIN",
+    "start_inclusive": "2007-01-01",
+    "end_inclusive": "2025-12-31",
+    "calendar": "Monday-Sunday W-SUN",
+    "deduplication": "none",
+    "partial_week": "retained, not extrapolated"
+  },
+  "warnings": [
+    "Historical screening only: confirmed=1 is provisional and is not the final scientific outcome definition.",
+    "Counts represent final retrospectively confirmed records, not information proven available at a historical prediction time.",
+    "A zero means no eligible records observed in this extraction; negative notification and absence of infections are not verified.",
+    "The 2013 notification/symptom anomaly is retained without correction or exclusion based on notification dates.",
+    "No cross-file, person or episode deduplication is applied or certified.",
+    "W-SUN Monday-Sunday has not been validated as equivalent to the official INS epidemiological calendar.",
+    "n_days measures the authorized calendar-window intersection, not verified daily surveillance or raster coverage.",
+    "The 78 candidate municipalities were selected retrospectively using the full 2007-2025 period; final municipalities remain undecided.",
+    "Covariate completeness does not certify meteorological accuracy or historical operational availability.",
+    "Manifest source row counts are checked against caches; original source Excel files are not re-audited.",
+    "Population discontinuities, including Montelibano 2008, and fixed MGN-2025 areas are preserved.",
+    "No labels, endemic channels, lags, predictive horizons, train/test splits or models are constructed."
+  ],
+  "data_dictionary": {
+    "municipality_code": "Five-digit occurrence DIVIPOLA code; integration key, including leading zeros.",
+    "municipality": "Descriptive name supplied by integrated covariates; never a join key.",
+    "week_start": "Monday start of W-SUN interval; date, integration key.",
+    "population": "Annual DANE population assigned by year of week_start; not certified INS at-risk population.",
+    "area_km2": "Fixed municipal MGN-2025 area in square kilometres.",
+    "population_density_km2": "Annual population / fixed area, inhabitants per square kilometre.",
+    "temperature_c": "Municipal weekly ERA5-Land mean air temperature at 2 m, degrees Celsius.",
+    "precipitation_mm": "Municipal mean CHIRPS accumulated precipitation over available interval days, millimetres.",
+    "relative_humidity_pct": "Estimated relative humidity from ERA5-Land daily mean temperature/dew point, percent.",
+    "confirmed_records_screening": "Count of retrospectively confirmed eligible source rows under the provisional historical screening rule; not unique people/episodes.",
+    "no_eligible_records_observed": "True exactly when screening count is zero; does not assert verified negative notification.",
+    "week_end_nominal": "Sunday nominal end, inclusive; can lie beyond the authorized window.",
+    "week_end_effective": "Inclusive nominal end clipped to 2025-12-31.",
+    "n_days": "Number of calendar days intersecting authorized window, inclusive; does not measure source completeness.",
+    "partial_week": "True when n_days < 7; the last interval has three days and is retained without extrapolation."
+  },
+  "configuration": {
+    "sivigila_dir": "../Datos SIVIGILA",
+    "covariates": "../Covariables/covariates_weekly_78_2007_2025.xlsx",
+    "output": "data/processed/master_weekly_screening_fixed_20261020.parquet",
+    "report": "reports/data_quality/integration_quality_fixed_20261020.json"
+  },
+  "configuration_path_convention": "Repository-relative paths; external:<input_name> aliases require explicit local CLI paths and are identified by source fingerprints.",
+  "runtime": {
+    "python": "3.11.0",
+    "pandas": "2.3.1",
+    "numpy": "1.26.4",
+    "pyarrow": "21.0.0",
+    "openpyxl": "3.1.2"
+  },
+  "git": {
+    "commit": "ccf513fec69cab8a34c58d2a78a063ba31d48d4b",
+    "branch": "feature/data-integration",
+    "working_tree_dirty": true
+  },
+  "pipeline_source_sha256": {
+    "__init__.py": "67e8fe6d292422052cf2d400d012aef6f679df7004baff32d123192517bda446",
+    "__main__.py": "9f6051715920f067c24ee1251a282beb3f0ddef1e0756fccfdd0020c5506e7b6",
+    "artifacts.py": "b75a378c842913333d7fdddb4016006b3c2245bc8547f67b18ff1924295b1ad5",
+    "calendar.py": "a82711b34d24fe6737d3816d4878b4900c0e675f0a5685e6783eba2104c34151",
+    "config.py": "23afbba56fabc08a047bb1049db3fa7988674e90e90bc6bc9ccf7b3dc99ec142",
+    "normalization.py": "4dc5005ee65c2ca0d5fac82b00b26253bca651feb93be95eee1b027db82080ed",
+    "pipeline.py": "b3e5396bb78e973da2fc089cb8951269f6f0fdfafcd0ee298cce2c8c0cbbee04",
+    "sources.py": "10387efe88843cda6f09e74a4749321ddf50ed4c53b8928a49613f6fbec32290",
+    "validation.py": "7eb56dff958fe3fc847bbb0b6c4d3899c8749a8af54e760eb93dddebe8c3303c"
+  },
+  "source_inventory": [
+    {
+      "year": 2007,
+      "file": "sivigila_210_2007.parquet",
+      "source_file": "Datos_2007_210.xlsx",
+      "rows": 35074,
+      "bytes": 465914,
+      "sha256": "f76371c58a660810f47ce32f02b1d2670aa707400178d991c7c30e8312070308",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2008,
+      "file": "sivigila_210_2008.parquet",
+      "source_file": "Datos_2008_210.xlsx",
+      "rows": 32793,
+      "bytes": 449908,
+      "sha256": "c30dba844c66a59781a92592298c8710a161634af9d21966cd7aa7d3d3e1848b",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2009,
+      "file": "sivigila_210_2009.parquet",
+      "source_file": "Datos_2009_210.xlsx",
+      "rows": 45345,
+      "bytes": 612622,
+      "sha256": "b38dd5f60a97d11a30a5eb302a72370d3ed7ba3306d36feb6eff632e14720c20",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2010,
+      "file": "sivigila_210_2010.parquet",
+      "source_file": "Datos_2010_210.xlsx",
+      "rows": 147224,
+      "bytes": 1831135,
+      "sha256": "b3d7ce01a8db1388c3433b78030c528382308d0cb835d28b5d2228c59146f2ef",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2011,
+      "file": "sivigila_210_2011.parquet",
+      "source_file": "Datos_2011_210.xlsx",
+      "rows": 29386,
+      "bytes": 392737,
+      "sha256": "ecce968e0ba702a971bf6d8fa19fcadad9480c0453f7ec3bf18270d56e9bd7c6",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2012,
+      "file": "sivigila_210_2012.parquet",
+      "source_file": "Datos_2012_210.xlsx",
+      "rows": 52467,
+      "bytes": 711594,
+      "sha256": "5529a63fe1009640b5bb3a18b935316cfee3ae1bb14ff423831d4d6ca913987e",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2013,
+      "file": "sivigila_210_2013.parquet",
+      "source_file": "Datos_2013_210.xlsx",
+      "rows": 122441,
+      "bytes": 1614258,
+      "sha256": "effb56ad2b28ee07f20f4cbc2dc88a3d3a65ab0ae1b718677c555a786247bc29",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2014,
+      "file": "sivigila_210_2014.parquet",
+      "source_file": "Datos_2014_210.xlsx",
+      "rows": 105356,
+      "bytes": 1430923,
+      "sha256": "ca7523a73bceaff6872a623b06e19618169ef5ff52c075c070eca2c00f2622a7",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2015,
+      "file": "sivigila_210_2015.parquet",
+      "source_file": "Datos_2015_210.xlsx",
+      "rows": 95023,
+      "bytes": 1333846,
+      "sha256": "631a20ea5c3ce87298754079cc53615bd70a8b4f29e82ba43c172f9dbc25f25f",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2016,
+      "file": "sivigila_210_2016.parquet",
+      "source_file": "Datos_2016_210.xlsx",
+      "rows": 100117,
+      "bytes": 1360486,
+      "sha256": "1077a2891d0d9c88c751cff74974497a19867be9395a1bc08ff9bcece97af2fb",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2017,
+      "file": "sivigila_210_2017.parquet",
+      "source_file": "Datos_2017_210.xlsx",
+      "rows": 25048,
+      "bytes": 333043,
+      "sha256": "1516e288f47c7cd3678cc4e0f07750a812e1c8796525e36c19bd7027669fd236",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2018,
+      "file": "sivigila_210_2018.parquet",
+      "source_file": "Datos_2018_210.xlsx",
+      "rows": 43652,
+      "bytes": 582486,
+      "sha256": "5ebd556cfaf7dffd91b7d123658faf930fb6f4b4fc4aa32997e00f6b6bbb7c8a",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2019,
+      "file": "sivigila_210_2019.parquet",
+      "source_file": "Datos_2019_210.xlsx",
+      "rows": 123641,
+      "bytes": 1638913,
+      "sha256": "bd3657dc1794a9e5ceeb7b8238de00e653a1c5f4231ea1d7ae0704aeb1255f96",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2020,
+      "file": "sivigila_210_2020.parquet",
+      "source_file": "Datos_2020_210.xlsx",
+      "rows": 76419,
+      "bytes": 1041005,
+      "sha256": "5bc1137f066701b22bfccaa0da6d7588c2be5b9b3de33312f6817d230fb54bc9",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2021,
+      "file": "sivigila_210_2021.parquet",
+      "source_file": "Datos_2021_210.xlsx",
+      "rows": 49325,
+      "bytes": 662256,
+      "sha256": "b01d207c46cc67d87cebe1a251106fd1d9453efdc64e746d736d7f2f6e47a3bb",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2022,
+      "file": "sivigila_210_2022.parquet",
+      "source_file": "Datos_2022_210.xlsx",
+      "rows": 65691,
+      "bytes": 889285,
+      "sha256": "c760009b74007d2c721168acf7c863cf628f6efb18efbe7ba72234526052138f",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2023,
+      "file": "sivigila_210_2023.parquet",
+      "source_file": "Datos_2023_210.xlsx",
+      "rows": 126411,
+      "bytes": 1623674,
+      "sha256": "ebd9fdbc3445477dc5bac0226c6ddee9b15593c888512bb59c8d208e795159cc",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2024,
+      "file": "sivigila_210_2024.parquet",
+      "source_file": "Datos_2024_210.xlsx",
+      "rows": 309627,
+      "bytes": 3355844,
+      "sha256": "9446c21e4b621b9639a4839e11f117f9b9ace7a98495ba3506ea038af3bb1074",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    },
+    {
+      "year": 2025,
+      "file": "sivigila_210_2025.parquet",
+      "source_file": "Datos_2025_210.xlsx",
+      "rows": 120564,
+      "bytes": 1602136,
+      "sha256": "131d43aa4f4776514d0819b9565935080a998408035006d3ac2239fc087b341e",
+      "schema": {
+        "_year_nominal": "int64",
+        "_source_file": "string",
+        "_excel_row": "int64",
+        "CONSECUTIVE": "string",
+        "COD_EVE": "string",
+        "FEC_NOT": "string",
+        "SEMANA": "string",
+        "ANO": "string",
+        "COD_DPTO_O": "string",
+        "COD_MUN_O": "string",
+        "INI_SIN": "string",
+        "TIP_CAS": "string",
+        "confirmados": "string",
+        "Estado_final_de_caso": "string",
+        "nom_est_f_caso": "string"
+      },
+      "row_groups": 1,
+      "compression": [
+        "ZSTD"
+      ]
+    }
+  ],
+  "manifest": {
+    "file": "cache_manifest.csv",
+    "rows": 19,
+    "sha256": "c150d25afcd70fcc5ee5faa4d529a0d5f28f151961580c06fb57565712c2aa2c"
+  },
+  "covariate_source": {
+    "file": "covariates_weekly_78_2007_2025.xlsx",
+    "bytes": 5672456,
+    "sha256": "02cbf7abf3add79162a1671fc88a45dedefb3a677eeadd4efe0c152ef6de281c"
+  },
+  "covariates_before_validation": {
+    "rows": 77376,
+    "columns": 9,
+    "types": {
+      "municipality_code": "string",
+      "municipality": "object",
+      "week_start": "datetime64[ns]",
+      "population": "int64",
+      "area_km2": "float64",
+      "population_density_km2": "float64",
+      "temperature_c": "float64",
+      "precipitation_mm": "float64",
+      "relative_humidity_pct": "float64"
+    },
+    "nulls": {
+      "municipality_code": 0,
+      "municipality": 0,
+      "week_start": 0,
+      "population": 0,
+      "area_km2": 0,
+      "population_density_km2": 0,
+      "temperature_c": 0,
+      "precipitation_mm": 0,
+      "relative_humidity_pct": 0
+    },
+    "blank_strings": {
+      "municipality_code": 0,
+      "municipality": 0
+    },
+    "numeric_ranges": {
+      "population": {
+        "min": 7091.0,
+        "max": 2528343.0,
+        "nonfinite": 0
+      },
+      "area_km2": {
+        "min": 19.7207209006049,
+        "max": 20281.9630313731,
+        "nonfinite": 0
+      },
+      "population_density_km2": {
+        "min": 2.1821852219895,
+        "max": 15441.9811291309,
+        "nonfinite": 0
+      },
+      "temperature_c": {
+        "min": 12.9616036643296,
+        "max": 32.2929453532476,
+        "nonfinite": 0
+      },
+      "precipitation_mm": {
+        "min": 0.0,
+        "max": 378.827025861538,
+        "nonfinite": 0
+      },
+      "relative_humidity_pct": {
+        "min": 30.1874358133116,
+        "max": 96.8148613127093,
+        "nonfinite": 0
+      }
+    },
+    "date_ranges": {
+      "week_start": {
+        "min": "2007-01-01T00:00:00",
+        "max": "2025-12-29T00:00:00"
+      }
+    },
+    "unique_keys": 77376,
+    "duplicate_rows_beyond_first": 0
+  },
+  "covariates_validated": {
+    "rows": 77376,
+    "columns": 9,
+    "types": {
+      "municipality_code": "string",
+      "municipality": "object",
+      "week_start": "datetime64[ns]",
+      "population": "int64",
+      "area_km2": "float64",
+      "population_density_km2": "float64",
+      "temperature_c": "float64",
+      "precipitation_mm": "float64",
+      "relative_humidity_pct": "float64"
+    },
+    "nulls": {
+      "municipality_code": 0,
+      "municipality": 0,
+      "week_start": 0,
+      "population": 0,
+      "area_km2": 0,
+      "population_density_km2": 0,
+      "temperature_c": 0,
+      "precipitation_mm": 0,
+      "relative_humidity_pct": 0
+    },
+    "blank_strings": {
+      "municipality_code": 0,
+      "municipality": 0
+    },
+    "numeric_ranges": {
+      "population": {
+        "min": 7091.0,
+        "max": 2528343.0,
+        "nonfinite": 0
+      },
+      "area_km2": {
+        "min": 19.7207209006049,
+        "max": 20281.9630313731,
+        "nonfinite": 0
+      },
+      "population_density_km2": {
+        "min": 2.1821852219895,
+        "max": 15441.9811291309,
+        "nonfinite": 0
+      },
+      "temperature_c": {
+        "min": 12.9616036643296,
+        "max": 32.2929453532476,
+        "nonfinite": 0
+      },
+      "precipitation_mm": {
+        "min": 0.0,
+        "max": 378.827025861538,
+        "nonfinite": 0
+      },
+      "relative_humidity_pct": {
+        "min": 30.1874358133116,
+        "max": 96.8148613127093,
+        "nonfinite": 0
+      }
+    },
+    "date_ranges": {
+      "week_start": {
+        "min": "2007-01-01T00:00:00",
+        "max": "2025-12-29T00:00:00"
+      }
+    },
+    "unique_keys": 77376,
+    "duplicate_rows_beyond_first": 0
+  },
+  "epidemiology": {
+    "files": [
+      {
+        "year": 2007,
+        "input_profile": {
+          "rows": 35074,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2007.0,
+              "max": 2007.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 35075.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 446,
+          "min": "2006-01-02T00:00:00",
+          "max": "2008-01-05T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 440,
+          "min": "2006-05-05T00:00:00",
+          "max": "2009-01-03T00:00:00"
+        },
+        "notification_before_symptoms": 7,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 638,
+        "exclusions_sequential": {
+          "not_confirmed": 18133,
+          "confirmed_missing_symptom_date": 0,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 168,
+          "confirmed_valid_date_outside_candidates": 4788,
+          "included": 11985
+        },
+        "weekly_profile": {
+          "rows": 2029,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 128.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2007-01-01T00:00:00",
+              "max": "2007-12-31T00:00:00"
+            }
+          },
+          "unique_keys": 2029,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2008,
+        "input_profile": {
+          "rows": 32793,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2008.0,
+              "max": 2008.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 32794.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 442,
+          "min": "2006-05-31T00:00:00",
+          "max": "2009-01-03T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 430,
+          "min": "2007-02-08T00:00:00",
+          "max": "2009-01-19T00:00:00"
+        },
+        "notification_before_symptoms": 0,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 703,
+        "exclusions_sequential": {
+          "not_confirmed": 16036,
+          "confirmed_missing_symptom_date": 0,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 1,
+          "confirmed_valid_date_outside_candidates": 4742,
+          "included": 12014
+        },
+        "weekly_profile": {
+          "rows": 2290,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 193.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2007-06-11T00:00:00",
+              "max": "2008-12-29T00:00:00"
+            }
+          },
+          "unique_keys": 2290,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2009,
+        "input_profile": {
+          "rows": 45345,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2009.0,
+              "max": 2009.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 45346.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 487,
+          "min": "2006-04-30T00:00:00",
+          "max": "2010-01-02T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 983,
+          "min": "2008-01-04T00:00:00",
+          "max": "2010-03-19T00:00:00"
+        },
+        "notification_before_symptoms": 0,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 702,
+        "exclusions_sequential": {
+          "not_confirmed": 19922,
+          "confirmed_missing_symptom_date": 0,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 3,
+          "confirmed_valid_date_outside_candidates": 6099,
+          "included": 19321
+        },
+        "weekly_profile": {
+          "rows": 2629,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 152.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2007-09-03T00:00:00",
+              "max": "2009-12-28T00:00:00"
+            }
+          },
+          "unique_keys": 2629,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2010,
+        "input_profile": {
+          "rows": 147224,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 63,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2010.0,
+              "max": 2010.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 147225.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 63,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 159,
+          "min": "2006-05-28T00:00:00",
+          "max": "2011-01-01T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 408,
+          "min": "2009-11-13T00:00:00",
+          "max": "2011-03-29T00:00:00"
+        },
+        "notification_before_symptoms": 0,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 913,
+        "exclusions_sequential": {
+          "not_confirmed": 101077,
+          "confirmed_missing_symptom_date": 1,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 0,
+          "confirmed_valid_date_outside_candidates": 12569,
+          "included": 33577
+        },
+        "weekly_profile": {
+          "rows": 2346,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 554.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2009-11-09T00:00:00",
+              "max": "2010-12-27T00:00:00"
+            }
+          },
+          "unique_keys": 2346,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2011,
+        "input_profile": {
+          "rows": 29386,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 3,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2011.0,
+              "max": 2011.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 29387.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 3,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 11,
+          "min": "2010-01-09T00:00:00",
+          "max": "2012-01-31T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 325,
+          "min": "2010-01-13T00:00:00",
+          "max": "2012-03-08T00:00:00"
+        },
+        "notification_before_symptoms": 0,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 764,
+        "exclusions_sequential": {
+          "not_confirmed": 16606,
+          "confirmed_missing_symptom_date": 1,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 0,
+          "confirmed_valid_date_outside_candidates": 4646,
+          "included": 8133
+        },
+        "weekly_profile": {
+          "rows": 2344,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 29.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2010-01-25T00:00:00",
+              "max": "2012-01-30T00:00:00"
+            }
+          },
+          "unique_keys": 2344,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2012,
+        "input_profile": {
+          "rows": 52467,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 15,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2012.0,
+              "max": 2012.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 52468.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 15,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 12,
+          "min": "2011-03-20T00:00:00",
+          "max": "2012-12-29T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 829,
+          "min": "2012-01-01T00:00:00",
+          "max": "2013-03-26T00:00:00"
+        },
+        "notification_before_symptoms": 0,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 798,
+        "exclusions_sequential": {
+          "not_confirmed": 25774,
+          "confirmed_missing_symptom_date": 10,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 0,
+          "confirmed_valid_date_outside_candidates": 9121,
+          "included": 17562
+        },
+        "weekly_profile": {
+          "rows": 2797,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 113.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2011-12-19T00:00:00",
+              "max": "2012-12-24T00:00:00"
+            }
+          },
+          "unique_keys": 2797,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2013,
+        "input_profile": {
+          "rows": 122441,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 28,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2013.0,
+              "max": 2013.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 122442.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 28,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 411,
+          "min": "2012-01-01T00:00:00",
+          "max": "2013-12-29T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 1296,
+          "min": "2012-12-30T00:00:00",
+          "max": "2014-03-01T00:00:00"
+        },
+        "notification_before_symptoms": 58869,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 933,
+        "exclusions_sequential": {
+          "not_confirmed": 60309,
+          "confirmed_missing_symptom_date": 15,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 0,
+          "confirmed_valid_date_outside_candidates": 18045,
+          "included": 44072
+        },
+        "weekly_profile": {
+          "rows": 3503,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 434.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2011-12-26T00:00:00",
+              "max": "2013-12-23T00:00:00"
+            }
+          },
+          "unique_keys": 3503,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2014,
+        "input_profile": {
+          "rows": 105356,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2014.0,
+              "max": 2014.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 105357.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 2130,
+          "min": "2013-01-13T00:00:00",
+          "max": "2015-02-12T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 3131,
+          "min": "2013-12-29T00:00:00",
+          "max": "2015-03-02T00:00:00"
+        },
+        "notification_before_symptoms": 0,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 929,
+        "exclusions_sequential": {
+          "not_confirmed": 53745,
+          "confirmed_missing_symptom_date": 0,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 0,
+          "confirmed_valid_date_outside_candidates": 17109,
+          "included": 34502
+        },
+        "weekly_profile": {
+          "rows": 3542,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 195.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2013-12-09T00:00:00",
+              "max": "2014-12-29T00:00:00"
+            }
+          },
+          "unique_keys": 3542,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2015,
+        "input_profile": {
+          "rows": 95023,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2015.0,
+              "max": 2015.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 95024.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 902,
+          "min": "2014-01-07T00:00:00",
+          "max": "2016-01-02T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 2887,
+          "min": "2015-01-04T00:00:00",
+          "max": "2016-03-01T00:00:00"
+        },
+        "notification_before_symptoms": 0,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 919,
+        "exclusions_sequential": {
+          "not_confirmed": 56697,
+          "confirmed_missing_symptom_date": 0,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 0,
+          "confirmed_valid_date_outside_candidates": 13246,
+          "included": 25080
+        },
+        "weekly_profile": {
+          "rows": 3076,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 137.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2014-12-08T00:00:00",
+              "max": "2015-12-28T00:00:00"
+            }
+          },
+          "unique_keys": 3076,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2016,
+        "input_profile": {
+          "rows": 100117,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 24,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2016.0,
+              "max": 2016.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 100118.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 24,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 5,
+          "min": "2015-01-04T00:00:00",
+          "max": "2017-01-16T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 660,
+          "min": "2016-01-03T00:00:00",
+          "max": "2017-03-03T00:00:00"
+        },
+        "notification_before_symptoms": 0,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 940,
+        "exclusions_sequential": {
+          "not_confirmed": 52164,
+          "confirmed_missing_symptom_date": 8,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 0,
+          "confirmed_valid_date_outside_candidates": 13922,
+          "included": 34023
+        },
+        "weekly_profile": {
+          "rows": 2482,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 393.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2015-12-21T00:00:00",
+              "max": "2016-12-26T00:00:00"
+            }
+          },
+          "unique_keys": 2482,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2017,
+        "input_profile": {
+          "rows": 25048,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2017.0,
+              "max": 2017.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 25049.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 0,
+          "min": "2017-01-01T00:00:00",
+          "max": "2017-12-30T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 321,
+          "min": "2017-01-01T00:00:00",
+          "max": "2018-03-24T00:00:00"
+        },
+        "notification_before_symptoms": 0,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 762,
+        "exclusions_sequential": {
+          "not_confirmed": 17343,
+          "confirmed_missing_symptom_date": 0,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 0,
+          "confirmed_valid_date_outside_candidates": 2873,
+          "included": 4832
+        },
+        "weekly_profile": {
+          "rows": 1590,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 39.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2016-12-26T00:00:00",
+              "max": "2017-12-25T00:00:00"
+            }
+          },
+          "unique_keys": 1590,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2018,
+        "input_profile": {
+          "rows": 43652,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2018.0,
+              "max": 2018.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 43653.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 51,
+          "min": "2017-12-31T00:00:00",
+          "max": "2018-12-29T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 1169,
+          "min": "2017-12-31T00:00:00",
+          "max": "2019-03-27T00:00:00"
+        },
+        "notification_before_symptoms": 0,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 756,
+        "exclusions_sequential": {
+          "not_confirmed": 20555,
+          "confirmed_missing_symptom_date": 0,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 0,
+          "confirmed_valid_date_outside_candidates": 9308,
+          "included": 13789
+        },
+        "weekly_profile": {
+          "rows": 2351,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 129.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2017-12-25T00:00:00",
+              "max": "2018-12-24T00:00:00"
+            }
+          },
+          "unique_keys": 2351,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2019,
+        "input_profile": {
+          "rows": 123641,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2019.0,
+              "max": 2019.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 123642.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 417,
+          "min": "2018-12-30T00:00:00",
+          "max": "2019-12-28T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 1732,
+          "min": "2018-12-30T00:00:00",
+          "max": "2020-06-04T00:00:00"
+        },
+        "notification_before_symptoms": 0,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 881,
+        "exclusions_sequential": {
+          "not_confirmed": 49582,
+          "confirmed_missing_symptom_date": 0,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 0,
+          "confirmed_valid_date_outside_candidates": 31726,
+          "included": 42333
+        },
+        "weekly_profile": {
+          "rows": 3424,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 248.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2018-12-24T00:00:00",
+              "max": "2019-12-23T00:00:00"
+            }
+          },
+          "unique_keys": 3424,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2020,
+        "input_profile": {
+          "rows": 76419,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2020.0,
+              "max": 2020.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 76420.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 1388,
+          "min": "2019-12-29T00:00:00",
+          "max": "2021-01-02T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 1008,
+          "min": "2019-12-29T00:00:00",
+          "max": "2021-04-11T00:00:00"
+        },
+        "notification_before_symptoms": 0,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 811,
+        "exclusions_sequential": {
+          "not_confirmed": 33856,
+          "confirmed_missing_symptom_date": 0,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 0,
+          "confirmed_valid_date_outside_candidates": 16048,
+          "included": 26515
+        },
+        "weekly_profile": {
+          "rows": 2696,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 381.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2019-12-23T00:00:00",
+              "max": "2020-12-28T00:00:00"
+            }
+          },
+          "unique_keys": 2696,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2021,
+        "input_profile": {
+          "rows": 49325,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2021.0,
+              "max": 2021.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 49326.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 284,
+          "min": "2021-01-03T00:00:00",
+          "max": "2022-01-01T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 1538,
+          "min": "2021-01-03T00:00:00",
+          "max": "2022-04-17T00:00:00"
+        },
+        "notification_before_symptoms": 0,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 752,
+        "exclusions_sequential": {
+          "not_confirmed": 15511,
+          "confirmed_missing_symptom_date": 0,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 0,
+          "confirmed_valid_date_outside_candidates": 8878,
+          "included": 24936
+        },
+        "weekly_profile": {
+          "rows": 2453,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 388.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2020-12-28T00:00:00",
+              "max": "2021-12-27T00:00:00"
+            }
+          },
+          "unique_keys": 2453,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2022,
+        "input_profile": {
+          "rows": 65691,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2022.0,
+              "max": 2022.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 65692.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 0,
+          "min": "2022-01-02T00:00:00",
+          "max": "2022-12-31T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 1282,
+          "min": "2022-01-02T00:00:00",
+          "max": "2023-03-29T00:00:00"
+        },
+        "notification_before_symptoms": 0,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 765,
+        "exclusions_sequential": {
+          "not_confirmed": 15756,
+          "confirmed_missing_symptom_date": 0,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 0,
+          "confirmed_valid_date_outside_candidates": 18798,
+          "included": 31137
+        },
+        "weekly_profile": {
+          "rows": 2968,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 344.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2021-12-27T00:00:00",
+              "max": "2022-12-26T00:00:00"
+            }
+          },
+          "unique_keys": 2968,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2023,
+        "input_profile": {
+          "rows": 126411,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2023.0,
+              "max": 2023.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 126412.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 0,
+          "min": "2023-01-01T00:00:00",
+          "max": "2023-12-30T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 2825,
+          "min": "2023-01-01T00:00:00",
+          "max": "2024-04-13T00:00:00"
+        },
+        "notification_before_symptoms": 0,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 851,
+        "exclusions_sequential": {
+          "not_confirmed": 25510,
+          "confirmed_missing_symptom_date": 0,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 0,
+          "confirmed_valid_date_outside_candidates": 40499,
+          "included": 60402
+        },
+        "weekly_profile": {
+          "rows": 3423,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 457.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2022-12-26T00:00:00",
+              "max": "2023-12-25T00:00:00"
+            }
+          },
+          "unique_keys": 3423,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2024,
+        "input_profile": {
+          "rows": 309627,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2024.0,
+              "max": 2024.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 309628.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 754,
+          "min": "2023-12-31T00:00:00",
+          "max": "2024-12-28T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 1502,
+          "min": "2023-12-31T00:00:00",
+          "max": "2025-03-29T00:00:00"
+        },
+        "notification_before_symptoms": 0,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 986,
+        "exclusions_sequential": {
+          "not_confirmed": 72516,
+          "confirmed_missing_symptom_date": 0,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 0,
+          "confirmed_valid_date_outside_candidates": 94915,
+          "included": 142196
+        },
+        "weekly_profile": {
+          "rows": 3900,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 914.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2023-12-25T00:00:00",
+              "max": "2024-12-23T00:00:00"
+            }
+          },
+          "unique_keys": 3900,
+          "duplicate_rows_beyond_first": 0
+        }
+      },
+      {
+        "year": 2025,
+        "input_profile": {
+          "rows": 120564,
+          "columns": 15,
+          "types": {
+            "_year_nominal": "int64",
+            "_source_file": "object",
+            "_excel_row": "int64",
+            "CONSECUTIVE": "string",
+            "COD_EVE": "string",
+            "FEC_NOT": "string",
+            "SEMANA": "string",
+            "ANO": "string",
+            "COD_DPTO_O": "string",
+            "COD_MUN_O": "string",
+            "INI_SIN": "string",
+            "TIP_CAS": "string",
+            "confirmados": "string",
+            "Estado_final_de_caso": "string",
+            "nom_est_f_caso": "string"
+          },
+          "nulls": {
+            "_year_nominal": 0,
+            "_source_file": 0,
+            "_excel_row": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "blank_strings": {
+            "_source_file": 0,
+            "CONSECUTIVE": 0,
+            "COD_EVE": 0,
+            "FEC_NOT": 0,
+            "SEMANA": 0,
+            "ANO": 0,
+            "COD_DPTO_O": 0,
+            "COD_MUN_O": 0,
+            "INI_SIN": 0,
+            "TIP_CAS": 0,
+            "confirmados": 0,
+            "Estado_final_de_caso": 0,
+            "nom_est_f_caso": 0
+          },
+          "numeric_ranges": {
+            "_year_nominal": {
+              "min": 2025.0,
+              "max": 2025.0,
+              "nonfinite": 0
+            },
+            "_excel_row": {
+              "min": 2.0,
+              "max": 120565.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {}
+        },
+        "INI_SIN": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 2330,
+          "min": "2024-12-29T00:00:00",
+          "max": "2026-01-03T00:00:00"
+        },
+        "FEC_NOT": {
+          "blank": 0,
+          "parse_fail_nonblank": 0,
+          "outside_nominal_year": 2444,
+          "min": "2024-12-29T00:00:00",
+          "max": "2026-03-27T00:00:00"
+        },
+        "notification_before_symptoms": 0,
+        "identifier_blank": 0,
+        "identifier_duplicates_within_file": 0,
+        "deduplication_applied": false,
+        "territorial_codes": 896,
+        "exclusions_sequential": {
+          "not_confirmed": 30074,
+          "confirmed_missing_symptom_date": 0,
+          "confirmed_unparseable_symptom_date": 0,
+          "confirmed_outside_date_window": 711,
+          "confirmed_valid_date_outside_candidates": 38917,
+          "included": 50862
+        },
+        "weekly_profile": {
+          "rows": 3532,
+          "columns": 3,
+          "types": {
+            "municipality_code": "string",
+            "week_start": "datetime64[ns]",
+            "confirmed_records_screening": "int64"
+          },
+          "nulls": {
+            "municipality_code": 0,
+            "week_start": 0,
+            "confirmed_records_screening": 0
+          },
+          "blank_strings": {
+            "municipality_code": 0
+          },
+          "numeric_ranges": {
+            "confirmed_records_screening": {
+              "min": 1.0,
+              "max": 454.0,
+              "nonfinite": 0
+            }
+          },
+          "date_ranges": {
+            "week_start": {
+              "min": "2024-12-23T00:00:00",
+              "max": "2025-12-29T00:00:00"
+            }
+          },
+          "unique_keys": 3532,
+          "duplicate_rows_beyond_first": 0
+        }
+      }
+    ],
+    "exclusions_sequential": {
+      "not_confirmed": 701166,
+      "confirmed_missing_symptom_date": 35,
+      "confirmed_unparseable_symptom_date": 0,
+      "confirmed_outside_date_window": 883,
+      "confirmed_valid_date_outside_candidates": 366249,
+      "included": 637271
+    },
+    "input_rows": 1705604,
+    "observed_territorial_codes": 1182,
+    "candidate_codes_without_any_source_record": 0,
+    "weekly_keys_before_cross_file_aggregation": 53375,
+    "weekly_keys_after_cross_file_aggregation": 52831,
+    "keys_with_multiple_nominal_files": 542,
+    "weekly_profile": {
+      "rows": 52831,
+      "columns": 3,
+      "types": {
+        "municipality_code": "string",
+        "week_start": "datetime64[ns]",
+        "confirmed_records_screening": "int64"
+      },
+      "nulls": {
+        "municipality_code": 0,
+        "week_start": 0,
+        "confirmed_records_screening": 0
+      },
+      "blank_strings": {
+        "municipality_code": 0
+      },
+      "numeric_ranges": {
+        "confirmed_records_screening": {
+          "min": 1.0,
+          "max": 914.0,
+          "nonfinite": 0
+        }
+      },
+      "date_ranges": {
+        "week_start": {
+          "min": "2007-01-01T00:00:00",
+          "max": "2025-12-29T00:00:00"
+        }
+      },
+      "unique_keys": 52831,
+      "duplicate_rows_beyond_first": 0
+    },
+    "deduplication_applied": false,
+    "cross_file_person_episode_uniqueness_verified": false
+  },
+  "merge": {
+    "covariate_rows": 77376,
+    "count_keys": 52831,
+    "output_rows": 77376,
+    "count_keys_unmatched": 0,
+    "positions_filled_with_zero": 24545,
+    "rows_multiplied": 0,
+    "cardinality": "one_to_one",
+    "record_total_before": 637271,
+    "record_total_after": 637271
+  },
+  "panel": {
+    "rows": 77376,
+    "columns": 15,
+    "types": {
+      "municipality_code": "string",
+      "municipality": "object",
+      "week_start": "datetime64[ns]",
+      "population": "int64",
+      "area_km2": "float64",
+      "population_density_km2": "float64",
+      "temperature_c": "float64",
+      "precipitation_mm": "float64",
+      "relative_humidity_pct": "float64",
+      "confirmed_records_screening": "int64",
+      "no_eligible_records_observed": "bool",
+      "week_end_nominal": "datetime64[ns]",
+      "week_end_effective": "datetime64[ns]",
+      "n_days": "uint8",
+      "partial_week": "bool"
+    },
+    "nulls": {
+      "municipality_code": 0,
+      "municipality": 0,
+      "week_start": 0,
+      "population": 0,
+      "area_km2": 0,
+      "population_density_km2": 0,
+      "temperature_c": 0,
+      "precipitation_mm": 0,
+      "relative_humidity_pct": 0,
+      "confirmed_records_screening": 0,
+      "no_eligible_records_observed": 0,
+      "week_end_nominal": 0,
+      "week_end_effective": 0,
+      "n_days": 0,
+      "partial_week": 0
+    },
+    "blank_strings": {
+      "municipality_code": 0,
+      "municipality": 0
+    },
+    "numeric_ranges": {
+      "population": {
+        "min": 7091.0,
+        "max": 2528343.0,
+        "nonfinite": 0
+      },
+      "area_km2": {
+        "min": 19.7207209006049,
+        "max": 20281.9630313731,
+        "nonfinite": 0
+      },
+      "population_density_km2": {
+        "min": 2.1821852219895,
+        "max": 15441.9811291309,
+        "nonfinite": 0
+      },
+      "temperature_c": {
+        "min": 12.9616036643296,
+        "max": 32.2929453532476,
+        "nonfinite": 0
+      },
+      "precipitation_mm": {
+        "min": 0.0,
+        "max": 378.827025861538,
+        "nonfinite": 0
+      },
+      "relative_humidity_pct": {
+        "min": 30.1874358133116,
+        "max": 96.8148613127093,
+        "nonfinite": 0
+      },
+      "confirmed_records_screening": {
+        "min": 0.0,
+        "max": 914.0,
+        "nonfinite": 0
+      },
+      "n_days": {
+        "min": 3.0,
+        "max": 7.0,
+        "nonfinite": 0
+      }
+    },
+    "date_ranges": {
+      "week_start": {
+        "min": "2007-01-01T00:00:00",
+        "max": "2025-12-29T00:00:00"
+      },
+      "week_end_nominal": {
+        "min": "2007-01-07T00:00:00",
+        "max": "2026-01-04T00:00:00"
+      },
+      "week_end_effective": {
+        "min": "2007-01-07T00:00:00",
+        "max": "2025-12-31T00:00:00"
+      }
+    },
+    "unique_keys": 77376,
+    "duplicate_rows_beyond_first": 0
+  },
+  "acceptance": {
+    "municipalities": {
+      "expected": 78,
+      "observed": 78,
+      "passed": true
+    },
+    "weeks_per_municipality_min": {
+      "expected": 992,
+      "observed": 992,
+      "passed": true
+    },
+    "weeks_per_municipality_max": {
+      "expected": 992,
+      "observed": 992,
+      "passed": true
+    },
+    "rows": {
+      "expected": 77376,
+      "observed": 77376,
+      "passed": true
+    },
+    "eligible_records": {
+      "expected": 637271,
+      "observed": 637271,
+      "passed": true
+    },
+    "positions_with_records": {
+      "expected": 52831,
+      "observed": 52831,
+      "passed": true
+    },
+    "positions_without_records": {
+      "expected": 24545,
+      "observed": 24545,
+      "passed": true
+    },
+    "partial_positions": {
+      "expected": 78,
+      "observed": 78,
+      "passed": true
+    },
+    "partial_week_coverage": {
+      "expected": "2025-12-29 / nominal 2026-01-04 / effective 2025-12-31 / 3 days",
+      "passed": true
+    },
+    "unique_keys": {
+      "passed": true
+    }
+  },
+  "by_municipality": [
+    {
+      "municipality_code": "05001",
+      "positions": 992,
+      "eligible_records": 26899,
+      "positions_without_records": 78,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "05088",
+      "positions": 992,
+      "eligible_records": 4232,
+      "positions_without_records": 371,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "05147",
+      "positions": 992,
+      "eligible_records": 1215,
+      "positions_without_records": 509,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "05154",
+      "positions": 992,
+      "eligible_records": 1840,
+      "positions_without_records": 511,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "05360",
+      "positions": 992,
+      "eligible_records": 2699,
+      "positions_without_records": 533,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "05579",
+      "positions": 992,
+      "eligible_records": 1035,
+      "positions_without_records": 545,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "08001",
+      "positions": 992,
+      "eligible_records": 39813,
+      "positions_without_records": 17,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "08078",
+      "positions": 992,
+      "eligible_records": 2073,
+      "positions_without_records": 417,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "08296",
+      "positions": 992,
+      "eligible_records": 1855,
+      "positions_without_records": 544,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "08433",
+      "positions": 992,
+      "eligible_records": 3660,
+      "positions_without_records": 198,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "08638",
+      "positions": 992,
+      "eligible_records": 2306,
+      "positions_without_records": 405,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "08758",
+      "positions": 992,
+      "eligible_records": 13750,
+      "positions_without_records": 55,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "13001",
+      "positions": 992,
+      "eligible_records": 26803,
+      "positions_without_records": 115,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "13244",
+      "positions": 992,
+      "eligible_records": 2837,
+      "positions_without_records": 443,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "13430",
+      "positions": 992,
+      "eligible_records": 3223,
+      "positions_without_records": 414,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "15572",
+      "positions": 992,
+      "eligible_records": 2410,
+      "positions_without_records": 339,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "17380",
+      "positions": 992,
+      "eligible_records": 2488,
+      "positions_without_records": 313,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "18753",
+      "positions": 992,
+      "eligible_records": 3146,
+      "positions_without_records": 432,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "19698",
+      "positions": 992,
+      "eligible_records": 2735,
+      "positions_without_records": 518,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "20001",
+      "positions": 992,
+      "eligible_records": 12732,
+      "positions_without_records": 93,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "20011",
+      "positions": 992,
+      "eligible_records": 5824,
+      "positions_without_records": 241,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "20710",
+      "positions": 992,
+      "eligible_records": 1107,
+      "positions_without_records": 499,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "23001",
+      "positions": 992,
+      "eligible_records": 12713,
+      "positions_without_records": 122,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "23417",
+      "positions": 992,
+      "eligible_records": 2850,
+      "positions_without_records": 448,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "23466",
+      "positions": 992,
+      "eligible_records": 1975,
+      "positions_without_records": 424,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "25290",
+      "positions": 992,
+      "eligible_records": 5511,
+      "positions_without_records": 478,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "25307",
+      "positions": 992,
+      "eligible_records": 7064,
+      "positions_without_records": 145,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "25386",
+      "positions": 992,
+      "eligible_records": 2428,
+      "positions_without_records": 480,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "25488",
+      "positions": 992,
+      "eligible_records": 2945,
+      "positions_without_records": 429,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "25875",
+      "positions": 992,
+      "eligible_records": 3163,
+      "positions_without_records": 357,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "41001",
+      "positions": 992,
+      "eligible_records": 27719,
+      "positions_without_records": 19,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "41132",
+      "positions": 992,
+      "eligible_records": 1712,
+      "positions_without_records": 510,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "41298",
+      "positions": 992,
+      "eligible_records": 4768,
+      "positions_without_records": 402,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "41396",
+      "positions": 992,
+      "eligible_records": 2243,
+      "positions_without_records": 526,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "41551",
+      "positions": 992,
+      "eligible_records": 8575,
+      "positions_without_records": 280,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "44001",
+      "positions": 992,
+      "eligible_records": 7039,
+      "positions_without_records": 263,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "44430",
+      "positions": 992,
+      "eligible_records": 3871,
+      "positions_without_records": 365,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "47001",
+      "positions": 992,
+      "eligible_records": 9925,
+      "positions_without_records": 110,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "47189",
+      "positions": 992,
+      "eligible_records": 1569,
+      "positions_without_records": 465,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "50001",
+      "positions": 992,
+      "eligible_records": 25722,
+      "positions_without_records": 27,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "50006",
+      "positions": 992,
+      "eligible_records": 6095,
+      "positions_without_records": 191,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "50313",
+      "positions": 992,
+      "eligible_records": 2515,
+      "positions_without_records": 440,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "50573",
+      "positions": 992,
+      "eligible_records": 1443,
+      "positions_without_records": 512,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "52835",
+      "positions": 992,
+      "eligible_records": 5000,
+      "positions_without_records": 242,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "54001",
+      "positions": 992,
+      "eligible_records": 30500,
+      "positions_without_records": 16,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "54261",
+      "positions": 992,
+      "eligible_records": 1106,
+      "positions_without_records": 492,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "54405",
+      "positions": 992,
+      "eligible_records": 3152,
+      "positions_without_records": 267,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "54498",
+      "positions": 992,
+      "eligible_records": 3975,
+      "positions_without_records": 253,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "54810",
+      "positions": 992,
+      "eligible_records": 1496,
+      "positions_without_records": 517,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "54874",
+      "positions": 992,
+      "eligible_records": 4462,
+      "positions_without_records": 194,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "63001",
+      "positions": 992,
+      "eligible_records": 10256,
+      "positions_without_records": 251,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "66001",
+      "positions": 992,
+      "eligible_records": 7329,
+      "positions_without_records": 248,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "66170",
+      "positions": 992,
+      "eligible_records": 3066,
+      "positions_without_records": 514,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "68001",
+      "positions": 992,
+      "eligible_records": 24208,
+      "positions_without_records": 38,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "68081",
+      "positions": 992,
+      "eligible_records": 6283,
+      "positions_without_records": 166,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "68276",
+      "positions": 992,
+      "eligible_records": 12341,
+      "positions_without_records": 118,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "68307",
+      "positions": 992,
+      "eligible_records": 6371,
+      "positions_without_records": 190,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "68547",
+      "positions": 992,
+      "eligible_records": 7091,
+      "positions_without_records": 213,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "68679",
+      "positions": 992,
+      "eligible_records": 3675,
+      "positions_without_records": 414,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "70001",
+      "positions": 992,
+      "eligible_records": 12930,
+      "positions_without_records": 103,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "70215",
+      "positions": 992,
+      "eligible_records": 2335,
+      "positions_without_records": 460,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "70670",
+      "positions": 992,
+      "eligible_records": 1452,
+      "positions_without_records": 464,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "73001",
+      "positions": 992,
+      "eligible_records": 22187,
+      "positions_without_records": 100,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "73268",
+      "positions": 992,
+      "eligible_records": 3382,
+      "positions_without_records": 378,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "73349",
+      "positions": 992,
+      "eligible_records": 1316,
+      "positions_without_records": 485,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "73449",
+      "positions": 992,
+      "eligible_records": 3022,
+      "positions_without_records": 250,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "76001",
+      "positions": 992,
+      "eligible_records": 93902,
+      "positions_without_records": 28,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "76109",
+      "positions": 992,
+      "eligible_records": 3259,
+      "positions_without_records": 267,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "76111",
+      "positions": 992,
+      "eligible_records": 6352,
+      "positions_without_records": 349,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "76147",
+      "positions": 992,
+      "eligible_records": 3988,
+      "positions_without_records": 437,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "76520",
+      "positions": 992,
+      "eligible_records": 13731,
+      "positions_without_records": 236,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "76834",
+      "positions": 992,
+      "eligible_records": 6473,
+      "positions_without_records": 271,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "76892",
+      "positions": 992,
+      "eligible_records": 4546,
+      "positions_without_records": 382,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "81001",
+      "positions": 992,
+      "eligible_records": 3609,
+      "positions_without_records": 380,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "81736",
+      "positions": 992,
+      "eligible_records": 2255,
+      "positions_without_records": 406,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "85001",
+      "positions": 992,
+      "eligible_records": 7901,
+      "positions_without_records": 159,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "86001",
+      "positions": 992,
+      "eligible_records": 3628,
+      "positions_without_records": 435,
+      "partial_positions": 1
+    },
+    {
+      "municipality_code": "95001",
+      "positions": 992,
+      "eligible_records": 4165,
+      "positions_without_records": 239,
+      "partial_positions": 1
+    }
+  ],
+  "discrepancies": [],
+  "source_hashes_unchanged": true,
+  "output": {
+    "file": "data/processed/master_weekly_screening_fixed_20261020.parquet",
+    "rows": 77376,
+    "columns": 15,
+    "bytes": 2285212,
+    "sha256": "ccc0ab5360e29cabb8b1f5d3a0feb7fe0f00dffba195c7f55ffe83c9d0a73c5e",
+    "readback_equal": true,
+    "schema": {
+      "municipality_code": "string",
+      "municipality": "string",
+      "week_start": "date32[day]",
+      "population": "int64",
+      "area_km2": "double",
+      "population_density_km2": "double",
+      "temperature_c": "double",
+      "precipitation_mm": "double",
+      "relative_humidity_pct": "double",
+      "confirmed_records_screening": "int64",
+      "no_eligible_records_observed": "bool",
+      "week_end_nominal": "date32[day]",
+      "week_end_effective": "date32[day]",
+      "n_days": "uint8",
+      "partial_week": "bool"
+    }
+  }
+}

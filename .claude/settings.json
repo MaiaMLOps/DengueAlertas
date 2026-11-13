@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(/.env)",
+      "Edit(/.env)",
+      "Edit(/docs/forecasting/contrato_predictivo.md)",
+      "Edit(/docs/forecasting/registro_decisiones.md)",
+      "Edit(/docs/forecasting/verificacion/**)",
+      "Edit(/src/epidemiology/ewt.py)",
+      "Edit(/src/epidemiology/labels.py)",
+      "Edit(/data/processed/master_weekly_screening.parquet.dvc)",
+      "Edit(/data/processed/pilot_municipalities_weekly.parquet.dvc)",
+      "Edit(/data/processed/epidemiology/pilot_weekly_labels.parquet.dvc)",
+      "Bash(git push *)",
+      "PowerShell(git push *)",
+      "Edit(/tests/acceptance/test_f0_*.py)",
+      "Edit(/tests/acceptance/test_f1_*.py)",
+      "Edit(/tests/acceptance/test_f2_*.py)",
+      "Edit(/tests/acceptance/test_f2gru_*.py)",
+      "Edit(/tests/acceptance/test_f3_*.py)",
+      "Edit(/tests/acceptance/test_f4_*.py)",
+      "Edit(/tests/acceptance/test_f5a_*.py)",
+      "Edit(/tests/acceptance/test_f6_*.py)",
+      "Edit(/tests/acceptance/test_f6receta_*.py)",
+      "Edit(/tests/acceptance/test_f7_*.py)",
+      "Edit(/tests/acceptance/test_f6b_*.py)",
+      "Edit(/tests/acceptance/test_f6breal_*.py)",
+      "Edit(/tests/acceptance/test_f7b_evaluacion.py)",
+      "Edit(/tests/acceptance/test_f7b_prueba_real.py)",
+      "Edit(/tests/acceptance/test_f7b_artefactos.py)",
+      "Edit(/tests/acceptance/test_f7b_diagnostico_desarrollo.py)",
+      "Edit(/tests/acceptance/test_f7c_formulas.py)",
+      "Edit(/tests/acceptance/test_f7c_identidades_real.py)",
+      "Edit(/tests/acceptance/test_f7c_reportes_real.py)"
+    ],
+    "ask": [
+      "Bash(git commit *)",
+      "PowerShell(git commit *)",
+      "Bash(dvc push *)",
+      "PowerShell(dvc push *)"
+    ]
+  }
+}

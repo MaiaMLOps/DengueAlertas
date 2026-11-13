@@ -1,0 +1,5 @@
+outs:
+- md5: 99fd12311a261264019645d906631cfc
+  size: 263155
+  hash: md5
+  path: pilot_weekly_channel.parquet

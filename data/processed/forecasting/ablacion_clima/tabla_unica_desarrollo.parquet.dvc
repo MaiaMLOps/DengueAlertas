@@ -1,0 +1,5 @@
+outs:
+- md5: 6fe5a495e71c585e364f8299617de7bf
+  size: 16645
+  hash: md5
+  path: tabla_unica_desarrollo.parquet

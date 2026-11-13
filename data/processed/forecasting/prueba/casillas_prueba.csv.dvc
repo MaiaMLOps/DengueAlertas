@@ -1,0 +1,5 @@
+outs:
+- md5: 52271b28fe4fca784d39c25c3d0690ce
+  size: 3943
+  hash: md5
+  path: casillas_prueba.csv

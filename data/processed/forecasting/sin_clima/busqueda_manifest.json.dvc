@@ -1,0 +1,5 @@
+outs:
+- md5: 8d1df8e3beb107e78864a2aa5bb14ba6
+  size: 12862
+  hash: md5
+  path: busqueda_manifest.json

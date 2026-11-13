@@ -1,0 +1,197 @@
+familia_comun: logistica
+comparacion_familias:
+  mejora_media_fuera_de_anio:
+    logistica: -0.023968181424018162
+    lightgbm: -0.028082585531237696
+  victorias: 9
+  casillas: 24
+  umbral: 17
+  reemplaza: false
+municipios:
+  '08001':
+    familia: logistica
+    candidato: logistica_03
+    orden: 3
+    hiperparametros:
+      C: 0.3
+      max_iter: 5000
+    excepcion_familia:
+      aplica: false
+      diferencias_logloss:
+        '2019': -0.038730956052270726
+        '2020': -0.04501224378824725
+        '2021': 0.049413820648889106
+        '2022': 0.37719523794498033
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': 0.0
+        '2020': 0.0
+        '2021': 0.0
+        '2022': 0.125853277989869
+  '08758':
+    familia: logistica
+    candidato: logistica_03
+    orden: 3
+    hiperparametros:
+      C: 0.3
+      max_iter: 5000
+    excepcion_familia:
+      aplica: false
+      diferencias_logloss:
+        '2019': 0.23605886034340084
+        '2020': -0.1904947621553696
+        '2021': 0.16279681631242482
+        '2022': 0.11739436655949997
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': -0.03217809964901708
+        '2020': -0.05843507775707418
+        '2021': 0.10369098152730916
+        '2022': 0.0911131044802026
+  '41001':
+    familia: logistica
+    candidato: logistica_03
+    orden: 3
+    hiperparametros:
+      C: 0.3
+      max_iter: 5000
+    excepcion_familia:
+      aplica: false
+      diferencias_logloss:
+        '2019': 0.2949816314280683
+        '2020': -0.18506245763525134
+        '2021': -0.0274570944616047
+        '2022': -0.05603658007159609
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': 0.09539708877940634
+        '2020': 0.058959496201419104
+        '2021': 0.014558095775865976
+        '2022': 0.007312248896959861
+  '50001':
+    familia: logistica
+    candidato: logistica_03
+    orden: 3
+    hiperparametros:
+      C: 0.3
+      max_iter: 5000
+    excepcion_familia:
+      aplica: false
+      diferencias_logloss:
+        '2019': 0.2514584005750249
+        '2020': 0.012752504265126169
+        '2021': 0.012315779060071795
+        '2022': 0.05140593199473714
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': -0.13068850500244789
+        '2020': 0.007373765972132185
+        '2021': -0.006503547188188316
+        '2022': -0.029245232531041193
+  '54001':
+    familia: logistica
+    candidato: logistica_03
+    orden: 3
+    hiperparametros:
+      C: 0.3
+      max_iter: 5000
+    excepcion_familia:
+      aplica: false
+      diferencias_logloss:
+        '2019': 0.11687600095411843
+        '2020': 0.009630119276916298
+        '2021': 0.022721028305305424
+        '2022': 0.15153129914569058
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': 0.0
+        '2020': 0.010243950194032177
+        '2021': 0.0
+        '2022': 0.05875074910410977
+  '76001':
+    familia: logistica
+    candidato: logistica_03
+    orden: 3
+    hiperparametros:
+      C: 0.3
+      max_iter: 5000
+    excepcion_familia:
+      aplica: false
+      diferencias_logloss:
+        '2019': 0.0120734437307089
+        '2020': -0.21978349010390774
+        '2021': -0.007559327032736152
+        '2022': -0.004538237518625917
+    excepcion_hiperparametros:
+      aplica: false
+      nominal: false
+      diferencias_logloss:
+        '2019': -0.024674471091176653
+        '2020': -0.09108118036975466
+        '2021': -0.02584855740212255
+        '2022': 0.027341960048596035
+decision:
+  tau: 0.1
+  k: 2
+  W: 12
+  restriccion_cumplida: true
+  inicios_evaluables: 10
+  inicios_avisados: 6
+  falsas_alarmas_modelo: 24
+  falsas_alarmas_canal: 48
+  inicios_avisados_canal: 10
+  municipio_anios: 24
+configuracion:
+  h: 8
+  canal:
+    n: 5
+    desplazamiento: 1
+    cuantil_t: 0.025
+  features:
+    w: 4
+    bloques:
+      m1:
+      - -3
+      - 0
+      m2:
+      - -7
+      - -4
+      m3:
+      - -11
+      - -8
+    ventana_semanas: 12
+  validacion:
+    desarrollo:
+    - 2019
+    - 2022
+    prueba:
+    - 2023
+    - 2025
+    primer_anio_entrenamiento: 2012
+  lineas_base:
+    b1_semiventana: 2
+  metricas:
+    recorte_log_loss: 1.0e-15
+procedencia:
+  commit_codigo: 78cce2c2e4f9b94e6f4d8b433c030fe493a8e486
+  commit_contrato: ec0058b21fe10db5595ac2cc51b143e2e70c3b29
+  version_dvc_canal: 99fd12311a261264019645d906631cfc
+  busqueda_id: 7f34b69832eea69407c6
+  insumos_md5:
+    tabla_unica_desarrollo.parquet: a38ab5ef1f925f46264a90bb13a4d80c
+    predicciones_desarrollo.parquet: ac5a28f3cdd47273a4cb694b8dc942ca
+    busqueda_manifest.json: 48b930bfb3eaa4ac334fb47c680a9889
+aprobacion:
+  nombre: Jesús Sierra
+  fecha: 2026-11-12
+hash_sha256: d2135a39a9de0b9fd55e63caf5cc22859e2c82a4b4437afe2a96bfbe2c39da98

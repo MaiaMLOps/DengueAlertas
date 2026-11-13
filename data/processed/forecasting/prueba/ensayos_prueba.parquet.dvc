@@ -1,0 +1,5 @@
+outs:
+- md5: 72a1880be2cadaf06367c4a6d3e82e13
+  size: 6945
+  hash: md5
+  path: ensayos_prueba.parquet

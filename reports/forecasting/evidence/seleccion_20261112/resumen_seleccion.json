@@ -1,0 +1,147 @@
+{
+  "fecha_utc": "2026-11-12T15:12:59+00:00",
+  "commit_codigo": "78cce2c2e4f9b94e6f4d8b433c030fe493a8e486",
+  "busqueda_id": "7f34b69832eea69407c6",
+  "insumos_md5": {
+    "tabla_unica_desarrollo.parquet": "a38ab5ef1f925f46264a90bb13a4d80c",
+    "predicciones_desarrollo.parquet": "ac5a28f3cdd47273a4cb694b8dc942ca",
+    "busqueda_manifest.json": "48b930bfb3eaa4ac334fb47c680a9889"
+  },
+  "version_dvc_canal": "99fd12311a261264019645d906631cfc",
+  "paso_1_configuracion_comun": {
+    "logistica": {
+      "candidato": "logistica_03",
+      "orden": 3,
+      "parametros": {
+        "C": 0.3,
+        "max_iter": 5000
+      },
+      "mejora_media_4_anios": 0.022133035341041843,
+      "segundo": "logistica_04",
+      "mejora_media_segundo": -0.01321281313050758,
+      "ventaja_sobre_segundo": 0.035345848471549424
+    },
+    "lightgbm": {
+      "candidato": "lightgbm_03",
+      "orden": 3,
+      "parametros": {
+        "colsample_bytree": 0.6529144781728654,
+        "learning_rate": 0.012257790533570788,
+        "max_depth": 2,
+        "min_child_samples": 36,
+        "n_estimators": 544,
+        "num_leaves": 4,
+        "random_state": 20261112,
+        "reg_lambda": 3.917014320373904,
+        "subsample": 0.8085499298157119,
+        "subsample_freq": 1
+      },
+      "mejora_media_4_anios": -0.019401621794500116,
+      "segundo": "lightgbm_16",
+      "mejora_media_segundo": -0.019815211939888194,
+      "ventaja_sobre_segundo": 0.00041359014538807845
+    }
+  },
+  "paso_2_familias": {
+    "mejora_media_fuera_de_anio": {
+      "logistica": -0.023968181424018162,
+      "lightgbm": -0.028082585531237696
+    },
+    "victorias_lightgbm": 9,
+    "casillas": 24,
+    "umbral": 17,
+    "reemplaza": false,
+    "familia_comun": "logistica"
+  },
+  "pasos_3_4_elecciones": [
+    {
+      "municipality_code": "08001",
+      "familia": "logistica",
+      "candidato": "logistica_03",
+      "orden": 3,
+      "parametros": "{\"C\": 0.3, \"max_iter\": 5000}",
+      "excepcion_familia": false,
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    },
+    {
+      "municipality_code": "08758",
+      "familia": "logistica",
+      "candidato": "logistica_03",
+      "orden": 3,
+      "parametros": "{\"C\": 0.3, \"max_iter\": 5000}",
+      "excepcion_familia": false,
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    },
+    {
+      "municipality_code": "41001",
+      "familia": "logistica",
+      "candidato": "logistica_03",
+      "orden": 3,
+      "parametros": "{\"C\": 0.3, \"max_iter\": 5000}",
+      "excepcion_familia": false,
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    },
+    {
+      "municipality_code": "50001",
+      "familia": "logistica",
+      "candidato": "logistica_03",
+      "orden": 3,
+      "parametros": "{\"C\": 0.3, \"max_iter\": 5000}",
+      "excepcion_familia": false,
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    },
+    {
+      "municipality_code": "54001",
+      "familia": "logistica",
+      "candidato": "logistica_03",
+      "orden": 3,
+      "parametros": "{\"C\": 0.3, \"max_iter\": 5000}",
+      "excepcion_familia": false,
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    },
+    {
+      "municipality_code": "76001",
+      "familia": "logistica",
+      "candidato": "logistica_03",
+      "orden": 3,
+      "parametros": "{\"C\": 0.3, \"max_iter\": 5000}",
+      "excepcion_familia": false,
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    }
+  ],
+  "tau": {
+    "tau": 0.1,
+    "restriccion_cumplida": true,
+    "k": 2,
+    "W": 12,
+    "modelo": {
+      "tau": 0.1,
+      "evaluable_onsets": 10,
+      "warned_onsets": 6,
+      "detection": 0.6,
+      "false_alarms": 24,
+      "municipality_years": 24,
+      "false_alarms_per_municipality_year": 1.0,
+      "judgeable_alerts": 32,
+      "continuity_alerts": 6
+    },
+    "canal": {
+      "evaluable_onsets": 10,
+      "warned_onsets": 10,
+      "detection": 1.0,
+      "false_alarms": 48,
+      "municipality_years": 24,
+      "false_alarms_per_municipality_year": 2.0,
+      "judgeable_alerts": 63,
+      "continuity_alerts": 0
+    }
+  },
+  "decisiones_por_menos_de_1e-12": [],
+  "reproducible": true
+}

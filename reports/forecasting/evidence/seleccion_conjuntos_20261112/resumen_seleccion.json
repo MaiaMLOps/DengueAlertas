@@ -1,0 +1,257 @@
+{
+  "fecha_utc": "2026-11-12T18:47:30+00:00",
+  "commit_codigo": "1f45514686200b4eeef6ca5ca2e814700b674b72",
+  "busquedas": {
+    "completo": {
+      "busqueda_id": "7f34b69832eea69407c6",
+      "insumos_md5": {
+        "tabla_unica_desarrollo.parquet": "a38ab5ef1f925f46264a90bb13a4d80c",
+        "predicciones_desarrollo.parquet": "ac5a28f3cdd47273a4cb694b8dc942ca",
+        "busqueda_manifest.json": "48b930bfb3eaa4ac334fb47c680a9889"
+      }
+    },
+    "sin_clima": {
+      "busqueda_id": "ae6225180d37d025224b",
+      "insumos_md5": {
+        "tabla_unica_desarrollo.parquet": "8e18c06857c0b840d6c08dc8cef8320a",
+        "predicciones_desarrollo.parquet": "75d29d5396488b28f67908750cb7986e",
+        "busqueda_manifest.json": "8d1df8e3beb107e78864a2aa5bb14ba6"
+      }
+    }
+  },
+  "version_dvc_canal": "99fd12311a261264019645d906631cfc",
+  "conjunto_forzado": null,
+  "paso_0_conjuntos": {
+    "logistica": {
+      "conjunto": "sin_clima",
+      "mejora_media_fuera_de_anio": {
+        "completo": -0.023968181424018162,
+        "sin_clima": 0.21090958293979553
+      },
+      "victorias_completo": 9,
+      "casillas": 24,
+      "umbral": 17,
+      "reemplaza": false,
+      "usado": "sin_clima"
+    },
+    "lightgbm": {
+      "conjunto": "sin_clima",
+      "mejora_media_fuera_de_anio": {
+        "completo": -0.028082585531237696,
+        "sin_clima": 0.08395871267355431
+      },
+      "victorias_completo": 11,
+      "casillas": 24,
+      "umbral": 17,
+      "reemplaza": false,
+      "usado": "sin_clima"
+    }
+  },
+  "conjuntos_municipio": {
+    "08001": "sin_clima",
+    "08758": "sin_clima",
+    "41001": "sin_clima",
+    "50001": "sin_clima",
+    "54001": "sin_clima",
+    "76001": "sin_clima"
+  },
+  "paso_1_configuracion_comun": {
+    "logistica": {
+      "candidato": "logistica_05",
+      "orden": 5,
+      "parametros": {
+        "C": 3.0,
+        "max_iter": 5000
+      },
+      "mejora_media_4_anios": 0.2235210502963949,
+      "segundo": "logistica_04",
+      "mejora_media_segundo": 0.22233693603572668,
+      "ventaja_sobre_segundo": 0.0011841142606682231
+    },
+    "lightgbm": {
+      "candidato": "lightgbm_20",
+      "orden": 20,
+      "parametros": {
+        "colsample_bytree": 0.9493593895899332,
+        "learning_rate": 0.021634226782751193,
+        "max_depth": 5,
+        "min_child_samples": 18,
+        "n_estimators": 594,
+        "num_leaves": 6,
+        "random_state": 20261112,
+        "reg_lambda": 6.094967831158885,
+        "subsample": 0.6045498923763365,
+        "subsample_freq": 1
+      },
+      "mejora_media_4_anios": 0.12072801749386064,
+      "segundo": "lightgbm_02",
+      "mejora_media_segundo": 0.11960486960826544,
+      "ventaja_sobre_segundo": 0.0011231478855951993
+    }
+  },
+  "paso_2_familias": {
+    "mejora_media_fuera_de_anio": {
+      "logistica": 0.21090958293979553,
+      "lightgbm": 0.08395871267355431
+    },
+    "victorias_lightgbm": 6,
+    "casillas": 24,
+    "umbral": 17,
+    "reemplaza": false,
+    "familia_comun": "logistica"
+  },
+  "pasos_3_4_elecciones": [
+    {
+      "municipality_code": "08001",
+      "familia": "logistica",
+      "candidato": "logistica_05",
+      "orden": 5,
+      "parametros": "{\"C\": 3.0, \"max_iter\": 5000}",
+      "excepcion_familia": false,
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    },
+    {
+      "municipality_code": "08758",
+      "familia": "logistica",
+      "candidato": "logistica_05",
+      "orden": 5,
+      "parametros": "{\"C\": 3.0, \"max_iter\": 5000}",
+      "excepcion_familia": false,
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    },
+    {
+      "municipality_code": "41001",
+      "familia": "logistica",
+      "candidato": "logistica_05",
+      "orden": 5,
+      "parametros": "{\"C\": 3.0, \"max_iter\": 5000}",
+      "excepcion_familia": false,
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    },
+    {
+      "municipality_code": "50001",
+      "familia": "logistica",
+      "candidato": "logistica_05",
+      "orden": 5,
+      "parametros": "{\"C\": 3.0, \"max_iter\": 5000}",
+      "excepcion_familia": false,
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    },
+    {
+      "municipality_code": "54001",
+      "familia": "logistica",
+      "candidato": "logistica_05",
+      "orden": 5,
+      "parametros": "{\"C\": 3.0, \"max_iter\": 5000}",
+      "excepcion_familia": false,
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    },
+    {
+      "municipality_code": "76001",
+      "familia": "logistica",
+      "candidato": "logistica_05",
+      "orden": 5,
+      "parametros": "{\"C\": 3.0, \"max_iter\": 5000}",
+      "excepcion_familia": false,
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    }
+  ],
+  "tau": {
+    "tau": 0.05,
+    "restriccion_cumplida": true,
+    "k": 2,
+    "W": 12,
+    "modelo": {
+      "tau": 0.05,
+      "evaluable_onsets": 10,
+      "warned_onsets": 8,
+      "detection": 0.8,
+      "false_alarms": 22,
+      "municipality_years": 24,
+      "false_alarms_per_municipality_year": 0.9166666666666666,
+      "judgeable_alerts": 34,
+      "continuity_alerts": 6
+    },
+    "canal": {
+      "evaluable_onsets": 10,
+      "warned_onsets": 10,
+      "detection": 1.0,
+      "false_alarms": 48,
+      "municipality_years": 24,
+      "false_alarms_per_municipality_year": 2.0,
+      "judgeable_alerts": 63,
+      "continuity_alerts": 0
+    }
+  },
+  "decisiones_por_menos_de_1e-12": [],
+  "reproducible": true,
+  "ablacion": [
+    {
+      "municipality_code": "08001",
+      "familia": "logistica",
+      "conjunto_variables": "completo",
+      "candidato": "logistica_03",
+      "orden": 3,
+      "parametros": "{\"C\": 0.3, \"max_iter\": 5000}",
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    },
+    {
+      "municipality_code": "08758",
+      "familia": "logistica",
+      "conjunto_variables": "completo",
+      "candidato": "logistica_03",
+      "orden": 3,
+      "parametros": "{\"C\": 0.3, \"max_iter\": 5000}",
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    },
+    {
+      "municipality_code": "41001",
+      "familia": "logistica",
+      "conjunto_variables": "completo",
+      "candidato": "logistica_03",
+      "orden": 3,
+      "parametros": "{\"C\": 0.3, \"max_iter\": 5000}",
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    },
+    {
+      "municipality_code": "50001",
+      "familia": "logistica",
+      "conjunto_variables": "completo",
+      "candidato": "logistica_03",
+      "orden": 3,
+      "parametros": "{\"C\": 0.3, \"max_iter\": 5000}",
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    },
+    {
+      "municipality_code": "54001",
+      "familia": "logistica",
+      "conjunto_variables": "completo",
+      "candidato": "logistica_03",
+      "orden": 3,
+      "parametros": "{\"C\": 0.3, \"max_iter\": 5000}",
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    },
+    {
+      "municipality_code": "76001",
+      "familia": "logistica",
+      "conjunto_variables": "completo",
+      "candidato": "logistica_03",
+      "orden": 3,
+      "parametros": "{\"C\": 0.3, \"max_iter\": 5000}",
+      "excepcion_hiperparametros": false,
+      "excepcion_hiperparametros_nominal": false
+    }
+  ],
+  "descriptores_dvc_sin_clima": "pendiente (sin descriptores .dvc)"
+}

@@ -1,0 +1,5 @@
+outs:
+- md5: a826f3661510f9e32afbdbe0682bd22a
+  size: 6103
+  hash: md5
+  path: lineas_base_desarrollo.parquet

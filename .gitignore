@@ -2,6 +2,9 @@
 .env
 .env.local
 
+# Personal Claude Code settings
+.claude/settings.local.json
+
 # Python cache
 __pycache__/
 *.py[cod]
@@ -45,6 +48,25 @@ env/
 /data/processed/epidemiology/?*
 !/data/processed/epidemiology/pilot_weekly_labels.parquet.dvc
 !/data/processed/epidemiology/run_manifest.json
+# epiCo channel product (F1): only its DVC descriptor and adjacent manifest.
+!/data/processed/epidemiology/pilot_weekly_channel.parquet.dvc
+!/data/processed/epidemiology/pilot_weekly_channel_manifest.json
+
+# Forecasting results (especificación §4): Parquet ignored; only DVC descriptors in Git.
+!/data/processed/forecasting/
+/data/processed/forecasting/?*
+!/data/processed/forecasting/*.dvc
+# D7.2 searches (reports/forecasting/INDICE.md): sin_clima/ (vigente) and ablacion_clima/ (registro), descriptors only.
+!/data/processed/forecasting/sin_clima/
+/data/processed/forecasting/sin_clima/?*
+!/data/processed/forecasting/sin_clima/*.dvc
+!/data/processed/forecasting/ablacion_clima/
+/data/processed/forecasting/ablacion_clima/?*
+!/data/processed/forecasting/ablacion_clima/*.dvc
+# Single test run of F7 (prueba/): descriptors only; small tables are copied to reports/forecasting/evidence/.
+!/data/processed/forecasting/prueba/
+/data/processed/forecasting/prueba/?*
+!/data/processed/forecasting/prueba/*.dvc
 
 # DVC local cache
 .dvc/cache/
@@ -55,3 +77,5 @@ env/
 /reports/epidemiology/runs/
 !/reports/pilot_selection/evidence/selection_20261020/*.csv
 !/reports/epidemiology/evidence/labels_20261021/*.csv
+!/reports/epidemiology/evidence/channel_20261111/*.csv
+!/reports/forecasting/evidence/*/*.csv

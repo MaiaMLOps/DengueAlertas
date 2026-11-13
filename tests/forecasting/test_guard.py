@@ -153,5 +153,5 @@ def test_access_from_config_uses_the_default_path():
     assert access.recipe_path == FROZEN_RECIPE_PATH == Path("configs/receta_congelada.yaml")
     assert access.test_years == tuple(config.validacion.prueba)
     assert access.channel_version == config.datos.version_dvc_canal
-    if FROZEN_RECIPE_PATH.exists():                             # frozen in F6 with Jesús's approval: must be valid
+    if FROZEN_RECIPE_PATH.exists():                             # recipe in force (D7.2, 6fc68f6), approved by the person responsible for the implementation: must be valid
         load_frozen_recipe(FROZEN_RECIPE_PATH, channel_version=config.datos.version_dvc_canal)

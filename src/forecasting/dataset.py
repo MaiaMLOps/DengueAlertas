@@ -65,7 +65,7 @@ CLIMATE_VARIABLES = {
     "hum": ("relative_humidity_pct", "mean"),
 }
 CLIMATE_COLUMNS = tuple(column for column, _ in CLIMATE_VARIABLES.values())
-# The climate block of contrato §5.2 (the nine anomalies), removed by the climate ablation (contrato §4.4).
+# The climate block of contrato §5.2 (the nine anomalies): the difference between the two feature sets of §6.6.
 CLIMATE_FEATURES = tuple(name for name in FEATURES if name.startswith("anom_"))
 # The two feature sets of contrato §6.6 (D7.2): "completo" (the 15 of §5.2) and "sin_clima" (the 6 without the
 # climate block), selected per family in step 0 of the selection. The simpler one is the default.

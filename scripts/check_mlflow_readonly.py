@@ -1,7 +1,7 @@
 """Read-only check of the team MLflow server (F0, U0.7).
 
-Uses src/forecasting/tracking.py in server mode only inside this script; configs/forecasting.yaml
-is not changed. Lists experiments and registered models (tags, aliases, versions) and the server
+Forces server mode through src/forecasting/tracking.py regardless of seguimiento.modo (servidor since the
+pre-registration), without editing configs/forecasting.yaml. Lists experiments and registered models (tags, aliases, versions) and the server
 version when /version is exposed. It creates, updates or deletes nothing and never prints
 credentials or request headers.
 

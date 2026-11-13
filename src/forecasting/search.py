@@ -2,8 +2,8 @@
 especificación §4, §6.F5a and §9).
 
 Flow (rows come from `build_examples`, trials from `splits.yearly_trials`; nothing is rebuilt):
-    CLI: load_config -> load_channel_product (md5) -> build_examples -> candidates_from_config(busqueda)
-         -> tracking.configure_tracking -> run_search
+    CLI: load_config -> uncommitted-changes check -> candidates_from_config(busqueda) -> load_channel_product
+         (md5) -> build_examples -> tracking.configure_tracking -> run_search
     run_search(examples, candidates, *, config, output_dir, tracking_uri)
       1. checks before any fit: families and candidate names, parameters (models.make_model), development
          years without test years, trials whose evaluated target weeks are all before the first test year.
@@ -76,7 +76,7 @@ DEFAULT_OUTPUT_DIR = ROOT / "data" / "processed" / "forecasting"
 # Variants of the search (contrato §6.6): name -> features of the models; each writes to the subfolder of its name.
 VARIANTS = {"sin_clima": FEATURE_SETS["sin_clima"]}
 BASELINE_FAMILIES = ("B2", "B1")
-REUSED_RUN_REL = 1e-12          # approved by Jesús for comparing a reused run with the recomputed unit
+REUSED_RUN_REL = 1e-12          # approved by the person responsible for the implementation for comparing a reused run with the recomputed unit
 _NAME_CHARACTERS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-")
 _PHASE = "desarrollo"
 

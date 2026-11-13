@@ -1,11 +1,11 @@
 # Parámetros del MVP de pronóstico (especificación §8). Se validan con Pydantic en
 # src/forecasting/config.py. Los valores vienen del contrato predictivo; no se ajustan con datos.
-# La sección `busqueda` es el pre-registro (especificación §7), aprobado por Jesús el 2026-11-11.
+# La sección `busqueda` es el pre-registro (especificación §7), aprobado por el responsable de la implementación el 2026-11-11.
 
 datos:
   panel: data/processed/pilot_municipalities_weekly.parquet
   canal: data/processed/epidemiology/pilot_weekly_channel.parquet
-  version_dvc_canal: 99fd12311a261264019645d906631cfc   # md5 del .dvc del canal (F1, U1.4)
+  version_dvc_canal: 99fd12311a261264019645d906631cfc   # md5 del .dvc del canal (F1, especificación §4 «Canal: reparto y reutilización»)
 
 canal:                             # contrato D1.1 y §1 (epiCo, method = "geometric")
   n: 5
@@ -45,7 +45,7 @@ decision:                          # contrato D8, §7.4 y §7.5
              0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95]
 
 seguimiento:                       # especificación §9
-  modo: servidor                   # servidor | local; sin respaldo automático. Servidor desde el pre-registro (F5b)
+  modo: servidor                   # servidor | local; sin respaldo automático. Servidor desde el commit del pre-registro (especificación §7), antes de F5b
   uri_servidor: https://platform.arkoiot.com   # MLFLOW_TRACKING_URI tiene prioridad
   directorio_local: mlruns
   experimentos:
@@ -53,7 +53,7 @@ seguimiento:                       # especificación §9
     prueba: dengue_h8_prueba
     final: dengue_h8_final
 
-busqueda:                          # pre-registro (especificación §7; contrato §6.2–§6.3); Jesús, 2026-11-11
+busqueda:                          # pre-registro (especificación §7; contrato §6.2–§6.3); responsable de la implementación, 2026-11-11
   logistica:                       # regresión logística L2: rejilla de C en escala log
     C: [0.01, 0.03, 0.1, 0.3, 1.0, 3.0]
     max_iter: 5000                 # la falta de convergencia es un error (models.py)

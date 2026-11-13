@@ -2,12 +2,13 @@
 (contrato §6.2, §7.5 and §8.3; especificación §6.F6, §7 and §8).
 
 Flow (nothing is retrained):
-    load_config -> check the F5b inputs against their DVC descriptors (md5) -> search_provenance
+    uncommitted-changes check -> load_config -> search_provenance -> check the inputs against their DVC
+    descriptors (md5)
     -> load_channel_product (md5) -> build_examples -> development rows of splits.yearly_trials
     -> selection.select twice (the result must be identical) -> evidence tables
     -> write the evidence folder and the recipe draft (selection.write_recipe_draft), never overwriting.
 
-Evidence files (folder given by --salida, which must be empty or new):
+Evidence files (folder given by --salida; none of these files may exist in it):
     resumen_seleccion.json       steps 1-4 and tau in the pre-registered order, inputs and margins < 1e-12
     casillas_fuera_de_anio.csv   per (municipality, year): common out-of-year configuration of each family
     mejora_por_municipio.csv     mean out-of-year improvement per municipality and minimum B2 log-loss
@@ -69,7 +70,7 @@ DRAFT_FILENAME = "receta_borrador.yaml"
 EVIDENCE_FILES = ("resumen_seleccion.json", "casillas_fuera_de_anio.csv", "mejora_por_municipio.csv",
                   "comparaciones_excepciones.csv", "curva_tau.csv", "margenes_de_eleccion.csv", DRAFT_FILENAME)
 SET_EVIDENCE_FILES = ("comparacion_conjuntos.csv", "ablacion.csv", "comparaciones_ablacion.csv")
-NEAR_TIE = 1e-12                        # a choice decided by less than this is reported (Jesús, U6.3)
+NEAR_TIE = 1e-12                        # a choice decided by less than this is reported (F6)
 
 
 # --------------------------------------------------------------------------- provenance and inputs

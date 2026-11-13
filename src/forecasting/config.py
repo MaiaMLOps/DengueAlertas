@@ -122,7 +122,7 @@ class DecisionSection(_Section):
 
 
 class LogisticSearch(_Section):
-    # Grid of C, in pre-registered order (contrato §6.3); max_iter must be enough to converge (§7).
+    # Grid of C, in pre-registered order (contrato §6.3); max_iter must be enough to converge (especificación §7).
     C: tuple[float, ...] = Field(min_length=1)
     max_iter: int = Field(ge=1, strict=True)
 
@@ -178,7 +178,7 @@ class LightGBMSearch(_Section):
 
 
 class SearchSection(_Section):
-    # Empty until the pre-registration (especificación §7 and §8).
+    # Pre-registration of especificación §7; optional only for configurations written before it.
     logistica: LogisticSearch | None = None
     lightgbm: LightGBMSearch | None = None
 

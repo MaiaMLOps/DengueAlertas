@@ -2,8 +2,7 @@
 Static PNG and SVG for the article (matplotlib, Agg backend, light surface). Development figures carry the label
 «usado para elegir»; the test AMOC curve is descriptive and does not change tau (contrato §7.5).
 
-Colour by job (reference palette of the dataviz method, first three categorical slots, validated all-pairs): the model
-(recipe) is slot 1 blue, the channel slot 2 orange, the ablation slot 3 aqua; B2 is the muted grey reference. The BSS
+Colour by role: the model (recipe) blue, the channel orange, the ablation aqua; B2 is the muted grey reference. The BSS
 map is diverging blue (model better) <-> red (B2 better) around a grey zero. Identity is never colour alone: every
 figure has a legend or direct labels.
 

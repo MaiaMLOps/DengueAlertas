@@ -120,7 +120,7 @@ def test_feature_and_channel_values_match_yaml():
     assert config.seguimiento.modo == "servidor"   # since the pre-registration (F5b)
 
 
-# --------------------------------------------------------------------------- busqueda (U5.3; values from the pre-registration)
+# --------------------------------------------------------------------------- busqueda (U5.3): the pre-registered values (first test) and schema validation with a synthetic SEARCH
 SEARCH = {
     "logistica": {"C": [0.1, 1.0], "max_iter": 2000},
     "lightgbm": {

@@ -3,7 +3,7 @@
 DV-02 (docs/forecasting/desviaciones.md): amendment D7.2 (contrato §6.6) made the feature set a selection step and
 replaced the frozen recipe d2135a39…da98 before the test period was opened. Some frozen acceptance tests assert that
 recipe (its hash, logistica_03, tau = 0.10), an explicit `ablation` argument or an ablation system named
-"sin_clima". They are not edited (CLAUDE.md, «Pruebas»): they are marked here, explicitly, as `sustituida_dv02` and
+"sin_clima". They are not edited (DV-02, decision 3, docs/forecasting/desviaciones.md): they are marked here, explicitly, as `sustituida_dv02` and
 skipped with a reason that names their replacement, so they show up as SKIPPED in every report (-rA) and are never
 silently omitted. The frozen files that stay as a record of the full-set selection of F6 (test_f6_real.py,
 test_f6receta_borrador.py and the other tests of test_f7_diagnostico_desarrollo.py) keep running and passing.

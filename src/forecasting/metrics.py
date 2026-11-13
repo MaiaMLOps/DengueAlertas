@@ -14,7 +14,8 @@ Flow of every function that receives rows:
 - improvement: 1 − score/reference, the selection metric against B2 (§6.2) and the BSS (§7.2). It works on
   scores already computed through the barrier, so it receives no rows.
 
-Murphy decomposition, reliability, calibration by year and metrics at τ are report metrics for F7.
+Murphy decomposition, reliability, calibration by year and metrics at τ are report metrics, implemented in
+reports.py (U7.5).
 """
 
 from collections.abc import Iterable

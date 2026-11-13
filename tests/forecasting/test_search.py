@@ -341,7 +341,7 @@ def test_cli_refuses_uncommitted_changes_unless_allowed(tmp_path, monkeypatch, c
     assert search.main(["--config", config, "--permitir-cambios"]) == 0
 
 
-# --------------------------------------------------------------------------- climate ablation variant (F7, D1)
+# ---- feature-set variant sin_clima (D7.2; first run as the F7 climate ablation in ablacion_clima/)
 def test_variant_without_climate_has_its_own_identity_and_tags(tmp_path):
     from src.forecasting.dataset import CLIMATE_FEATURES
 

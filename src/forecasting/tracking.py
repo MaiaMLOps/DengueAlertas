@@ -3,8 +3,7 @@
 Server mode needs CF_ACCESS_CLIENT_ID and CF_ACCESS_CLIENT_SECRET and fails before any network
 call when either is missing. Local mode uses the file store under mlruns/; MLflow 3.17 refuses it unless
 MLFLOW_ALLOW_FILE_STORE=true, which `allow_file_store` sets in this process only, and only for file: URIs
-(especificación §9). There is no automatic
-fallback from server to local: the mode is chosen explicitly in configs/forecasting.yaml.
+(especificación §9). There is no automatic fallback from server to local: the mode is chosen explicitly in configs/forecasting.yaml.
 Credential values are never logged, printed or included in error messages.
 """
 

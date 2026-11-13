@@ -48,7 +48,7 @@ env/
 /data/processed/?*
 !/data/processed/*.dvc
 
-# Final epidemiological Parquet remains ignored; permit only its future DVC descriptor and provenance.
+# Legacy EWT labels Parquet remains ignored; only its DVC descriptor and provenance manifest are versioned.
 !/data/processed/epidemiology/
 /data/processed/epidemiology/?*
 !/data/processed/epidemiology/pilot_weekly_labels.parquet.dvc
@@ -61,7 +61,7 @@ env/
 !/data/processed/forecasting/
 /data/processed/forecasting/?*
 !/data/processed/forecasting/*.dvc
-# D7.2 searches (reports/forecasting/INDICE.md): sin_clima/ (vigente) and ablacion_clima/ (registro), descriptors only.
+# D7.2 searches (reports/forecasting/INDICE.md): sin_clima/ (current) and ablacion_clima/ (record), descriptors only.
 !/data/processed/forecasting/sin_clima/
 /data/processed/forecasting/sin_clima/?*
 !/data/processed/forecasting/sin_clima/*.dvc

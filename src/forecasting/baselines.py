@@ -11,7 +11,7 @@ Flow of each predictor:
       -> integer counts (cases, positives) per group in `train`
       -> laplace(...) for each evaluated row, in the order of `evaluate`
 
-B1 window edges (approved by Jesús in U3.1): ordinal 53 counts as 52, both for training rows and for the
+B1 window edges (approved by the person responsible for the implementation in U3.1): ordinal 53 counts as 52, both for training rows and for the
 evaluated row, and the window is circular over 52 weeks, {((o - 1 + d) mod 52) + 1 : d = -k..k}.
 The descriptive channel alert (§4.1, third row) belongs to the events module (F4).
 """

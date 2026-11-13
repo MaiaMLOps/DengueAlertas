@@ -8,7 +8,8 @@ Flow:
          one of its weeks belongs to an episode, "post_epidemica" if not and the previous year is epidemic (it does
          not chain), "tranquila" otherwise. It uses weeks after the emission: a diagnostic stratum only, never a
          feature and never a decision.
-    development: single score table + saved predictions of F5b
+    development: single score table + saved predictions of the search of the recipe's feature set
+      (current recipe: data/processed/forecasting/sin_clima; --busqueda defaults to the full-set search of F5b)
       -> development_predictions(table, predictions, baseline_predictions, familia): in each (municipality,
          year) the common out-of-year configuration of the chosen family (comparison.out_of_year_scores,
          candidato_comun), plus the saved B2 and B1 of that trial; long table with sistema in SYSTEMS.
@@ -32,8 +33,9 @@ Differences are the option minus the reference (negative = the model is better);
 1 - L / L_ref; a win is a strictly smaller loss (a tie is not a win). Log-loss uses the same clip as every
 system (metricas.recorte_log_loss).
 
-Command line (development only; nothing in 2023-2025 is read):
-    python -B -m src.forecasting.diagnostics --salida reports/forecasting/evidence/diagnostico_desarrollo_<fecha>
+Command line (development only; nothing in 2023-2025 is read; it does not check for uncommitted changes):
+    python -B -m src.forecasting.diagnostics --busqueda data/processed/forecasting/sin_clima
+        --salida reports/forecasting/evidence/diagnostico_desarrollo_<fecha>
 """
 
 import argparse

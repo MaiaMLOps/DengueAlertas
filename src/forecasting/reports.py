@@ -3,7 +3,7 @@ Nothing is refitted and the single test is not run again: every table and figure
 
 Flow:
     development (rotulo "usado_para_elegir"), development_systems(rows, search_dir, sin_clima_dir, familia):
-      recipe   = common out-of-year configuration of `familia` in the sin_clima search (as diagnostics.py, D3);
+      recipe   = common out-of-year configuration of `familia` in the sin_clima search (as diagnostics.py, decision U7.1-D3);
       ablation = common out-of-year configuration of `familia` in the full-set search (F5b), the cells of step 0;
       B2, B1   = saved baselines of the sin_clima search (identical to F5b).
     test (rotulo "prueba"), test_systems(prueba_dir): the four systems of predicciones_prueba.parquet.
@@ -20,10 +20,11 @@ Flow:
       duracion_alertas   alert_durations, descriptive and outside the contract;
       curva_amoc         amoc_curve of the model over decision.tau_grid with the channel as one row; in the test
                          period it is descriptive and does not change tau (contrato §7.5).
-    The command line adds the development curve of the tau choice (logistica_05 in the four years,
+    The command line adds the development curve of the tau choice (the recipe configuration in the four years,
+    logistica_05 in the current recipe;
     development_recipe_probabilities), the table desarrollo_vs_prueba and the figures (PNG and SVG).
 
-Declared conventions (plan approved by Jesús on 2026-11-12; frozen in tests/acceptance/test_f7c_formulas.py):
+Declared conventions (plan approved by the person responsible for the implementation on 2026-11-12; frozen in tests/acceptance/test_f7c_formulas.py):
 - Reliability intervals: pd.qcut(p, RELIABILITY_BINS, labels=False, duplicates="drop") on the p of each system over
   the rows of the set (the same call as artifacts._calibration); equal p fall in the same interval; coinciding edges
   merge intervals; by year the deciles are recomputed within the year.
@@ -34,7 +35,8 @@ Declared conventions (plan approved by Jesús on 2026-11-12; frozen in tests/acc
 - Alert ratio of events._summarize (onsets warned by judgeable alerts / judgeable alerts; it may exceed 1); composite
   0.5·detection + 0.5·ratio. Duration of an alert: emissions from t_c to its end, both included.
 
-Command line (refused with uncommitted changes in src/ or configs/; never overwrites):
+Command line (refused with uncommitted changes in src/ or configs/ unless --permitir-cambios, recorded in the
+manifest; never overwrites):
     python -B -X utf8 -m src.forecasting.reports --salida reports/forecasting/evidence/reportes_<fecha>
         --figuras reports/forecasting/figures/<fecha>
 """
@@ -364,7 +366,8 @@ def _search_files(folder: Path) -> dict:
 
 def development_systems(rows: pd.DataFrame, *, search_dir, sin_clima_dir, familia: str) -> PeriodSystems:
     """Development period «usado para elegir»: the recipe and the ablation with their common out-of-year
-    configuration in each (municipality, year), and the saved baselines (decision D5 of U7.5)."""
+    configuration in each (municipality, year), and the saved baselines (decision U7.5-D5, second sense: the inputs
+    of each period; glossary of docs/forecasting/README.md)."""
     base = _sorted_rows(rows)
     years = sorted(set(base["anio"]))
     simple, full = _search_files(sin_clima_dir), _search_files(search_dir)
@@ -381,7 +384,7 @@ def development_systems(rows: pd.DataFrame, *, search_dir, sin_clima_dir, famili
 
 def development_recipe_probabilities(rows: pd.DataFrame, *, sin_clima_dir, familia: str, candidato: str) -> np.ndarray:
     """Saved development predictions of one configuration in every year (the tau choice of contrato §7.5 used the
-    recipe configuration, logistica_05), in the order of the sorted rows."""
+    recipe configuration, logistica_05 in the current recipe), in the order of the sorted rows."""
     base = _sorted_rows(rows)
     saved = pd.read_parquet(Path(sin_clima_dir) / "predicciones_desarrollo.parquet")
     own = saved[(saved["familia"] == familia) & (saved["candidato"] == candidato)]

@@ -26,7 +26,9 @@ Command line (real data; refused with uncommitted changes in src/ or configs/):
 writes predicciones_prueba.parquet, ensayos_prueba.parquet, casillas_prueba.csv, resumen_prueba.json and the six
 diagnostic inputs of §8.8 in diagnostico_prueba/, then logs one MLflow run per municipality and system in the
 experiment `seguimiento.experimentos.prueba`. `--sin-seguimiento` skips MLflow; `--solo-seguimiento` logs the
-runs from the saved outputs of --salida without running the test again (no log entry).
+runs from the saved outputs of --salida without running the test again (no log entry) and does not check for
+uncommitted changes. The single test was already run (execution 1 in reports/forecasting/bitacora_prueba.jsonl);
+another execution needs --razon and a team decision.
 """
 
 import argparse

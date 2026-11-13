@@ -61,7 +61,7 @@ def test_development_history_checks_the_md5_of_the_search(tmp_path):
 
 
 def test_history_of_two_periods_with_the_synthetic_world(tmp_path):
-    """Development and test histories of the evaluate world; the alert state restarts at each period (D4)."""
+    """Development and test histories of the evaluate world; the alert state restarts at each period (decision U7.1-D4)."""
     config = load_config()
     _WORLD.write_recipe(tmp_path / "receta.yaml", config)
     access = RecipeAccess.from_config(config, recipe_path=tmp_path / "receta.yaml")

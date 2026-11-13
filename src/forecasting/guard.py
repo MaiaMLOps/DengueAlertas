@@ -1,8 +1,8 @@
-"""Test-period barrier and minimal frozen-recipe format (CLAUDE.md rule 1; especificación §4 «Barrera de
-prueba: detalle» and §8; contrato §6.1 and §7.1).
+"""Test-period barrier and minimal frozen-recipe format (especificación §1, rule 1, §4 «Barrera de prueba:
+detalle» and §8; contrato §6.1 and §7.7).
 
 Flow of `check_test_access(target_weeks, access)`, called by every function that scores rows (metrics,
-baselines, events, evaluate) with the target weeks of the rows it scores:
+baselines, events, evaluate, artifacts, reports and diagnostics) with the target weeks of the rows it scores:
     no target week in access.test_years -> return (development needs no recipe)
     otherwise -> load_frozen_recipe(access.recipe_path), read from disk on every call (no cache)
                    -> structure and formats of procedencia, aprobacion and hash_sha256
@@ -15,8 +15,9 @@ separators=(",", ":"), ensure_ascii=False, allow_nan=False) in UTF-8, dates in I
 of the YAML keys and quoting a date do not change it. Duplicate YAML keys are rejected, because the hash
 is computed on the loaded content and a duplicate would hide one of the values.
 
-The module only reads: it never writes or creates configs/receta_congelada.yaml (generated in F6 and
-approved by Jesús). The log of test executions belongs to evaluate.py (F7).
+The module only reads: it never writes or creates configs/receta_congelada.yaml (generated in F6 and,
+after DV-02, in F6b; approved by the person responsible for the implementation). The log of test executions
+belongs to evaluate.py (F7).
 """
 
 from collections.abc import Iterable, Mapping

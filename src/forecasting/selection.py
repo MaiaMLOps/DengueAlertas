@@ -1,7 +1,8 @@
 """Selection of F6: hyperparameters -> family -> exceptions -> tau, from the saved development search
 (contrato §4.3, §6.2, §7.5 and §8.3; especificación §6.F6 and §7, «Orden de selección para F6»).
 
-Nothing is retrained: the inputs are the single table and the per-row predictions of F5b.
+Nothing is retrained: the inputs are the single tables and per-row predictions of the saved development searches
+(F5b and, since D7.2, sin_clima).
 
 Flow:
     single table (tabla_unica_desarrollo)
@@ -20,7 +21,7 @@ Flow:
             (nominal exception when it equals the common one)
          every comparison is reported with its annual differences (logloss option − logloss reference)
       4 alone. hyperparameter_choices(table, familia): the same step 4 with a fixed family, for the climate
-         ablation (contrato §4.4, D1 of F7), whose search holds only the family of the recipe
+         ablation (contrato §4.4 and §6.6; decision 1 of the F7 plan); other families in the table are ignored
     per-row predictions -> chosen_predictions (the configuration of each municipality)
       -> tau_curve: the development rows of the six municipalities together, through events.evaluate_period
          for the channel (channel_positive) and for every tau of the grid (model_positive), same rows
@@ -29,7 +30,7 @@ Flow:
     select(...) chains everything and checks that no input has a test-period target week.
     build_recipe(selection, config, provenance) -> the recipe draft of especificación §8 (no approval, no hash)
       -> write_recipe_draft: YAML, never overwriting and never at configs/receta_congelada.yaml. Approval and
-         hash are added in a separate unit, with Jesús's approval; only then the test period opens.
+         hash are added in a separate unit, with the approval of the person responsible for the implementation; only then the test period opens.
 
 Step 0 (contrato §6.6, D7.2), before everything above, with one single table per feature set:
     choose_feature_set(tables, familia, alpha), per family: "sin_clima" (dataset.DEFAULT_FEATURE_SET) unless

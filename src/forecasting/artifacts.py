@@ -3,7 +3,7 @@ especificación §4 and §6.F7; DV-02): out-of-sample history, performance card 
 the single test: the card and the history are computed from the saved predictions of evaluate.run_test.
 
 Flow:
-    history_table(rows, predictions, observed, *, origen, tau, k, window, access), one period at a time (D4):
+    history_table(rows, predictions, observed, *, origen, tau, k, window, access), one period at a time (decision U7.1-D4):
       only rolling-origin predictions ("desarrollo_origen_movil" or "prueba_origen_movil"; the final model never
       enters, contrato §9.4) -> alert state of every emission (alert_states, api §2) within the period -> rows of
       api §6 (C, central, U1e and zone of the target week) and the events of the model and the channel
@@ -17,10 +17,11 @@ Flow:
       feature set, fitted with all its rows (t <= 2025-10-27, contrato §6.1) -> write_final_models: <code>.joblib
       and manifiesto.json, never overwriting.
 
-Command line (from the saved outputs of the single test; refused with uncommitted changes in src/ or configs/):
+Command line (from the saved outputs of the single test; refused with uncommitted changes in src/ or configs/
+unless --permitir-cambios):
     python -B -X utf8 -m src.forecasting.artifacts --prueba data/processed/forecasting/prueba
 writes ficha_desempeno.json, historial.parquet, historial_eventos.parquet and modelos_finales/ in that folder. The
-development part of the history uses the saved F5b-style predictions of the recipe configuration (decision D2,
+development part of the history uses the saved F5b-style predictions of the recipe configuration (decision U7.1-D2,
 «usado para elegir»), from the search of its feature set, whose md5 must match the recipe provenance.
 """
 
@@ -130,7 +131,7 @@ def _target_lookup(observed: pd.DataFrame, codes, weeks) -> pd.DataFrame:
 
 def history_table(rows: pd.DataFrame, predictions: pd.DataFrame, observed: pd.DataFrame, *, origen: str, tau: float,
                   k: int, window: int, access: RecipeAccess) -> History:
-    """History rows and events of one period (decision D4: the alert state never crosses periods)."""
+    """History rows and events of one period (decision U7.1-D4: the alert state never crosses periods)."""
     require(origen in ORIGINS, f"origen must be one of {sorted(ORIGINS)}; got {origen!r}. The final model never "
                                f"enters the history (contrato §9.4).")
     if "origen" in predictions.columns:
@@ -368,7 +369,7 @@ def _dirty_paths() -> list[str]:
 
 
 def development_history_inputs(recipe: dict, dev_rows: pd.DataFrame, search_dirs: dict = SEARCH_DIRS) -> pd.DataFrame:
-    """Saved development predictions of the recipe configuration of each municipality (decision D2) and the B2/B1
+    """Saved development predictions of the recipe configuration of each municipality (decision U7.1-D2) and the B2/B1
     of the same search, as a long table with sistema in {modelo, B2, B1}. The md5 of each search's predictions
     must be the one of the recipe provenance."""
     frames = []

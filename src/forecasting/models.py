@@ -3,7 +3,7 @@
 Flow (rows come from `build_examples`; train and evaluate are the rows of one `splits.yearly_trials` trial):
     _check_rows: the fifteen FEATURES, numeric ones finite, zona_t in ZONES; in train, y in {0, 1} with both classes
       -> make_model(family, params, features=FEATURES): unfitted sklearn Pipeline
-           logistica: ColumnTransformer[StandardScaler(14 numeric) | OneHotEncoder(zona_t, ZONES, drop seguridad)]
+           logistica: ColumnTransformer[StandardScaler(numeric columns of features: 14 with all FEATURES, 5 with sin_clima) | OneHotEncoder(zona_t, ZONES, drop seguridad)]
                       -> LogisticRegression(L2, class_weight=None, **params)
            lightgbm:  FunctionTransformer(zona_t -> pd.Categorical with fixed categories ZONES)
                       -> LGBMClassifier(binary, class_weight=None, verbose=-1, n_jobs=1, deterministic, **params)
@@ -17,8 +17,9 @@ requires exactly its allowed names and the module supplies no default value. The
 structural, not searched: no class weights (contrato §4.2), L2 penalty, binary objective, and one thread with
 deterministic LightGBM so that two equal fits give the same p bit for bit. Nothing is imputed (§5.5).
 
-`features` (keyword only, F7) restricts the model to a subset of FEATURES, always with zona_t: the climate
-ablation (contrato §4.4) fits the same family without the nine anom_* columns. Without it the pipeline is exactly
+`features` (keyword only, F7) restricts the model to a subset of FEATURES, always with zona_t: the sin_clima
+feature set of contrato §6.6 (D7.2), used by the current recipe; the climate ablation (§4.4) is the same family
+with the other set. Without it the pipeline is exactly
 the one of F5a: logistic regression scales the requested numeric columns; LightGBM gets a leading column selection
 step only when a subset is requested. The input rows still carry the fifteen columns (`_check_rows`).
 

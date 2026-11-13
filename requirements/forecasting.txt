@@ -1,4 +1,4 @@
-# Modelado del MVP de pronóstico (feature/forecasting-mvp). Python 3.11, solo en .venv.
+# Modelado del MVP de pronóstico (src/forecasting/). Python 3.11, solo en .venv.
 # pilot-selection.txt incluye data.txt y matplotlib (pruebas del legado y F7).
 # Entorno completo verificado (pip freeze del .venv, incluye DVC): forecasting.lock.txt.
 -r pilot-selection.txt

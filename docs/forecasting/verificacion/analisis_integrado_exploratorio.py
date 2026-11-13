@@ -1,9 +1,9 @@
-"""analisis_integrado_exploratorio.py: exploratory calculations [X] of the integrated analysis (contract §8.8, D9.1)
+r"""analisis_integrado_exploratorio.py: exploratory calculations [X] of the integrated analysis (contract §8.8, D9.1)
 and an independent cross-check of the derivable reports of U7.5.
 
 Scope. The document docs/forecasting/analisis_resultados.md cites two kinds of figures: those of the frozen evidence
-(reports/forecasting/evidence/, figures/20261112/) and exploratory ones, marked [X], that were not declared before
-the single test run and use information posterior to the emission (phases relative to episodes, weeks since the end
+(reports/forecasting/evidence/, reports/forecasting/figures/20261112/) and exploratory ones, marked [X], that were
+not declared before the single test run and use information posterior to the emission (phases relative to episodes, weeks since the end
 of an episode, alert state at an onset). This script produces every [X] figure and table of that document and checks
 that the U7.5 tables it reads agree with an independent recomputation. It changes nothing in the recipe, retrains
 nothing, adds no statistical test (§8.5) and does not redefine the event rule of §7.4.
@@ -14,7 +14,7 @@ series and the event rule of §7.4.
 
 Usage (from the repository root, with the DVC data pulled):
 
-    python -X utf8 -I docs/forecasting/verificacion/analisis_integrado_exploratorio.py \
+    .venv/Scripts/python.exe -X utf8 -I docs/forecasting/verificacion/analisis_integrado_exploratorio.py \
         --canal data/processed/epidemiology/pilot_weekly_channel.parquet \
         --busqueda-sin-clima data/processed/forecasting/sin_clima \
         --predicciones-prueba data/processed/forecasting/prueba/predicciones_prueba.parquet \
@@ -24,9 +24,10 @@ Usage (from the repository root, with the DVC data pulled):
 
 Outputs are never overwritten: the run fails if an output file already exists. The exit code is 1 if a check of the
 U7.5 cross-check fails. The cross-check covers the quantities the document cites (cells, skill, classification at
-tau, Murphy of the model, calibration per year, global events and weeks under alert); it does not cover the ablation
-nor «alertas_que_avisan», whose count in development follows convention D4 of the implementation (9/63 instead of the
-10/63 of an independent count: Villavicencio 2022-10-31 is warned only by a non-judgeable alert).
+tau, Murphy of the model, calibration per year, global events and weeks under alert); it does not cover the ablation,
+the alert ratio (inicios_avisados_por_juzgable / alertas_juzgables) nor «alertas_que_avisan». The channel's alert ratio
+in development follows convention U7.5-D4 (9/63 instead of the 10/63 of an independent count: Villavicencio
+2022-10-31 is warned only by a non-judgeable alert). The full independent check of U7.5 is caso_u75.py.
 
 Definitions (all diagnostic strata; none is information available at emission):
   episode      run of >= 3 consecutive eligible weeks with target_u1e = 1 on the whole eligible series (as §8.8).
@@ -41,7 +42,7 @@ Definitions (all diagnostic strata; none is information available at emission):
                means t_c <= onset week <= last week of the run (continuity runs included); the base rate is the
                share of emission weeks that lie in [t_c, end] of some run.
   persistence  positive if the channel zone at the emission week t is epidemic (y_hat = zone at t). It coincides with
-               B2 for tau between 0.25 and 0.60 in test and for tau 0.25 and 0.30 in development, because only the
+               B2 for tau between 0.25 and 0.50 in test and for tau 0.25 and 0.30 in development, because only the
                epidemic zone gives B2 a high value there.
   tau of max F1 the grid tau with the largest F1 of the model in development (ties to the larger tau); used only to
                describe the label at a weekly-optimal point chosen without the test period. 0.50 is reported as a
@@ -79,7 +80,7 @@ PHASES = ("antes", "durante", "después", "resto")
 PHASE_LABEL = {"antes": "Antes (1–8 sem previas)", "durante": "Durante el episodio",
                "después": "Después (1–13 sem)", "resto": "Resto (tranquilas)"}
 NAMES = f7.NAMES
-ORDER = ("41001", "50001", "76001", "08758", "54001", "08001")  # Neiva, Villavicencio, Cali, Soledad, Cúcuta, B/quilla
+ORDER = ("41001", "50001", "76001", "08758", "54001", "08001")  # Neiva, Villavicencio, Cali, Soledad, Cúcuta, Barranquilla
 PERIODS = ("desarrollo", "prueba")
 PERIOD_TITLE = {"desarrollo": "Desarrollo 2019–2022 (usado para elegir)", "prueba": "Prueba 2023–2025"}
 LABEL = {"desarrollo": "usado_para_elegir", "prueba": "prueba"}
@@ -872,7 +873,7 @@ def figure_thresholds(curve: pd.DataFrame, tau_f1: float):
     axes[0, 1].text(TAU + 0.01, 0.05, "τ de la receta", color=ORANGE, fontsize=8)
     axes[0, 1].text(tau_f1 + 0.01, 0.05, "τ de F1 máximo en desarrollo", color=INK_2, fontsize=8)
     fig.suptitle("Clasificación semanal de la etiqueta según el umbral [X]", y=1.0)
-    fig.text(0.5, -0.02, "B2 toma pocos valores: entre τ ≈ 0,25 y 0,60 coincide con la persistencia en prueba. "
+    fig.text(0.5, -0.02, "B2 toma pocos valores: entre τ ≈ 0,25 y 0,50 coincide con la persistencia en prueba. "
              "La curva es descriptiva y no elige τ.", ha="center", color=INK_2, fontsize=8)
     return fig
 

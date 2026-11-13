@@ -141,7 +141,7 @@ La dependencia va de `src/forecasting/` a `src/epidemiology/`, nunca al revés. 
   | `umbrales_d9.py` | Umbrales de las reglas de conteo de victorias (F5a) |
   | `caso_f6.py`, `caso_f6b.py` | Selección, τ, paso 0 y ablación (F6, F6b) |
   | `caso_f7_diagnostico.py` | Régimen, casillas y resúmenes del diagnóstico (F7). Su uso documentado y su `--tau` por defecto (0,10) corresponden a la receta sustituida; para la receta vigente (literales de `test_f7b_diagnostico_desarrollo.py`): `--busqueda data/processed/forecasting/sin_clima --familia logistica --tau 0.05` |
-  | `caso_u75.py` | Reportes derivables de U7.5: clasificación en τ, Murphy, calibración anual, eventos y razón de alertas (contraste independiente previo a congelar `test_f7c_reportes_real.py` y `test_f7c_identidades_real.py`) |
+  | `caso_u75.py` | Reportes derivables de U7.5: clasificación en τ, Murphy, calibración anual, eventos y razón de alertas (contraste independiente previo a congelar `test_f7c_reportes_real.py` y `test_f7c_identidades_real.py`). Frente a `reportes_20261112/` coinciden 1.061 de 1.065 cantidades; las 4 diferencias son la convención U7.5-D4 (razón de alertas del canal en desarrollo, 10/63 frente a 9/63, y en Villavicencio 2/6 frente a 1/6, con sus compuestos). Incluye un adaptador para periodos sin inicios, porque `caso_f7_diagnostico.py`, congelado, falla con una tabla de inicios vacía |
   | `analisis_integrado_exploratorio.py` | Cifras exploratorias [X] de `analisis_resultados.md` y contraste independiente parcial de U7.5 (480 cantidades) |
   | `verificar_cifras_analisis.py` | Cada cifra de `analisis_resultados.md` que procede de la evidencia, con un solo redondeo (245 comprobaciones) |
 

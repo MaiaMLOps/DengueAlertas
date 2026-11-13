@@ -1,4 +1,4 @@
-"""Inicios de brote evaluables por periodo bajo la regla de eventos de D8 (02 §7.4).
+"""Inicios de brote evaluables por periodo bajo la regla de eventos de D8 (contrato_predictivo.md §7.4).
  
 Solo usa la etiqueta observada (canal de epiCo, D1.1): no entrena ni evalúa modelos.
  

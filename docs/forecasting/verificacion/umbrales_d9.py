@@ -1,4 +1,4 @@
-"""Umbrales de las reglas de conteo de D9 (02 §8).
+"""Umbrales de las reglas de conteo de D9 (contrato_predictivo.md §8.2).
  
 Si dos opciones fueran equivalentes, ganar cada casilla (o cada inicio discrepante)
 sería una moneda con p = 0,5. El umbral es el menor número de victorias cuya

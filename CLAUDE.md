@@ -1,89 +1,89 @@
 @AGENTS.md
 
-# Claude Code en DengueAlertas: rama `feature/forecasting-mvp`
+# Trabajo en el MVP de pronóstico
 
-Este archivo añade a `AGENTS.md` las reglas para implementar el MVP de pronóstico. Si `AGENTS.md` contradice este archivo o el contrato predictivo, prevalecen el contrato y este archivo. `AGENTS.md` se actualiza en la fase F0.
+Este archivo añade a `AGENTS.md` las reglas del pronóstico (`src/forecasting/`). Si `AGENTS.md` contradice este archivo o el contrato predictivo, prevalecen el contrato y este archivo.
 
 ## Fuentes de verdad
 
 | Documento | Uso |
 |---|---|
-| `docs/forecasting/contrato_predictivo.md` | Qué se construye. Es vinculante. En §10 están los 22 requisitos con sus pruebas |
-| `docs/forecasting/especificacion_implementacion.md` | Cómo se construye: modo de trabajo, módulos, fases, pruebas de aceptación y configuración |
+| `docs/forecasting/README.md` | Guía: fases, módulos, reproducibilidad, gobernanza y glosario |
+| `docs/forecasting/contrato_predictivo.md` | Qué se construye. Vinculante; los requisitos están en §10 |
+| `docs/forecasting/especificacion_implementacion.md` | Cómo se construye: módulos, fases, pruebas de aceptación y configuración |
 | `docs/forecasting/api_salida_d10.md` | Esquema de salida de la API |
-| `docs/forecasting/registro_decisiones.md` | Solo cuando haga falta el porqué de una decisión |
-| `docs/forecasting/verificacion/*.py` | Scripts de referencia con los que se calcularon las cifras del contrato |
+| `docs/forecasting/registro_decisiones.md` y `desviaciones.md` | Por qué se decidió así y qué cambió durante la implementación |
+| `docs/forecasting/verificacion/*.py` | Cálculos independientes de las cifras de aceptación |
+| `reports/forecasting/INDICE.md` | Estado de cada carpeta de datos, evidencia y figuras |
 
-Si la especificación contradice al contrato, manda el contrato. Estos documentos no se importan aquí para no cargarlos en cada sesión: lee las secciones que correspondan al planificar cada unidad. Las rutas `claude/...` que aparecen dentro del contrato equivalen a `docs/forecasting/...` (ver la especificación, §0).
-
-**Lo que no se discute aquí:** la metodología (D0–D10) está cerrada. Si algo del contrato resulta inviable, se detiene la parte afectada, se explica el problema y se espera la decisión de Jesús. Toda desviación aprobada se registra en `docs/forecasting/desviaciones.md` antes de continuar.
+Si la especificación contradice al contrato, manda el contrato. La metodología (D0–D10 y sus enmiendas) está cerrada: si algo resulta inviable, se detiene la parte afectada, se explica el problema y se espera la decisión del responsable de la implementación. Toda desviación aprobada se registra en `docs/forecasting/desviaciones.md` antes de continuar.
 
 ## Reglas no negociables
 
-1. **Periodo de prueba.** Ninguna métrica de ningún sistema (modelo, B1, B2 ni alerta del canal) se calcula sobre semanas objetivo de 2023–2025 sin que exista `configs/receta_congelada.yaml` aprobado por Jesús. El código lo hace cumplir (especificación §4). No se desactiva esa barrera.
-2. **Sin fuga temporal.** Ninguna feature usa semanas posteriores a t; la prueba de truncamiento lo verifica. Si detectas una posible fuga, te detienes y lo informas.
-3. **Comparaciones pareadas.** Todos los candidatos, las líneas base y la ablación usan las mismas filas y los mismos cortes.
-4. **Legado congelado.** No se modifican `ewt`, `excess_label`, `pilot_weekly_labels.parquet`, `src/epidemiology/ewt.py`, `src/epidemiology/labels.py` ni los descriptores DVC existentes. El paquete `src/forecasting/` no lee el parquet de legado.
-5. **Registro completo.** Se registran todos los candidatos, las líneas base, la ablación y las semillas, no solo el elegido.
-6. **Nada se decide mirando la prueba.** No se ajustan umbrales, ventanas, k, W ni τ con datos fuera de lo que fija el contrato.
+1. **Periodo de prueba.** Ninguna métrica de ningún sistema (modelo, B1, B2, ablación ni alerta del canal) se calcula sobre semanas objetivo de 2023–2025 sin `configs/receta_congelada.yaml` aprobado. La barrera `src/forecasting/guard.py` lo hace cumplir y no se desactiva. La prueba única ya se ejecutó: `python -m src.forecasting.evaluate` no se relanza sin una decisión del equipo (exige `--razon` y queda en `reports/forecasting/bitacora_prueba.jsonl`).
+2. **Sin fuga temporal.** Ninguna variable usa semanas posteriores a t; la prueba de truncamiento lo verifica. Ante una posible fuga, detenerse e informarlo.
+3. **Comparaciones pareadas.** Candidatos, líneas base y ablación usan las mismas filas y los mismos cortes.
+4. **Legado congelado.** No se modifican `ewt`, `excess_label`, `pilot_weekly_labels.parquet`, `src/epidemiology/ewt.py`, `src/epidemiology/labels.py` ni los descriptores DVC existentes, porque reproducen el informe de avance y su auditoría. `src/forecasting/` no lee el Parquet de legado.
+5. **Receta congelada.** `configs/receta_congelada.yaml` no se edita: su hash SHA-256 cubre todo el contenido y la barrera rechaza una receta alterada.
+6. **Registro completo.** Se registran todos los candidatos, las líneas base, la ablación y las semillas, no solo el elegido.
+7. **Nada se decide mirando la prueba.** No se ajustan umbrales, ventanas, k, W ni τ con datos fuera de lo que fija el contrato.
 
-## Ciclo de trabajo por unidad
+## Entorno
 
-Una unidad cubre uno o dos requisitos de `contrato §10` y dura entre 30 y 90 minutos de trabajo.
-
-1. **Plan (modo Plan).** Lee las secciones pertinentes y presenta:
-   - qué vas a construir y por qué, citando la sección del contrato;
-   - las funciones públicas, con sus entradas y salidas;
-   - las pruebas, en lenguaje natural, con el valor esperado y su origen;
-   - los riesgos y las dudas.
-
-   No edites nada hasta que Jesús apruebe. Si pregunta, responde con el flujo real de los datos, no con una lista de archivos.
-2. **Implementación.** Haz solo lo aprobado y ejecuta las pruebas.
-3. **Informe de paso.** Termina siempre con esta estructura:
-   - **Archivos tocados:** lista.
-   - **Pruebas:** comando exacto y resultado (aprobadas, fallidas, omitidas). Una prueba de aceptación omitida no cuenta como aprobada.
-   - **Referencia:** cifras obtenidas frente a las esperadas.
-   - **Pruebas de aceptación intactas:** salida de `git diff --stat HEAD -- "tests/acceptance/test_f*_*.py"` y de `git log --oneline <commit de congelamiento>..HEAD -- "tests/acceptance/test_f*_*.py"`; ambas deben estar vacías. Los cambios en `tests/acceptance/conftest.py` se señalan aparte y solo pueden añadir opciones (con su fixture de ruta), nunca alterar las existentes.
-   - **Dudas o desviaciones:** con la sección del contrato afectada.
-   - **Fuera de alcance:** confirmación de que no tocaste nada más.
-4. **Espera.** Jesús decide entre commit, recorrido del código o corrección. **No hagas `git commit`, `git push`, `dvc push`, instalaciones ni merges sin su aprobación explícita.**
+- **Python 3.11** del entorno virtual del repositorio, siempre por su ruta: `.venv/Scripts/python.exe` en Windows (`.venv/bin/python` en Linux o macOS). No usar el Python global ni suponer el entorno activado.
+- **Dependencias:** `requirements/forecasting.txt` (directas) y `requirements/forecasting.lock.txt` (entorno verificado, con DVC). No instalar nada sin aprobación.
+- **DVC:** `.venv/Scripts/dvc.exe`. `status` sin `-c` es local. Los comandos contra el remoto (`pull`, `fetch`, `push`, `status -c`) piden la contraseña por teclado y se ejecutan en una terminal interactiva. `add` y `push` requieren aprobación.
+- **Credenciales:** `.env` contiene las credenciales de Cloudflare Access para MLflow (plantilla: `.env.example`). **No se lee, no se imprime y su contenido no se copia** en mensajes, código, logs ni commits; los scripts lo cargan con `python-dotenv`. Las credenciales de DVC están solo en `.dvc/config.local`.
+- **MLflow:** solo a través de `src/forecasting/tracking.py`, que añade los encabezados de Cloudflare Access. Si `.env` falta o el servidor no responde, se informa y se usa el modo `local` de `configs/forecasting.yaml` (especificación §9). No se inventan credenciales ni se desactiva la verificación TLS.
 
 ## Pruebas
 
-- **`tests/acceptance/`** contiene las pruebas de aceptación de cada fase (`test_fN_*.py`), con las cifras literales de la especificación §6. Se escriben al inicio de la fase, Jesús revisa sus afirmaciones y se congelan en un commit propio antes de implementar. Después se añade una regla `Edit(...)` para ese archivo en `.claude/settings.json`, con aprobación de Jesús. **Nunca las modifiques para que pasen.** Si una parece errónea, detente y explica por qué.
-- **Pruebas unitarias:** van en `tests/forecasting/` y las escribes libremente dentro de cada unidad, con datos sintéticos.
-- **Datos locales:** se sigue la convención existente en `tests/epidemiology/conftest.py`. Las pruebas con datos reales se activan con una opción explícita de pytest: sin la opción se omiten; con la opción y sin el archivo, fallan. En el informe de paso, las de aceptación siempre se ejecutan con la opción.
+`pytest.ini` ya aplica `--import-mode=importlib`.
 
-## Entorno: Windows, app de escritorio, sesión local
+- Suite completa:
 
-- **Python:** usa siempre el del entorno virtual del repositorio por su ruta: `.venv/Scripts/python.exe` (Python 3.11.0; ruta confirmada en F0). No uses el Python global aunque tenga paquetes instalados. No supongas que el entorno está activado.
-  - Pruebas: `pytest.ini` ya aplica `--import-mode=importlib` (hay dos `test_local_regression.py` en el legado).
-    - Suite completa: `.venv/Scripts/python.exe -B -m pytest tests/ -q -p no:cacheprovider`
-    - Aceptación: `.venv/Scripts/python.exe -B -m pytest tests/acceptance -q -rA -p no:cacheprovider` más las opciones de datos de `tests/acceptance/conftest.py` (`--panel-parquet`, `--channel-parquet`, `--legacy-labels-parquet`). Las opciones de datos solo se reconocen si la carpeta cuyo `conftest.py` las define se pasa explícitamente como argumento (no basta `tests/`).
-  - DVC: `.venv/Scripts/dvc.exe ...` (`status` y `pull` sin preguntar; `add` y `push` con aprobación).
-- **Dependencias:** el conjunto de modelado está en `requirements/forecasting.txt`, que se crea en F0. No instales nada sin aprobación.
-- **Credenciales:** `.env` contiene las credenciales de Cloudflare Access para MLflow. **No lo leas, no lo imprimas y no copies su contenido en mensajes, código, logs ni commits.** Los scripts las cargan con `python-dotenv`. Las credenciales de DVC son locales y nunca se escriben.
-- **MLflow:** se usa solo a través de `src/forecasting/tracking.py`, que añade los encabezados de Cloudflare Access. Si `.env` falta o MLflow no responde, informa y usa el respaldo local de la especificación §9. No inventes credenciales ni desactives la verificación TLS.
+  ```bash
+  .venv/Scripts/python.exe -B -m pytest tests/ -q -p no:cacheprovider
+  ```
+
+- Aceptación con datos reales (requiere `dvc pull`). Las opciones de datos solo se reconocen si se pasa `tests/acceptance` explícitamente:
+
+  ```bash
+  .venv/Scripts/python.exe -B -m pytest tests/acceptance -q -rA -p no:cacheprovider --panel-parquet data/processed/pilot_municipalities_weekly.parquet --channel-parquet data/processed/epidemiology/pilot_weekly_channel.parquet --legacy-labels-parquet data/processed/epidemiology/pilot_weekly_labels.parquet --search-dir data/processed/forecasting --sin-clima-dir data/processed/forecasting/sin_clima --prueba-dir data/processed/forecasting/prueba
+  ```
+
+  Sin la opción, una prueba con datos se omite; con la opción y sin el archivo, falla. Una prueba de aceptación omitida no cuenta como aprobada; las marcadas `sustituida_dv02` se omiten a propósito (DV-02).
+- **Pruebas de aceptación** (`tests/acceptance/test_f*_*.py`): se escriben al inicio de cada fase con las cifras literales de la especificación §6, se revisan, se congelan en un commit propio y reciben una regla `Edit(...)` de denegación en `.claude/settings.json`. **Nunca se modifican para que pasen.** Si una parece errónea, se detiene el trabajo y se explica por qué. Una prueba obsoleta por una enmienda se marca como sustituida en `tests/conftest.py` y su reemplazo va en un archivo nuevo con nombre propio que no coincida con los patrones ya denegados. `tests/acceptance/conftest.py` solo puede ganar opciones nuevas (con su fixture de ruta), nunca alterar las existentes.
+- **Comprobar que las pruebas congeladas no cambiaron** (ambas salidas deben estar vacías):
+
+  ```bash
+  git diff --stat HEAD -- "tests/acceptance/test_f*_*.py"
+  ```
+
+  ```bash
+  git log --oneline <commit de congelamiento>..HEAD -- "tests/acceptance/test_f*_*.py"
+  ```
+
+- **Pruebas unitarias:** en `tests/forecasting/`, con datos sintéticos.
+- **Datos locales:** convención de `tests/epidemiology/conftest.py`: las pruebas con datos reales se activan con una opción explícita de pytest.
 
 ## Convenciones
 
-- **Código nuevo:** va en `src/forecasting/` y en `src/epidemiology/channel_epico.py`, con pruebas en `tests/forecasting/` y `tests/acceptance/`. Los cambios fuera de esas rutas (documentación, `.gitignore`, `requirements/`, `configs/`, API) se hacen solo si la unidad aprobada los incluye.
-- **Nombres:**
-  - Los que fija el contrato se usan tal cual: features (`zona_t`, `posicion_4s`, …), columnas (`epico_central`, `epico_upper`, `target_u1e`, `channel_zone`) y campos de la API.
-  - Lo demás sigue el estilo del código existente: identificadores y docstrings en inglés, documentación en español.
+- **Ubicación:** código nuevo en `src/forecasting/` y `src/epidemiology/channel_epico.py`; pruebas en `tests/forecasting/` y `tests/acceptance/`. Fuera de esas rutas (documentación, `.gitignore`, `requirements/`, `configs/`, API, frontend) solo si la tarea aprobada lo incluye.
+- **Nombres:** los que fija el contrato se usan tal cual (variables como `zona_t` o `posicion_4s`; columnas `epico_central`, `epico_upper`, `target_u1e`, `channel_zone`; campos de la API). Lo demás sigue el estilo existente: identificadores y docstrings en inglés, documentación en español.
 - **Configuración:** los parámetros van en `configs/forecasting.yaml` y se validan con Pydantic al cargarse. Ningún parámetro del contrato se escribe en el código.
-- **Datos y resultados:** los Parquet se gestionan con DVC. `.gitignore` ignora `*.csv` y `*.parquet`; las excepciones se añaden de forma explícita, como en `reports/epidemiology/evidence/`.
-- **Errores:** valida las entradas y falla con mensajes claros. No captures excepciones para ocultarlas.
-- **Commits:** formato `tipo(alcance): descripción` en español, por ejemplo `feat(canal): …`, `test(aceptacion): …`, `docs: …` o `chore: …`. Un commit por unidad, y el cuerpo cita el requisito (`contrato §10.7`).
+- **Datos y resultados:** los Parquet y artefactos van con DVC en `data/processed/`; la evidencia pequeña, en `reports/forecasting/evidence/<fecha>/` con excepciones explícitas en `.gitignore`. Las líneas de comandos nunca sobrescriben una salida y se niegan a correr con cambios sin commit en `src/` o `configs/`.
+- **Errores:** validar las entradas y fallar con mensajes claros. No capturar excepciones para ocultarlas.
+- **Commits:** formato `tipo(alcance): descripción` en español, con tipos `feat`, `fix`, `test`, `docs`, `chore` y `refactor` (por ejemplo `feat(canal): …`, `test(aceptacion): …`). Un commit por unidad de trabajo, con el requisito citado en el cuerpo (`contrato §10.7`). No se hacen commits, pushes, `dvc push`, instalaciones ni merges sin aprobación explícita.
 
 ## Cuándo detenerse
 
-Detente y pregunta antes de seguir si:
-- el plan exige una decisión que el contrato no fija;
+Detenerse y consultar antes de seguir si:
+- la tarea exige una decisión que el contrato no fija;
 - una cifra de aceptación no se reproduce;
 - una prueba de aceptación parece incorrecta;
 - aparece una posible fuga;
-- una dependencia o servicio externo falla;
+- una dependencia o un servicio externo falla;
 - la tarea requiere tocar el legado.
 
-No corrijas en silencio ni optimices decisiones metodológicas.
+No se corrige en silencio ni se optimizan decisiones metodológicas.

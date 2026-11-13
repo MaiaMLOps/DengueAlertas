@@ -9,8 +9,21 @@
 - **Marcas.** [H] hecho tomado de la evidencia congelada; [I] inferencia; [R] recomendación; [D] decisión; [P] pendiente (glosario de `docs/forecasting/README.md`, apartado 7). Se añade **[X], exploratorio**: un cálculo que no se declaró antes de abrir la prueba. Incluye los estratos que usan información posterior a la emisión (fase respecto a un episodio, semanas desde su fin, estado de una alerta en un inicio) y las métricas descriptivas que el contrato no fija (umbrales distintos de τ, AUC, estratos por zona del canal). Una cifra [X] describe; no es una conclusión ni una prueba estadística (§8.5).
 - **Referencias.** «§» remite al contrato predictivo (`docs/forecasting/contrato_predictivo.md`). Las referencias internas se escriben «sección N» o «apartado N.M».
 - **Rótulos.** Desarrollo 2019–2022 se rotula «usado para elegir»: esos datos sirvieron para elegir la familia, el conjunto de variables, los hiperparámetros y τ, así que no estiman el desempeño. El desempeño se lee en prueba 2023–2025.
-- **Fuentes.** Salvo que se indique otra raíz, las rutas de evidencia son relativas a `reports/forecasting/evidence/` y las de figuras a `reports/forecasting/figures/`. Las cifras [X] y sus figuras las produce `docs/forecasting/verificacion/analisis_integrado_exploratorio.py`, que escribe en `exploratorio_20261112/` (tablas) y en `figures/exploratorio_20261112/` (figuras). El script recalcula además, de forma independiente, las 480 cantidades de U7.5 que cita este documento (casillas, habilidad, clasificación en τ, Murphy, calibración anual, eventos y semanas bajo alerta), y todas coinciden con las tablas congeladas (`exploratorio_20261112/contraste_u75.csv`).
+- **Fuentes.** Salvo que se indique otra raíz, las rutas de evidencia son relativas a `reports/forecasting/evidence/` y las de figuras a `reports/forecasting/figures/`. Las cifras [X] y sus figuras las produce `docs/forecasting/verificacion/analisis_integrado_exploratorio.py`, que escribe en `exploratorio_20261112/` (tablas) y en `figures/exploratorio_20261112/` (figuras). El script recalcula además, de forma independiente, 480 cantidades de las tablas de U7.5 de las que salen las cifras [H] de este documento (casillas, habilidad, clasificación en τ, Murphy, calibración anual, eventos y semanas bajo alerta), y todas coinciden con las tablas congeladas (`exploratorio_20261112/contraste_u75.csv`). Cada cifra de este documento que procede de la evidencia se comprueba contra su archivo con `docs/forecasting/verificacion/verificar_cifras_analisis.py`, que lee los valores exactos y aplica un solo redondeo.
 - **Vocabulario (§9.5).** «Semana en zona epidémica» para y = 1; «brote» solo en «inicio de brote» (§2.4). Un *episodio* es una racha de ≥ 3 semanas en zona epidémica (§8.8). La *persistencia* es la regla que predice que el municipio estará en zona epidémica en t + 8 si lo está en t.
+
+**Correspondencia con la estructura de §8.8.** El contrato fija seis contenidos para el análisis cualitativo, de lo particular a lo general. Este documento los conserva todos, pero no en ese orden: el relato por año (sección 6) va después de tres secciones de síntesis sobre la calidad de la estimación, su valor práctico y los eventos (secciones 3 a 5), y se añade la comparación entre desarrollo y prueba (sección 9). El cambio de orden es editorial y no altera ningún contenido exigido; se registra en `docs/forecasting/desviaciones.md`.
+
+**Tabla 0.** Dónde está cada contenido de §8.8.
+
+| Contenido de §8.8 | Sección de este documento |
+|---|---|
+| 1. Perfil por municipio | Sección 2 |
+| 2. Relato por año | Sección 6 |
+| 3. Síntesis de los seis municipios | Sección 1 (conclusiones de §8.4), apartado 2.7 (patrones comunes y propios) y secciones 3 a 5 (estimación, valor práctico y eventos) |
+| 4. Contraste de H-R y H-E | Sección 7 |
+| 5. Efecto de las métricas en la lectura | Sección 8, complementada por la sección 9 |
+| 6. Conclusiones integradas | Sección 10 |
 
 ---
 
@@ -22,7 +35,7 @@
 |---|---|---|---|
 | Modelo frente a B2 (principal) | **Tendencia favorable** | BSS +0,081; mejora de log-loss +6,3 % | 12 de 18; 12 de 18 |
 | Modelo frente a B1 | **Mejora consistente** | BSS +0,468; mejora de log-loss +43,5 % | 15 de 18; 15 de 18 |
-| Ablación del clima (receta sin clima frente a la misma familia con clima) | **Sin mejora** | Brier 0,1413 (receta) frente a 0,1434 (con clima) | 9 de 18; 10 de 18 |
+| Ablación del clima (receta sin clima frente a la misma familia con clima) | **Sin mejora** (con Brier, sin mejora; con log-loss, tendencia favorable; se adopta el menor, §8.4) | Brier 0,1413 (receta) frente a 0,1434 (con clima); log-loss 0,441 frente a 0,450 | 9 de 18; 10 de 18 |
 | Eventos frente al canal | **Sin mejora** | Detección 4 de 10 frente a 8 de 10; McNemar con 6 inicios discrepantes, 1 a favor del modelo | — |
 
 La lectura integrada de la evidencia es esta [I]: **el modelo estima mejor que el estado del canal la probabilidad de que un municipio esté en zona epidémica dentro de 8 semanas. Su valor no está en anticipar inicios de brote, para lo cual la alerta del canal sigue siendo mejor, sino en graduar el estado actual del canal: distingue qué epidemias en curso continuarán, qué semanas de alerta del canal tienen más probabilidad de terminar en zona epidémica y qué períodos tranquilos lo seguirán siendo, con probabilidades mejor calibradas que B2.**
@@ -34,19 +47,19 @@ Cinco hechos sostienen esa lectura:
    - *Zona de alerta del canal:* el 42 % de esas semanas recibe p̂ < 0,05 y solo el 7 % llega a zona epidémica, frente al 32 % de las que reciben p̂ ≥ 0,20.
    - *Zona epidémica:* el 62 % de las semanas recibe p̂ ≥ 0,70 y el 81 % de ellas sigue en zona epidémica 8 semanas después; con p̂ < 0,30 solo sigue el 35 %.
    - *Consistencia:* las cifras de desarrollo son del mismo orden.
-3. **La etiqueta binaria no es su fuerte [X].** Si p̂ se convierte en sí o no con el umbral que maximiza F1 en desarrollo (0,30), el modelo iguala a la persistencia en prueba (F1 0,73 y 0,73; MCC 0,58 y 0,59). Lo que gana en las transiciones (recupera el 23 % de las entradas a la zona epidémica y anticipa el 16 % de las salidas, que la persistencia no puede anticipar) lo pierde en semanas persistentes. El valor está en la probabilidad graduada, no en la etiqueta dura (apartado 3.3).
+3. **La etiqueta binaria no es su fuerte [X].** Si p̂ se convierte en sí o no con el umbral que maximiza F1 en desarrollo (0,30), el modelo iguala a la persistencia en prueba (F1 0,73 y 0,73; MCC 0,58 y 0,59). Lo que gana en las transiciones (recupera el 23 % de las entradas a la zona epidémica y anticipa el 15 % de las salidas, que la persistencia no puede anticipar) lo pierde en semanas persistentes. El valor está en la probabilidad graduada, no en la etiqueta dura (apartado 3.3).
 4. **Dónde está la mejora [X].** En prueba, la fase «durante el episodio» aporta el 109 % de la mejora neta del Brier frente a B2 y las semanas tranquilas el 34 %. Las 1–8 semanas previas a un episodio aportan el 7 % y las 1–13 semanas posteriores restan el 49 % (apartado 3.5).
-5. **Decisión.** El modelo no anticipa inicios mejor que el canal (4 de 10 frente a 8 de 10). Emite menos alertas, pero más largas y con una proporción de falsas alarmas similar: 82 % frente a 77 % (sección 5).
+5. **Decisión [H].** El modelo no anticipa inicios mejor que el canal (4 de 10 frente a 8 de 10). Emite menos alertas, pero más largas y con una proporción de falsas alarmas similar: 82 % frente a 77 % (sección 5).
 
 Con la misma visibilidad:
 
-- El modelo **sobrestima la probabilidad en las semanas que siguen al fin de un episodio**: en las 13 semanas posteriores, p̂ medio 0,51 frente a 6,5 % observado.
-- Con un **p̂ bajo en zona de alerta subestima**: 2 % predicho frente a 7 % observado.
+- El modelo **sobrestima la probabilidad en las semanas que siguen al fin de un episodio**: en las 13 semanas posteriores, p̂ medio 0,51 frente a 6,5 % observado [X].
+- Con un **p̂ bajo en zona de alerta subestima**: 2 % predicho frente a 7 % observado [X].
 - **Barranquilla** es desfavorable en prueba.
 - **2025** fue un año adverso en cuatro de seis municipios.
-- El bloque climático no aporta capacidad medible.
+- El bloque climático no aporta capacidad medible [I]: con Brier, la receta sin clima y la versión con clima quedan en «sin mejora» (la receta gana 9 de 18 casillas); con log-loss, la receta sin clima tiene una tendencia favorable (10 de 18).
 
-Destacan Neiva y Villavicencio, favorables en ambos períodos, y Cali, favorable en prueba (sección 2). La sección 4 traduce estos resultados a su valor práctico.
+Destacan Neiva y Villavicencio, favorables en prueba y también en desarrollo (convención [X] de la sección 2), y Cali, favorable en prueba (sección 2). La sección 4 traduce estos resultados a su valor práctico.
 
 ---
 
@@ -55,6 +68,8 @@ Destacan Neiva y Villavicencio, favorables en ambos períodos, y Cali, favorable
 Cada municipio tiene su propio modelo, entrenado solo con sus datos, como pidió el experto de dominio. Lo que comparten es la configuración: C y τ se eligieron con los seis municipios juntos (§6.2, §7.5); los coeficientes son propios. Por eso el análisis empieza por los municipios. La conclusión de §8.4 (12 de 18 frente a B2, 15 de 18 frente a B1) cuenta casillas evaluadas, cada una por el modelo de su municipio; no promedia modelos.
 
 El nivel por municipio de §8.8 (favorable, mixto o desfavorable) es **descriptivo**: con 3 casillas, un modelo equivalente a B2 gana al menos 2 de 3 años la mitad de las veces. Se acompaña de las casillas de desarrollo como contexto de consistencia, no como confirmación.
+
+Para rotular también el desarrollo se usa una **convención [X]** que el contrato no fija: la misma regla aplicada a las 4 casillas de desarrollo, con «gana en más de la mitad» como en prueba. Un municipio es *favorable* si su BSS de desarrollo es > 0 y gana en al menos 3 de 4 años; *mixto*, si cumple solo una condición; *desfavorable*, si no cumple ninguna. Se calcula con Brier y con log-loss y se adopta el menor. Con ella, Neiva, Villavicencio, Cúcuta y Barranquilla son favorables en desarrollo, Soledad es mixto y Cali es desfavorable (`diagnostico_desarrollo_sin_clima_20261112/diag_casillas.csv`). Frente al canal en eventos, el nivel descriptivo por municipio de la ficha es «sin mejora» en los seis (`prueba_20261112/ficha_desempeno.json`).
 
 ![Resumen por municipio: BSS frente a B2, inicios avisados y falsas alarmas por municipio-año, en desarrollo y en prueba](../../reports/forecasting/figures/20261112/resumen_municipios.png)
 
@@ -76,13 +91,15 @@ El nivel por municipio de §8.8 (favorable, mixto o desfavorable) es **descripti
 | Municipio | Fuera de zona epidémica en t | Dentro de zona epidémica en t | Después de un episodio (1–13 semanas) [X] |
 |---|---|---|---|
 | Neiva | +31 % (+26 %) | +4 % (+30 %) | −34 % (−9 %) |
-| Villavicencio | +13 % (+31 %) | +17 % (+43 %) | −29 % (−49 %) |
+| Villavicencio | +13 % (+31 %) | +17 % (+43 %) | −29 % (−48 %) |
 | Cali | −31 % (+15 %) | +36 % (−37 %) | −3 % (−123 %) |
-| Soledad | −13 % (+13 %) | +10 % (+10 %) | −7 % (−34 %) |
+| Soledad | −13 % (+13 %) | +10 % (+10 %) | −7 % (−33 %) |
 | Cúcuta | +2 % (+16 %) | +6 % (+15 %) | −24 % (−15 %) |
-| Barranquilla | +0 % (+13 %) | −13 % (+26 %) | −28 % (−47 %) |
+| Barranquilla | +0 % (+13 %) | −12 % (+26 %) | −28 % (−47 %) |
 
-**Episodios disponibles para el entrenamiento.** §8.8 pide relacionar cada perfil con los episodios que su modelo vio (`exploratorio_20261112/episodios_entrenamiento.csv`):
+**Episodios disponibles para el entrenamiento.** §8.8 pide relacionar cada perfil con los episodios que su modelo vio.
+
+**Tabla 2.3.** Episodios disponibles para el entrenamiento, por municipio. Fuente: `exploratorio_20261112/episodios_entrenamiento.csv` [X].
 
 | Municipio | Episodios antes de la primera emisión de prueba (2022-11-07) | Episodios antes de la primera emisión de desarrollo (2018-11-12) |
 |---|---|---|
@@ -119,7 +136,7 @@ Tiene un solo inicio evaluable en prueba (2025-12-01) y no lo avisa ningún sist
 
 *Figura 3.* Villavicencio. Fuente: `figures/20261112/serie_50001.png`.
 
-### 2.3 Cali (76001): favorable en prueba, inconsistente con desarrollo
+### 2.3 Cali (76001): favorable en prueba, desfavorable en desarrollo
 
 En prueba tiene el mayor BSS frente a B2 (+0,239) y la mayor AP (0,95 frente a 0,81), pero en desarrollo el BSS es −0,028 (gana 2019 y 2022, pierde 2020 y 2021), con solo 20 semanas positivas en cuatro años. La mejora de prueba se concentra dentro de la zona epidémica (+36 %), donde están 58 de sus 66 semanas positivas; fuera de ella pierde (−31 %). La casilla de 2025, post-epidémica y sin semanas positivas, aporta un BSS de +0,868 que pesa mucho en cualquier promedio de casillas (apartado 8.1). Por log-loss gana 2 de 3 años: en 2023 el Brier lo favorece (+0,011) y el log-loss no (−18 %). Su ventaja es de calidad de la probabilidad y no de etiqueta: con τ = 0,30 [X], su MCC (0,75) no supera al de la persistencia (0,79). No tiene inicios en prueba, así que en eventos solo se miden falsas alarmas: 1 frente a 3, producto de una sola alerta de 72 semanas.
 
@@ -131,9 +148,9 @@ En prueba tiene el mayor BSS frente a B2 (+0,239) y la mayor AP (0,95 frente a 0
 
 El BSS frente a B2 es positivo pero pequeño (+0,029) y la mejora de log-loss, negativa (−1,6 %); gana 2023 y 2024 y pierde 2025. En desarrollo, BSS +0,125, con dos de cuatro años.
 
-- **Entradas.** El canal es muy superior: avisa 8 de 10 frente a 2 de 10 del modelo (en desarrollo, 18 de 20 frente a 6 de 20). Soledad es el municipio con más rachas cortas de la serie (46 rachas, 21 de una semana; §2.2), un patrón de excursiones breves sobre U1e que la alerta del canal, basada en la semana observada, sigue mejor.
+- **Entradas.** El canal es muy superior: avisa 8 de 10 frente a 2 de 10 del modelo (en desarrollo, 18 de 20 frente a 6 de 20). Soledad es el municipio con más rachas de la serie (46, de ellas 21 de una semana, tantas como Cúcuta; §2.2), un patrón de excursiones breves sobre U1e que la alerta del canal, basada en la semana observada, sigue mejor.
 - **Emisión y estratos.** El modelo emite positivo en el 73 % de las semanas (114 de 156). Su ventaja dentro de la zona epidémica (+10 %) se compensa con la pérdida fuera de ella (−13 %).
-- **Inicios.** Avisa 1 de 3, frente a 2 de 3 del canal, pero el que avisa (2024-12-23, una semana de anticipación) es la única discrepancia de McNemar a favor del modelo. Los dos que no avisa corresponden a una alerta encendida desde 33 semanas antes (2023-07-03) y a una alerta que se apagó 3 semanas antes del inicio (2025-05-26) [X]. Falsas alarmas: 3 frente a 6.
+- **Inicios.** Avisa 1 de 3, frente a 2 de 3 del canal, pero el que avisa (2024-12-23, una semana de anticipación) es la única discrepancia de McNemar a favor del modelo. Los dos que no avisa son el del 2023-07-03, al que llegó con una alerta confirmada 33 semanas antes (2022-11-14) y aún encendida, y el del 2025-05-26, con una alerta que se apagó 3 semanas antes [X]. Falsas alarmas: 3 frente a 6.
 
 ![Serie de Soledad 2019–2025](../../reports/forecasting/figures/20261112/serie_08758.png)
 
@@ -151,7 +168,7 @@ Es el único municipio con más entradas avisadas que el canal (5 de 8 frente a 
 
 ### 2.6 Barranquilla (08001): desfavorable en prueba, favorable en desarrollo
 
-Es el único municipio desfavorable en prueba: BSS −0,053, gana solo 2023 (+0,136) y pierde 2024 (−0,156) y 2025 (−0,040). En desarrollo fue favorable (+0,224, tres de cuatro años). Pierde incluso dentro de la zona epidémica (−13 %), el estrato en que los demás municipios ganan, y su AP es prácticamente la de B2 (0,59 frente a 0,60). El modelo emite positivo en el 78 % de las semanas (121 de 156), la proporción más alta de los seis.
+Es el único municipio desfavorable en prueba: BSS −0,053, gana solo 2023 (+0,136) y pierde 2024 (−0,156) y 2025 (−0,040). En desarrollo fue favorable (+0,224, tres de cuatro años). Pierde incluso dentro de la zona epidémica (−12 %), el estrato en que los demás municipios ganan, y su AP es prácticamente la de B2 (0,59 frente a 0,60). El modelo emite positivo en el 78 % de las semanas (121 de 156), la proporción más alta de los seis.
 
 Su único inicio de prueba (2023-04-10) lo avisa el canal y no el modelo, cuya alerta estaba en continuidad desde noviembre de 2022, tras un 2022 con 51 de 52 semanas en zona epidémica [X]. Falsas alarmas: 2 frente a 5.
 
@@ -186,7 +203,7 @@ Esta sección responde a la pregunta del sistema (§9.2): ¿qué tan bien estima
 |---|---|---|---|
 | Brier | 0,141 (0,101) | 0,154 (0,124) | Menor es mejor |
 | Log-loss | 0,441 | 0,471 | Menor es mejor |
-| Confiabilidad (Murphy, 10 intervalos de igual frecuencia) | 0,006 (0,003) | 0,015 (0,012) [X] | Menor es mejor: favorece al modelo |
+| Confiabilidad (Murphy, 10 intervalos de igual frecuencia) | 0,006 (0,003) | 0,015 (0,011) [X] | Menor es mejor: favorece al modelo |
 | Resolución (mismos intervalos) | 0,087 (0,093) | 0,087 (0,074) [X] | Mayor es mejor: empate en prueba; en desarrollo ganaba el modelo |
 | Calibración en grande 2023 / 2024 / 2025 | −0,067 / −0,002 / +0,012 | −0,091 / −0,018 / +0,033 | Más cerca de 0 es mejor: el modelo, los tres años |
 | Nitidez: desviación estándar de p̂ | 0,35 (0,30) | 0,26 (0,21) [X] | Mayor es más informativa, si está calibrada |
@@ -203,19 +220,19 @@ La calibración global es buena, pero el modelo es **demasiado extremo en ambas 
 
 La AP y la AUC miden si el modelo ordena las semanas de mayor a menor probabilidad real, sin fijar un umbral ni exigir calibración. La AUC no es una métrica del contrato y se reporta solo como descripción [X].
 
-**Tabla 3.2.** Discriminación de la etiqueta semanal en prueba; entre paréntesis, desarrollo. Fuentes: `prueba_20261112/resumen_prueba.json` y `prueba_20261112/diag_transicion.csv` [H]; desarrollo, persistencia y AUC, `exploratorio_20261112/zona_canal.csv` [X].
+**Tabla 3.2.** Discriminación de la etiqueta semanal en prueba; entre paréntesis, desarrollo. Fuentes: fila «Todas», `exploratorio_20261112/zona_canal.csv` [X] (su AP del modelo y de B2 en prueba es la de `prueba_20261112/resumen_prueba.json`); prevalencia y AP de los estratos, `prueba_20261112/diag_transicion.csv` y `diagnostico_desarrollo_sin_clima_20261112/diag_transicion.csv` [H]; AUC dentro de la zona epidémica, `exploratorio_20261112/zona_canal.csv` [X].
 
 | Filas | Prevalencia | AP modelo | AP B2 | AP persistencia | AUC modelo | AUC B2 | AUC persistencia |
 |---|---|---|---|---|---|---|---|
 | Todas | 0,34 (0,26) | 0,77 (0,76) | 0,61 (0,62) | 0,62 (0,61) | 0,87 (0,92) | 0,79 (0,86) | 0,80 (0,82) |
 | Fuera de zona epidémica en t | 0,13 (0,09) | 0,29 (0,36) | 0,14 (0,15) | — | — | — | — |
-| Dentro de zona epidémica en t | 0,71 (0,75) | 0,85 (0,85) | 0,66 (0,67) | — | 0,69 (0,69) | 0,36 (0,36) | — |
+| Dentro de zona epidémica en t | 0,71 (0,75) | 0,84 (0,85) | 0,66 (0,67) | — | 0,69 (0,69) | 0,36 (0,36) | — |
 
-![Curva precisión-recall de la etiqueta semanal](../../reports/forecasting/figures/exploratorio_20261112/clasificacion_pr.png)
+![Curva precisión-sensibilidad de la etiqueta semanal](../../reports/forecasting/figures/exploratorio_20261112/clasificacion_pr.png)
 
-*Figura 9.* Curva precisión-recall del modelo, con B2 (un punto por cada valor distinto) y la persistencia como referencias [X]. Fuente: `figures/exploratorio_20261112/clasificacion_pr.png`.
+*Figura 9.* Curva precisión-sensibilidad del modelo, con B2 (un punto por cada valor distinto) y la persistencia como referencias [X]. Fuente: `figures/exploratorio_20261112/clasificacion_pr.png`.
 
-El modelo domina a B2 en casi toda la curva y pasa por el punto de la persistencia (Figura 9). La ventaja está a la izquierda de ese punto, en la región de alta precisión: el modelo identifica un subconjunto de semanas con certeza mayor que la que da la persistencia (precisión de 0,80 o más hasta un recall de 0,4, y cercana a 0,78 hasta 0,55, frente a 0,72 de la persistencia). También está a la derecha, donde recupera semanas positivas que la persistencia no marca, con precisión que decae más despacio que la de B2. En los dos períodos la AP es casi la misma (0,76 y 0,77), un signo de estabilidad. Dentro de cada estrato de transición, donde la persistencia ya no informa, la AP del modelo duplica la de B2 fuera de la zona epidémica (0,29 frente a 0,14) y la supera dentro (0,85 frente a 0,66).
+El modelo domina a B2 en casi toda la curva y pasa por el punto de la persistencia (Figura 9). La ventaja está a la izquierda de ese punto, en la región de alta precisión: el modelo identifica un subconjunto de semanas con certeza mayor que la que da la persistencia (precisión de 0,80 o más hasta una sensibilidad de 0,43 y de al menos 0,78 hasta 0,55, frente a 0,71 de la persistencia; puntos de la curva calculados con `prueba_20261112/diag_serie.csv`). También está a la derecha, donde recupera semanas positivas que la persistencia no marca, con precisión que decae más despacio que la de B2. En los dos períodos la AP es casi la misma (0,76 y 0,77), un signo de estabilidad. Dentro de cada estrato de transición, donde la persistencia ya no informa, la AP del modelo duplica la de B2 fuera de la zona epidémica (0,29 frente a 0,14) y la supera dentro (0,84 frente a 0,66).
 
 ### 3.3 La etiqueta como clasificación semanal
 
@@ -225,27 +242,27 @@ Para leer la etiqueta como un sí o un no hay que elegir un umbral, y el resulta
 - **0,30:** el que maximiza la F1 del modelo en desarrollo, elegido sin mirar la prueba [X].
 - **0,50:** sin selección [X].
 
-En todos los casos la referencia más exigente es la persistencia. En prueba, B2 coincide exactamente con ella para cualquier umbral entre 0,25 y 0,60, porque solo la zona epidémica le da una probabilidad alta.
+En todos los casos la referencia más exigente es la persistencia. En prueba, B2 coincide exactamente con ella para cualquier umbral entre 0,25 y 0,50 (marca las mismas 340 semanas), porque solo la zona epidémica le da una probabilidad alta; desde 0,55 marca menos semanas (`exploratorio_20261112/clasificacion_curva_tau.csv`).
 
 **Tabla 3.3.** Clasificación semanal de la etiqueta en prueba; entre paréntesis, desarrollo. Fuentes: `reportes_20261112/clasificacion_tau.csv` [H, τ = 0,05]; `exploratorio_20261112/clasificacion_umbrales.csv` [X].
 
-| Sistema y umbral | Semanas marcadas | Recall | Especificidad | Precisión (VPP) | VPN | F1 | MCC |
+| Sistema y umbral | Semanas marcadas | Sensibilidad | Especificidad | Precisión (VPP) | VPN | F1 | MCC |
 |---|---|---|---|---|---|---|---|
 | Modelo, τ = 0,05 (receta) | 65 % (53 %) | 0,96 (0,98) | 0,51 (0,62) | 0,50 (0,47) | 0,96 (0,99) | 0,66 (0,64) | 0,46 (0,53) |
 | B2, τ = 0,05 | 89 % (70 %) | 1,00 (0,98) | 0,17 (0,39) | 0,39 (0,36) | 1,00 (0,99) | 0,56 (0,53) | 0,26 (0,36) |
 | Modelo, τ = 0,30 (F1 máxima en desarrollo) | 40 % (28 %) | 0,79 (0,78) | 0,81 (0,89) | 0,68 (0,71) | 0,88 (0,92) | 0,73 (0,74) | 0,58 (0,65) |
 | Modelo, τ = 0,50 | 32 % (22 %) | 0,68 (0,65) | 0,87 (0,93) | 0,73 (0,77) | 0,84 (0,89) | 0,70 (0,70) | 0,55 (0,62) |
-| Persistencia (= B2 con τ = 0,30) | 36 % (25 %) | 0,76 (0,72) | 0,84 (0,92) | 0,72 (0,75) | 0,87 (0,91) | 0,73 (0,73) | 0,59 (0,65) |
+| Persistencia (= B2 con τ = 0,30) | 36 % (25 %) | 0,75 (0,72) | 0,84 (0,91) | 0,71 (0,75) | 0,87 (0,91) | 0,73 (0,73) | 0,59 (0,65) |
 | Marcar todas las semanas | 100 % | 1,00 | 0,00 | 0,34 (0,26) | — | 0,51 (0,41) | — |
 
 ![F1 y MCC según el umbral](../../reports/forecasting/figures/exploratorio_20261112/clasificacion_umbral.png)
 
-*Figura 10.* F1 y MCC del modelo y de B2 sobre la rejilla de τ, con la persistencia y «marcar todo» como referencias [X]. Fuente: `figures/exploratorio_20261112/clasificacion_umbral.png` y `exploratorio_20261112/clasificacion_curva_tau.csv`.
+*Figura 10.* F1 y MCC del modelo y de B2 sobre la rejilla de τ, con la persistencia y «marcar todo» como referencias [X]. Fuente: `figures/exploratorio_20261112/clasificacion_umbral.png` y `exploratorio_20261112/clasificacion_curva_tau.csv`. Errata: la nota al pie de la figura dice que B2 coincide con la persistencia «entre τ ≈ 0,25 y 0,60»; según la tabla, el rango es de 0,25 a 0,50. La figura versionada no se regenera.
 
 La lectura tiene tres partes.
 
 - **El MCC de la receta es engañoso como comparación.** Con τ = 0,05 el modelo gana con claridad (MCC 0,46 frente a 0,26), pero frente a una referencia que marca casi todo.
-- **Con un umbral razonable, el modelo iguala a la persistencia.** Con el umbral elegido en desarrollo, F1 0,73 frente a 0,73 y MCC 0,58 frente a 0,59 en prueba (en desarrollo, 0,74 frente a 0,73 y 0,65 frente a 0,65). La Figura 10 muestra que la curva del modelo es más ancha que la de B2: mantiene F1 y MCC altos en un rango amplio de τ (de 0,15 a 0,6), mientras que B2 colapsa por encima de 0,6. Pero en ningún umbral supera claramente a la persistencia.
+- **Con un umbral razonable, el modelo iguala a la persistencia.** Con el umbral elegido en desarrollo, F1 0,73 frente a 0,73 y MCC 0,58 frente a 0,59 en prueba (en desarrollo, 0,74 frente a 0,73 y 0,65 frente a 0,65). La Figura 10 muestra que la curva del modelo es más ancha que la de B2: mantiene F1 y MCC altos en un rango amplio de τ (de 0,15 a 0,60), mientras que B2 colapsa por encima de 0,60. Pero en ningún umbral supera claramente a la persistencia.
 - **El resultado no es parejo por municipio y año.** Con τ = 0,30, el MCC del modelo supera al de la persistencia en Neiva y Soledad, y queda por debajo en los otros cuatro municipios y en 2023 y 2025 (`exploratorio_20261112/clasificacion_umbrales.csv`).
 
 La conclusión [I] es que **la etiqueta dura no muestra el valor del modelo**: al convertir p̂ en sí o no se descarta precisamente lo que el modelo hace mejor (graduar la certeza y calibrarla). Y con una autocorrelación tan alta (el estado cambia en el 12 % de los pares de semanas separadas por 5; §2.2), la persistencia acierta la gran mayoría de las semanas sin información adicional. Dónde el modelo sí añade algo a la etiqueta se ve al separar las transiciones.
@@ -255,9 +272,9 @@ La conclusión [I] es que **la etiqueta dura no muestra el valor del modelo**: a
 | Estrato | Semanas (positivas) | Lo que hace el modelo | Persistencia |
 |---|---|---|---|
 | Fuera de zona epidémica en t | 596 (79) (938 (88)) | Marca el 9 % (8 %) de las semanas; recupera el 23 % (33 %) de las entradas con precisión 0,33 (0,40), frente a una tasa base de 0,13 (0,09) | Recupera el 0 % de las entradas, por construcción |
-| Dentro de zona epidémica en t | 340 (243) (310 (231)) | Predice la salida en el 7 % (10 %) de las semanas; acierta en el 65 % (61 %) de esas predicciones, frente a una tasa base de salida de 0,29 (0,25), y anticipa el 16 % (24 %) de las salidas | Anticipa el 0 % de las salidas, por construcción |
+| Dentro de zona epidémica en t | 340 (243) (310 (231)) | Predice la salida en el 7 % (10 %) de las semanas; acierta en el 65 % (61 %) de esas predicciones, frente a una tasa base de salida de 0,29 (0,25), y anticipa el 15 % (24 %) de las salidas | Anticipa el 0 % de las salidas, por construcción |
 
-Esta es la contribución del modelo a la etiqueta que la persistencia no puede hacer: anticipar parte de las transiciones con una precisión de dos a tres veces la tasa base, de forma consistente en los dos períodos. Es una contribución modesta en volumen (una de cada cuatro o cinco transiciones), y por eso no se nota en las métricas globales: en las semanas sin transición el modelo comete algunos errores que la persistencia no comete.
+Esta es la contribución del modelo a la etiqueta que la persistencia no puede hacer: anticipar parte de las transiciones con una precisión de dos a cuatro veces la tasa base, de forma consistente en los dos períodos. Es una contribución modesta en volumen (en prueba anticipa 33 de 176 transiciones, algo menos de una de cada cinco), y por eso no se nota en las métricas globales: en las semanas sin transición el modelo comete algunos errores que la persistencia no comete.
 
 ### 3.4 Lo que la probabilidad añade al estado del canal [X]
 
@@ -269,7 +286,7 @@ La pregunta práctica no es si el modelo supera al canal en general, sino qué l
 |---|---|---|---|---|---|---|---|
 | Seguridad | 132 (427) | 0,00 (0,03) | +62 % (+27 %) | +0,71 (+0,17) | sin positivas (0,44 / 0,34) | sin positivas (0,96 / 0,91) | — (2 de 2) |
 | Alerta | 464 (511) | 0,17 (0,15) | +2 % (+16 %) | +0,02 (+0,11) | 0,29 / 0,14 (0,36 / 0,15) | 0,71 / 0,40 (0,79 / 0,48) | 6 de 6 (5 de 6) |
-| Epidemia | 340 (310) | 0,71 (0,75) | +10 % (+19 %) | +0,14 (+0,25) | 0,85 / 0,66 (0,85 / 0,67) | 0,69 / 0,36 (0,69 / 0,36) | 5 de 6 (6 de 6) |
+| Epidemia | 340 (310) | 0,71 (0,75) | +10 % (+20 %) | +0,14 (+0,25) | 0,84 / 0,66 (0,85 / 0,67) | 0,69 / 0,36 (0,69 / 0,36) | 5 de 6 (6 de 6) |
 
 Dentro de una misma zona, B2 solo cambia entre municipios y años; no ordena las semanas. Por eso su AUC por zona queda en torno a 0,4 o por debajo, lo que refleja diferencias entre municipios, no una capacidad de ordenar. El modelo, en cambio, separa las semanas dentro de cada zona, y lo hace en casi todos los municipios y en ambos períodos.
 
@@ -277,7 +294,7 @@ Dentro de una misma zona, B2 solo cambia entre municipios y años; no ordena las
 
 *Figura 11.* Frecuencia observada de zona epidémica en t + 8 según el p̂ del modelo, dentro de cada zona del canal en t; B2, como la media de la zona [X]. Fuente: `figures/exploratorio_20261112/zona_canal.png` y `exploratorio_20261112/zona_canal_intervalos.csv`.
 
-- **Zona de alerta del canal.** Es donde la discriminación aporta más (AUC 0,71 frente a 0,40). La calibración, sin embargo, es débil: con p̂ < 0,05, la frecuencia observada es 7 % y no 2 %; con p̂ entre 0,5 y 0,9, es 33–40 % y no 60–80 %. Por eso la mejora de log-loss en esta zona es solo +2 % en prueba, pese a que el orden de las semanas es bueno. El modelo distingue bien qué semanas de alerta son más y menos riesgosas, pero sus probabilidades en esta zona son demasiado extremas en ambas direcciones.
+- **Zona de alerta del canal.** Es donde la discriminación aporta más (AUC 0,71 frente a 0,40). La calibración, sin embargo, es débil: con p̂ < 0,05, la frecuencia observada es 7 % y no 2 %; con p̂ entre 0,5 y 0,9, es 33–40 % y no 60–79 %. Por eso la mejora de log-loss en esta zona es solo +2 % en prueba, pese a que el orden de las semanas es bueno. El modelo distingue bien qué semanas de alerta son más y menos riesgosas, pero sus probabilidades en esta zona son demasiado extremas en ambas direcciones.
 - **Zona epidémica.** La probabilidad está bien calibrada en los intervalos con muchas semanas y distingue las epidemias que continuarán de las que terminarán. Es la fuente principal de la mejora global (apartado 3.5).
 - **Zona de seguridad.** El modelo confirma la tranquilidad con probabilidades casi nulas: en prueba, 128 de las 132 semanas tienen p̂ < 0,05 y ninguna llegó a zona epidémica. B2 asigna en promedio 0,02.
 
@@ -313,7 +330,7 @@ La mejora está durante los episodios y en las semanas tranquilas, lo mismo que 
 
 La pérdida después de los episodios es de calibración. La Figura 14 la mide sin la precedencia de las fases: cuenta las semanas transcurridas desde el fin del último episodio, aunque la semana objetivo esté también en los 8 previos a otro episodio (por eso la ventana de 1–13 semanas tiene 155 semanas objetivo en prueba, y no las 132 de la fase «después»). En esa ventana, en prueba, el p̂ medio del modelo es 0,51 y el de B2 0,48, mientras que la frecuencia observada es 0,065; en desarrollo, 0,47, 0,39 y 0,090. Ambos sobrestiman, el modelo un poco más, y la mejora de log-loss es −21 % (desarrollo, −38 %). En prueba, desde la semana 14 el modelo vuelve a estar más cerca de lo observado que B2; en desarrollo eso ocurre solo desde la semana 27.
 
-Cómo se produce [I]: las semanas objetivo situadas entre 1 y 8 semanas tras el fin de un episodio se emitieron cuando el episodio seguía en curso. El modelo vio un municipio en zona epidémica, con casos altos, y predijo continuidad, pero la epidemia terminó en ese intervalo. Es la contracara de la fortaleza del apartado 3.3: el modelo anticipa algunas salidas (16 % en prueba), pero la mayoría de los finales de episodio lo toman por sorpresa.
+Cómo se produce [I]: las semanas objetivo situadas entre 1 y 8 semanas tras el fin de un episodio se emitieron cuando el episodio seguía en curso. El modelo vio un municipio en zona epidémica, con casos altos, y predijo continuidad, pero la epidemia terminó en ese intervalo. Es la contracara de la fortaleza del apartado 3.3: el modelo anticipa algunas salidas (15 % en prueba), pero la mayoría de los finales de episodio lo toman por sorpresa.
 
 ![Probabilidad media frente a prevalencia según el tiempo desde el último episodio](../../reports/forecasting/figures/exploratorio_20261112/semanas_desde_episodio.png)
 
@@ -342,13 +359,13 @@ La columna de B2 muestra la diferencia: B2 dice prácticamente lo mismo en todas
 
 **Usos en los que el modelo genera valor [I].**
 
-1. **Seguimiento de una epidemia en curso (señal de continuidad).** Cuando el municipio ya está en zona epidémica, el canal solo dice eso. El modelo añade cuánto durará. En prueba, el 62 % de esas semanas tuvo p̂ ≥ 0,70 y el 81 % de ellas seguía en zona epidémica 8 semanas después; con p̂ < 0,30, solo el 35 %. Es la fuente principal de la mejora del Brier (+109 % del total, apartado 3.5), se repite en cinco o seis municipios según el período y sirve para planear con dos meses de anticipación la duración de las acciones de control y de la demanda asistencial. Esta señal no es la «alerta de continuidad» de §7.4: con τ = 0,05, el modelo emite positivo en el 99,7 % de las semanas en zona epidémica (`exploratorio_20261112/clasificacion_umbrales.csv`), así que la alerta no informa nada nuevo. Lo que informa es el valor de p̂.
+1. **Seguimiento de una epidemia en curso (señal de continuidad).** Cuando el municipio ya está en zona epidémica, el canal solo dice eso. El modelo añade cuánto durará. En prueba, el 62 % de esas semanas tuvo p̂ ≥ 0,70 y el 81 % de ellas seguía en zona epidémica 8 semanas después; con p̂ < 0,30, solo el 35 %. Es la fuente principal de la mejora del Brier (+109 % del total, apartado 3.5), se repite en casi todos los municipios (dentro de la zona epidémica, el AUC del modelo supera al de B2 en cinco municipios en prueba y en los seis en desarrollo) y sirve para planear con dos meses de anticipación la duración de las acciones de control y de la demanda asistencial. Esta señal no es la «alerta de continuidad» de §7.4: con τ = 0,05, el modelo emite positivo en el 99,7 % de las semanas en zona epidémica (`exploratorio_20261112/clasificacion_umbrales.csv`), así que la alerta no informa nada nuevo. Lo que informa es el valor de p̂.
 2. **Priorización de las alertas del canal.** La zona de alerta del canal es frecuente (la mitad de las semanas de prueba) y poco específica: solo el 17 % termina en zona epidémica. El modelo la divide en tres grupos: el 42 % de esas semanas, con p̂ < 0,05, tuvo un 7 % de conversión; el 20 %, con p̂ ≥ 0,20, tuvo un 32 %. Ordenar las alertas del canal por p̂ permitiría concentrar la vigilancia donde el riesgo es de dos a cinco veces mayor. Ese orden se cumple en los seis municipios en prueba (AUC del modelo por encima del de B2).
 3. **Confirmación de la tranquilidad.** En la zona de seguridad, un p̂ < 0,05 (casi todas las semanas) se acompañó de 0 % de semanas epidémicas en prueba y 0,3 % en desarrollo. Sirve para descartar con confianza que el municipio pase de la seguridad a la zona epidémica en 8 semanas.
 
 **Usos en los que el aporte es modesto [I].**
 
-- **Anticipar transiciones.** El modelo anticipa una de cada cuatro o cinco entradas a la zona epidémica y una de cada seis salidas (Tabla 3.4), con una precisión de dos a tres veces la tasa base. Es información útil, pero no permite confiar en que el modelo avise la mayoría de los cambios de estado.
+- **Anticipar transiciones.** El modelo anticipa una de cada cuatro o cinco entradas a la zona epidémica (23 %) y una de cada seis o siete salidas (15 %) (Tabla 3.4), con una precisión de dos a cuatro veces la tasa base. Es información útil, pero no permite confiar en que el modelo avise la mayoría de los cambios de estado.
 - **Valores absolutos en la zona de alerta.** El orden es bueno, pero la calibración no: un p̂ de 0,02 en zona de alerta corresponde a un riesgo observado cercano al 7 %, y un p̂ alto, a un 30–40 %. Conviene leer el p̂ en esta zona como un orden relativo más que como una probabilidad literal.
 - **Las semanas después del fin de una epidemia.** Durante unas 13 semanas, p̂ sobrestima la probabilidad de seguir en zona epidémica (0,51 predicho frente a 6,5 % observado en prueba).
 
@@ -409,7 +426,7 @@ La columna de B2 muestra la diferencia: B2 dice prácticamente lo mismo en todas
 
 Los cuatro avisos del modelo salen de tres alertas largas, encendidas antes del inicio y que siguieron encendidas después. De los seis fallos:
 
-- En tres, el modelo tenía una alerta encendida en la semana del inicio, pero confirmada más de 12 semanas antes, y §7.4 la cuenta como falsa alarma y no como aviso.
+- En tres, el modelo tenía una alerta encendida en la semana del inicio, pero confirmada más de 12 semanas antes, así que según §7.4 no lo avisa. Dos de esas alertas cuentan además como falsas alarmas, porque ningún inicio cayó en sus 12 semanas siguientes: la de Soledad (confirmada el 2022-11-14) y la de Cúcuta (2024-11-11). La de Neiva (2023-07-03) no, porque antes había avisado dos inicios (`prueba_20261112/diag_alertas.csv`).
 - En Barranquilla la alerta estaba en continuidad.
 - En Soledad 2025 la alerta se apagó tres semanas antes.
 - El inicio de Villavicencio de diciembre de 2025 no lo avisa ningún sistema.
@@ -432,7 +449,7 @@ Los años se describen con la serie observada (régimen, episodios, inicios) y c
 | Año | Régimen de las 6 casillas | Semanas positivas | BSS frente a B2 | Casillas ganadas a B2 / a B1 | Calibración en grande, modelo / B2 | MCC con τ = 0,30, modelo / persistencia [X] | Inicios avisados, modelo / canal |
 |---|---|---|---|---|---|---|---|
 | 2019 | 5 E, 1 T | 119 | +0,317 | 5 / 5 | −0,064 / −0,152 | 0,64 / 0,62 | 4 / 5 de 5 |
-| 2020 | 2 E, 4 P | 24 | −0,241 | 1 / 2 | +0,080 / +0,062 | 0,24 / 0,32 | 1 / 1 de 1 |
+| 2020 | 2 E, 4 P | 24 | −0,241 | 1 / 2 | +0,080 / +0,062 | 0,24 / 0,31 | 1 / 1 de 1 |
 | 2021 | 3 E, 1 P, 2 T | 72 | +0,149 | 4 / 6 | −0,086 / −0,078 | 0,65 / 0,59 | 2 / 2 de 2 |
 | 2022 | 3 E, 1 P, 2 T | 104 | +0,324 | 6 / 5 | −0,049 / −0,051 | 0,83 / 0,80 | 1 / 2 de 2 |
 | 2023 | 5 E, 1 T | 142 | +0,149 | 5 / 6 | −0,067 / −0,091 | 0,66 / 0,70 | 2 / 4 de 4 |
@@ -451,7 +468,7 @@ Los años se describen con la serie observada (régimen, episodios, inicios) y c
 
 **2019.** Año epidémico en cinco municipios; solo Barranquilla fue tranquila. El modelo gana a B2 en cinco casillas (pierde Soledad), con BSS +0,317, y B2 subestima más que el modelo (calibración −0,152 frente a −0,064). El año concentra 5 de los 10 inicios evaluables de desarrollo (el de Villavicencio del 2019-01-28 se censura). El modelo avisa cuatro y no avisa el de Villavicencio del 2019-11-25. Que la mitad de los inicios con que se eligió τ sean de un solo año es una limitación ya declarada (§7.8).
 
-**2020.** Año post-epidémico en cuatro municipios (Soledad, Neiva, Villavicencio y Cúcuta) y epidémico en Barranquilla y Cali, con solo 24 semanas positivas. Es el peor año de desarrollo: BSS −0,241, una casilla ganada a B2 y, en etiqueta, el MCC más bajo, por debajo del de la persistencia. El modelo sobreestima más que B2 (+0,080 frente a +0,062) y pierde en las casillas post-epidémicas salvo Cúcuta. De este año salió H-R (sección 7). El único inicio evaluable (Barranquilla, 2020-01-27) lo avisan ambos, el modelo con 7 semanas más de anticipación.
+**2020.** Año post-epidémico en cuatro municipios (Soledad, Neiva, Villavicencio y Cúcuta) y epidémico en Barranquilla y Cali, con solo 24 semanas positivas. Es el peor año de desarrollo: BSS −0,241, una casilla ganada a B2 y, en etiqueta, el MCC más bajo, por debajo del de la persistencia. El modelo sobrestima más que B2 (+0,080 frente a +0,062) y pierde en las casillas post-epidémicas salvo Cúcuta. De este año salió H-R (sección 7). El único inicio evaluable (Barranquilla, 2020-01-27) lo avisan ambos, el modelo con 7 semanas más de anticipación.
 
 **2021.** Epidémico en Barranquilla, Soledad y Cúcuta; tranquilo en Neiva y Villavicencio. El modelo gana cuatro casillas a B2 y las seis a B1. Pierde en Cúcuta, en un año epidémico (BSS −0,171), y en Cali, post-epidémica, por un margen mínimo (−0,001). Los dos inicios (Barranquilla y Cúcuta) los avisan ambos sistemas (Δw de 0 y +1).
 
@@ -477,18 +494,18 @@ Las hipótesis secundarias de §8.8 se formularon con los resultados de desarrol
 |---|---|---|
 | H-R(a): en las casillas epidémicas, el modelo gana a B2 por log-loss en más de la mitad | 8 de 13 (por Brier, 9 de 13); en las filas juntas, mejora de log-loss +3,0 %, BSS +0,066 | **Sostenida** |
 | H-R(b): en las post-epidémicas, el modelo pierde en más de la mitad | Pierde 1 de 4 (Barranquilla 2025); en las filas juntas, +34,5 % de log-loss y BSS +0,270 | **No sostenida** |
-| H-R(c): en las post-epidémicas, el modelo sobreestima más que B2 | 0 de 4: su calibración en grande es menor que la de B2 en las cuatro (filas juntas: +0,043 frente a +0,110) | **No sostenida** |
+| H-R(c): en las post-epidémicas, el modelo sobrestima más que B2 | 0 de 4: su calibración en grande es menor que la de B2 en las cuatro (filas juntas: +0,043 frente a +0,110) | **No sostenida** |
 | H-E(a): el modelo avisa menos inicios | 4 frente a 8 de 10 | **Sostenida** |
 | H-E(b): el modelo tiene menos falsas alarmas por municipio-año | 1,00 frente a 1,67 | **Sostenida**, con la precisión de la sección 5: son menos porque hay menos alertas, no porque sean más precisas |
 | H-E(c): en los inicios avisados por ambos, Δw > 0 en más de la mitad | 2 de 3 (Δw de 0, +7 y +5) | **Sostenida**, con 3 inicios. Los dos Δw positivos vienen de alertas largas: la de Neiva duró 66 semanas desde t_c y la de Cúcuta, 42 |
 
 La única casilla tranquila de prueba (Cúcuta 2023) no forma estrato evaluable.
 
-![Casillas por régimen: habilidad y sobreestimación relativa a B2](../../reports/forecasting/figures/exploratorio_20261112/regimen_casillas.png)
+![Casillas por régimen: habilidad y sobrestimación relativa a B2](../../reports/forecasting/figures/exploratorio_20261112/regimen_casillas.png)
 
 *Figura 19.* Mejora de log-loss frente a B2 (izquierda) y calibración en grande del modelo menos la de B2 (derecha), por casilla y régimen. Fuente: `figures/exploratorio_20261112/regimen_casillas.png`; datos, `prueba_20261112/diag_casillas.csv` y `diagnostico_desarrollo_sin_clima_20261112/diag_casillas.csv`.
 
-**Lo que contradice a H-R.** En desarrollo, las casillas post-epidémicas favorecían a B2: el modelo ganaba 2 de 6 y sobreestimaba más que B2 en las tres de 2020 (Soledad, Neiva y Villavicencio), aunque no en las filas juntas (+0,101 frente a +0,113; `diagnostico_desarrollo_sin_clima_20261112/diag_resumenes.csv`). En prueba, las cuatro casillas post-epidémicas tienen 6 semanas positivas en 206 filas, B2 sobrestima más que el modelo en las cuatro y el modelo gana tres. El estrato anual no reproduce lo que H-R(b) y H-R(c) buscaban.
+**Lo que contradice a H-R.** En desarrollo, las casillas post-epidémicas favorecían a B2: el modelo ganaba 2 de 6 y sobrestimaba más que B2 en tres de las cuatro de 2020 (Soledad, Neiva y Villavicencio), aunque no en las filas juntas (+0,101 frente a +0,113; `diagnostico_desarrollo_sin_clima_20261112/diag_resumenes.csv`). En prueba, las cuatro casillas post-epidémicas tienen 6 semanas positivas en 206 filas, B2 sobrestima más que el modelo en las cuatro y el modelo gana tres. El estrato anual no reproduce lo que H-R(b) y H-R(c) buscaban.
 
 **Dónde aparece lo que H-R(b) buscaba** [X]. La pérdida del modelo después de una epidemia sí existe, pero a escala de semanas: entre 1 y 13 semanas después del fin de un episodio pierde frente a B2 en las 12 combinaciones municipio-período, y en esa ventana el p̂ medio (0,51) multiplica por ocho la frecuencia observada (0,065). El año calendario no capta esa ventana por dos motivos:
 
@@ -515,7 +532,7 @@ Esta sección recorre las limitaciones de las métricas que §8.8 pide discutir 
 | Con clima frente a B2, prueba | +0,067 | +0,102 | +4,4 % | +8,1 % |
 | Con clima frente a B2, desarrollo | +0,070 | −0,084 | +5,3 % | −2,4 % |
 
-**8.2 AP sin positivas y con empates.** La AP no está definida en las casillas sin semanas positivas: 2 en prueba (Neiva y Cali 2025) y 8 en desarrollo. Por eso se reporta global, por estrato y por municipio. Además, B2 toma pocos valores distintos (entre 6 y 9 por municipio en prueba) y su AP depende de cómo se traten los empates. El repositorio agrupa los empates en un mismo umbral (`src/forecasting/metrics.py`, `average_precision_score`). Un cálculo que los rompe por el orden de las filas da otra cifra, por ejemplo 0,77 en lugar de 0,60 para B2 en Barranquilla y 0,73 en lugar de 0,59 en Cúcuta, lo que invertiría la comparación con el modelo en esos dos municipios (`exploratorio_20261112/ap_empates.csv` [X]; el cálculo con empates agrupados reproduce exactamente la ficha). Las cifras válidas son las de la ficha. El modelo, con valores continuos, no tiene empates.
+**8.2 AP sin positivas y con empates.** La AP no está definida en las casillas sin semanas positivas: 2 en prueba (Neiva y Cali 2025) y 8 en desarrollo. Por eso se reporta global, por estrato y por municipio. Además, B2 toma pocos valores distintos (entre 6 y 9 por municipio en prueba) y su AP depende de cómo se traten los empates. El repositorio agrupa los empates en un mismo umbral (`src/forecasting/metrics.py`, `average_precision_score`). Un cálculo que los rompe por el orden de las filas da otra cifra, por ejemplo 0,76 en lugar de 0,60 para B2 en Barranquilla y 0,73 en lugar de 0,59 en Cúcuta (`exploratorio_20261112/ap_empates.csv` [X]; el cálculo con empates agrupados reproduce exactamente la ficha). En Cúcuta eso invertiría la comparación con el modelo (0,66); en Barranquilla ampliaría la ventaja que B2 ya tiene con empates agrupados (0,60 frente a 0,59). Las cifras válidas son las de la ficha. El modelo, con valores continuos, no tiene empates.
 
 **8.3 Las métricas en un umbral dependen del umbral.** Sensibilidad, VPP, F1 y MCC describen un punto de operación, no la calidad de la probabilidad (§7.1). Con τ = 0,05 el modelo parece muy superior a B2 (MCC 0,46 frente a 0,26) y con τ = 0,30 iguala a la persistencia (apartado 3.3). Ninguna de las dos cifras es «la» calidad de la estimación; la juzgan las reglas de puntuación, la calibración y la discriminación sin umbral. Por la misma razón, el umbral que maximiza F1 se tomó de desarrollo y nunca de la prueba.
 
@@ -527,7 +544,7 @@ Esta sección recorre las limitaciones de las métricas que §8.8 pide discutir 
 
 **8.7 La descomposición de Murphy depende del agrupamiento.** Con 10 intervalos de igual frecuencia, la confiabilidad de B2 en prueba es 0,015 y su resolución, 0,087. Si se agrupa por sus valores exactos (44 grupos, residuo 0), son 0,033 y 0,105 (`exploratorio_20261112/murphy_b2.csv` [X]). La afirmación «misma resolución» solo vale con el mismo procedimiento de intervalos y no compara capacidades intrínsecas. La conclusión de que la ventaja global viene de la calibración (apartado 3.1) se apoya además en la calibración en grande por año, que no depende de intervalos, y la de que el modelo discrimina mejor, en la AP y la AUC (apartado 3.2).
 
-**8.8 La restricción de τ no estuvo activa.** τ se elige maximizando la detección con falsas alarmas no mayores que las del canal (§7.5). En desarrollo, el modelo cumple la restricción en toda la rejilla (con τ = 0,05, 0,92 falsas alarmas por municipio-año frente a 2,00 del canal), así que τ lo decidió solo la detección y quedó en el extremo inferior de la rejilla (`seleccion_conjuntos_20261112/curva_tau.csv` y `resumen_seleccion.json`). Eso explica por qué el modelo pasa el 60 % de las semanas bajo alerta en prueba.
+**8.8 La restricción de τ no estuvo activa.** τ se elige maximizando la detección con falsas alarmas no mayores que las del canal (§7.5). En desarrollo, el modelo cumple la restricción en toda la rejilla (con τ = 0,05, 0,92 falsas alarmas por municipio-año frente a 2,00 del canal: 22 falsas alarmas en 24 municipio-años, con la configuración de la receta, `logistica_05`, en los cuatro años), así que τ lo decidió solo la detección y quedó en el extremo inferior de la rejilla (`seleccion_conjuntos_20261112/curva_tau.csv` y `resumen_seleccion.json`). Eso explica por qué el modelo pasa el 60 % de las semanas bajo alerta en prueba. Las Tablas 5.1 y 9.1 usan, en cambio, la configuración común fuera de año de §8.8, que cambia según el año, y por eso cuentan 24 falsas alarmas (1,00 por municipio-año).
 
 **8.9 Correlación entre casillas del mismo año.** Las 18 casillas de prueba no son 18 unidades independientes (§8.6): 2023 y 2024 fueron epidémicos en cinco municipios a la vez y en 2025 el modelo perdió en cuatro casillas al mismo tiempo. El conteo de 12 de 18 debe leerse con esa dependencia.
 
@@ -567,8 +584,8 @@ En eventos la diferencia es mayor (8 de 10 → 4 de 10), como se espera de una c
 ## 10. Conclusiones
 
 **Hechos [H].**
-- Frente a B2, el modelo alcanza «tendencia favorable» (BSS +0,081; 12 de 18 casillas); frente a B1, «mejora consistente» (BSS +0,468; 15 de 18). El clima no aporta mejora medible y los eventos frente al canal quedan «sin mejora» (4 de 10 frente a 8 de 10).
-- Por municipio (descriptivo): Neiva, Villavicencio y Cali son favorables en prueba; Soledad y Cúcuta, mixtos; Barranquilla, desfavorable. Neiva y Villavicencio también lo fueron en desarrollo.
+- Frente a B2, el modelo alcanza «tendencia favorable» (BSS +0,081; 12 de 18 casillas); frente a B1, «mejora consistente» (BSS +0,468; 15 de 18). El clima no aporta mejora medible: la ablación queda en «sin mejora» con Brier y, con log-loss, en tendencia favorable a no usarlo. Los eventos frente al canal quedan «sin mejora» (4 de 10 frente a 8 de 10).
+- Por municipio (descriptivo): Neiva, Villavicencio y Cali son favorables en prueba; Soledad y Cúcuta, mixtos; Barranquilla, desfavorable. Neiva y Villavicencio también lo fueron en desarrollo (convención [X] de la sección 2).
 - El modelo está mejor calibrado que B2 en prueba (confiabilidad 0,006 frente a 0,015 con 10 intervalos; calibración en grande más cerca de 0 los tres años) y ordena mejor las semanas (AP 0,77 frente a 0,61). Es demasiado extremo en ambas direcciones.
 - Tiene menos falsas alarmas por municipio-año que el canal porque emite menos alertas, que duran más; la proporción de alertas falsas es similar (82 % frente a 77 %).
 - H-R(a) y las tres partes de H-E se sostienen; H-R(b) y H-R(c) no.
@@ -580,14 +597,13 @@ En eventos la diferencia es mayor (8 de 10 → 4 de 10), como se espera de una c
 
 **Exploratorio [X].**
 - Dentro de cada zona del canal, el modelo separa semanas cuyo riesgo observado difiere entre dos y cinco veces, donde B2 asigna una sola probabilidad. Esto se repite en desarrollo y en prueba y en casi todos los municipios (Tabla 4.1).
-- Con el umbral de F1 máxima de desarrollo, el modelo recupera el 23 % de las entradas y anticipa el 16 % de las salidas, con una precisión de dos a tres veces la tasa base; la persistencia no anticipa ninguna.
+- Con el umbral de F1 máxima de desarrollo, el modelo recupera el 23 % de las entradas y anticipa el 15 % de las salidas, con una precisión de dos a cuatro veces la tasa base; la persistencia no anticipa ninguna.
 - La mejora neta frente a B2 se concentra durante los episodios (+109 %) y en las semanas tranquilas (+34 %), y se pierde en las 1–13 semanas posteriores a un episodio (−49 %), en casi todos los municipios y en ambos períodos.
 - Que el modelo esté bajo alerta en 8 de 10 inicios no se distingue de su tasa base de semanas bajo alerta (unos 6 de 10).
 
 **Valor en la práctica [I].** El sistema es un **estimador de riesgo a 8 semanas que complementa el canal**: lo enriquece donde el canal da una sola respuesta para situaciones muy distintas. Tiene tres usos principales: seguir una epidemia en curso (cuánto durará), priorizar las semanas en zona de alerta y confirmar la tranquilidad. No sustituye la alerta del canal para avisar inicios de brote. Su lectura exige dos advertencias: tras el fin de una epidemia, p̂ sobrestima la continuidad durante unas 13 semanas; y en zona de alerta, un p̂ bajo no significa riesgo nulo (2 % predicho, 7 % observado).
 
 **Pendientes [P].**
-- Incorporar `exploratorio_20261112/` y `figures/exploratorio_20261112/` a `reports/forecasting/INDICE.md`, con su estado (exploratorio).
 - F8: registro de modelos, API y frontend. Las recomendaciones de presentación de la sección 4 son una propuesta para la vista principal y la ficha de desempeño.
 
 ---
@@ -596,7 +612,7 @@ En eventos la diferencia es mayor (8 de 10 → 4 de 10), como se espera de una c
 
 **Limitaciones.**
 - **Tamaño de la prueba.** Tres años, 18 casillas correlacionadas y 10 inicios evaluables: la potencia es baja (§8.6) y los niveles por municipio son descriptivos.
-- **Análisis exploratorios.** Los análisis [X] se definieron después de ver la prueba. Describen patrones, pero no confirman hipótesis. Sus cortes (8 semanas antes, 13 después, las bandas de la Tabla 4.1 y el umbral de 0,50) son convenciones de este análisis, no del contrato. Solo el umbral de F1 máxima (0,30) se tomó de desarrollo con una regla explícita.
+- **Análisis exploratorios.** Los análisis [X] se definieron después de ver la prueba. Describen patrones, pero no confirman hipótesis. Sus cortes (8 semanas antes, 13 después, las bandas de la Tabla 4.1 y el umbral de 0,50) y el nivel descriptivo en desarrollo (sección 2) son convenciones de este análisis, no del contrato. Solo el umbral de F1 máxima (0,30) se tomó de desarrollo con una regla explícita.
 - **Información posterior a la emisión.** El régimen y las fases la usan y nunca están disponibles al emitir. La zona del canal en t sí lo está.
 - **Pronóstico retrospectivo,** con datos consolidados (§3.4).
 - **Sin atribución causal.** Ningún resultado se atribuye a variables concretas ni a causas epidemiológicas (inmunidad, serotipos, notificación): este análisis no tiene evidencia para hacerlo.
@@ -607,6 +623,8 @@ En eventos la diferencia es mayor (8 de 10 → 4 de 10), como se espera de una c
 3. **Una regla de alerta que se apague**, por ejemplo con duración máxima o con reconfirmación, para que una alerta encendida más de 12 semanas no impida avisar el siguiente inicio. Debe elegirse en desarrollo con un criterio declarado antes.
 4. **Una regla combinada con el canal**: la alerta del canal para los inicios y la probabilidad del modelo para la persistencia, la priorización de alertas y la vuelta a la tranquilidad, evaluada con la simetría de §7.4.
 5. **Un tratamiento específico de la ventana posterior a un episodio**, declarado antes de evaluarlo, dado que es la debilidad más estable del modelo en ambos períodos.
+
+**Sensibilidades previstas que no se ejecutaron en el MVP [P].** Quedan como posible desarrollo posterior, sin compromiso de realizarlas: la GRU opcional (§4.2), los horizontes h ∈ {2, 4, 12} (§3.6), el canal U3a y las ventanas de 3 o 7 años (`registro_decisiones.md`, D2), la validación externa (`registro_decisiones.md`, D0) y el contraste del canal con epiCo en R (§10.1).
 
 ---
 
@@ -624,7 +642,7 @@ Exploratorio [X]:
 - **Script:** `docs/forecasting/verificacion/analisis_integrado_exploratorio.py`. No importa nada de `src/` y reutiliza `caso_f7_diagnostico.py` sin modificarlo. Se ejecuta desde la raíz, con los datos de DVC:
 
   ```
-  python -X utf8 -I docs/forecasting/verificacion/analisis_integrado_exploratorio.py --canal data/processed/epidemiology/pilot_weekly_channel.parquet --busqueda-sin-clima data/processed/forecasting/sin_clima --predicciones-prueba data/processed/forecasting/prueba/predicciones_prueba.parquet --evidencia reports/forecasting/evidence --salida-tablas reports/forecasting/evidence/exploratorio_20261112 --salida-figuras reports/forecasting/figures/exploratorio_20261112
+  .venv/Scripts/python.exe -X utf8 -I docs/forecasting/verificacion/analisis_integrado_exploratorio.py --canal data/processed/epidemiology/pilot_weekly_channel.parquet --busqueda-sin-clima data/processed/forecasting/sin_clima --predicciones-prueba data/processed/forecasting/prueba/predicciones_prueba.parquet --evidencia reports/forecasting/evidence --salida-tablas reports/forecasting/evidence/exploratorio_20261112 --salida-figuras reports/forecasting/figures/exploratorio_20261112
   ```
 
 - **Tablas** (`exploratorio_20261112/`):
@@ -634,4 +652,10 @@ Exploratorio [X]:
   - Control: `contraste_u75.csv` y `manifiesto_exploratorio.json` (md5 de los insumos y τ de F1 máxima en desarrollo).
 - **Figuras** (`figures/exploratorio_20261112/`): `clasificacion_pr`, `clasificacion_umbral`, `zona_canal`, `fases_aporte`, `fases_municipio`, `semanas_desde_episodio`, `inicios_prueba`, `regimen_casillas`.
 
-Documentos: `docs/forecasting/contrato_predictivo.md` (§2.2, §2.4, §7.1–§7.8, §8.2–§8.8, §9.2–§9.5) y `docs/forecasting/README.md` (glosario).
+Comprobación de cifras: `docs/forecasting/verificacion/verificar_cifras_analisis.py` reconstruye desde la evidencia cada fila de tabla y cada cifra de la prosa que procede de ella, y verifica que aparezcan en este documento:
+
+```
+.venv/Scripts/python.exe -X utf8 -I docs/forecasting/verificacion/verificar_cifras_analisis.py --analisis docs/forecasting/analisis_resultados.md --evidencia reports/forecasting/evidence
+```
+
+Documentos: `docs/forecasting/contrato_predictivo.md` (§2.2, §2.4, §3.4, §3.6, §4.2, §6.2, §7.1–§7.8, §8.2–§8.8, §9.2–§9.5, §10.1), `docs/forecasting/registro_decisiones.md` (D0, D2) y `docs/forecasting/README.md` (glosario).

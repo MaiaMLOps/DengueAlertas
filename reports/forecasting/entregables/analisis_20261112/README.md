@@ -1,11 +1,13 @@
 # Entregables del análisis integrado de resultados (corrida del 2026-11-12)
 
-Versiones para lectura y presentación del análisis integrado de la prueba única 2023–2025 (contrato §8.8). Se generaron a partir de la corrida registrada en la ejecución 1 de `reports/forecasting/bitacora_prueba.jsonl` y de la evidencia de `prueba_20261112/`, `reportes_20261112/` y `exploratorio_20261112/`.
+Versiones para lectura y presentación del análisis integrado de la prueba única 2023–2025 (contrato §8.8). Se generaron a partir de la corrida registrada en la ejecución 1 de `reports/forecasting/bitacora_prueba.jsonl` y de la evidencia de `reports/forecasting/evidence/prueba_20261112/`, `reports/forecasting/evidence/reportes_20261112/` y `reports/forecasting/evidence/exploratorio_20261112/`.
+
+Regenerado el 2026-11-13 tras la corrección de cifras de la auditoría de coherencia; `docs/forecasting/verificacion/verificar_cifras_analisis.py` comprueba sus cifras contra la evidencia.
 
 | Archivo | Qué es | Fuente |
 |---|---|---|
 | `analisis_resultados.docx` | El análisis integrado en Word, con figuras y tablas incrustadas | [`docs/forecasting/analisis_resultados.md`](../../../../docs/forecasting/analisis_resultados.md), convertido con pandoc |
-| `presentacion_resultados.pdf` | Presentación de referencia para el equipo: complemento visual del análisis, en lenguaje para un lector externo | Resume el mismo análisis; sus figuras son versiones con términos simplificados de las de `figures/` |
+| `presentacion_resultados.pdf` | Presentación de referencia para el equipo: complemento visual del análisis, en lenguaje para un lector externo | Resume el mismo análisis; sus figuras son versiones con términos simplificados de las de `reports/forecasting/figures/` |
 
 Reglas de uso:
 

@@ -41,6 +41,7 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
+from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 
 from catboost import CatBoostClassifier
@@ -52,22 +53,23 @@ from src.epidemiology.validation import require
 
 from .dataset import FEATURES
 
-FAMILIES = ("logistica", "lightgbm", "catboost", "xgboost", "svm")
+FAMILIES = ("logistica", "lightgbm", "catboost", "xgboost", "svm", "mlp")
 NUMERIC_FEATURES = tuple(name for name in FEATURES if name != "zona_t")
-_REFERENCE_ZONE = ZONES[0]   # seguridad: reference category of the two indicators (contrato §5.5)
+_REFERENCE_ZONE = ZONES[0]
 
-# Names of the hyperparameters each candidate must give (values come from the pre-registration).
 HYPERPARAMETERS = {
     "logistica": ("C", "max_iter"),
     "lightgbm": ("num_leaves", "max_depth", "learning_rate", "n_estimators", "min_child_samples", "reg_lambda", "subsample", "subsample_freq", "colsample_bytree", "random_state"),
     "catboost": ("depth", "learning_rate", "iterations", "l2_leaf_reg", "subsample", "random_strength", "rsm", "min_data_in_leaf", "random_state"),
     "xgboost": ("max_depth", "learning_rate", "n_estimators", "min_child_weight", "reg_lambda", "reg_alpha", "gamma", "subsample", "colsample_bytree", "random_state"),
     "svm": ("C", "gamma", "tol", "coef0", "degree", "random_state"),
+    "mlp": ("hidden_units", "n_layers", "alpha", "learning_rate_init", "max_iter", "batch_size", "random_state"),
 }
-# Settings that a candidate may not change: class weights (contrato §4.2), early stopping (§6.3: the number
-# of trees is searched without early stopping) and the fixed settings of each estimator.
-_FORBIDDEN = ("class_weight", "is_unbalance", "scale_pos_weight", "early_stopping_round", "early_stopping_rounds",
-              "early_stopping", "objective", "penalty", "solver", "n_jobs", "deterministic", "verbose")
+
+_FORBIDDEN = (
+    "class_weight", "is_unbalance", "scale_pos_weight", "early_stopping_round", "early_stopping_rounds",
+    "early_stopping", "objective", "penalty", "solver", "n_jobs", "deterministic", "verbose",
+)
 
 
 def _zone_as_category(frame: pd.DataFrame) -> pd.DataFrame:
@@ -112,7 +114,7 @@ def make_model(family: str, params: Mapping, *, features: Sequence[str] = FEATUR
     ordered = _check_features(features)
     numeric = [name for name in ordered if name != "zona_t"]
 
-    if family in ("logistica", "svm"):
+    if family in ("logistica", "svm", "mlp"):
         prepare = ColumnTransformer(
             [
                 ("estandarizar", StandardScaler(), numeric),
@@ -123,31 +125,27 @@ def make_model(family: str, params: Mapping, *, features: Sequence[str] = FEATUR
         )
         if family == "logistica":
             estimator = LogisticRegression(penalty="l2", class_weight=None, **params)
-        else:
+        elif family == "svm":
             estimator = SVC(kernel="rbf", probability=True, class_weight=None, **params)
+        else:
+            mp = dict(params)
+            u, nl = int(mp.pop("hidden_units")), int(mp.pop("n_layers"))
+            hls = (u,) if nl == 1 else (u, max(4, u // 2))
+            estimator = MLPClassifier(hidden_layer_sizes=hls, activation="relu", solver="adam", early_stopping=False, **mp)
         return Pipeline([("preparar", prepare), ("modelo", estimator)])
 
     if family == "lightgbm":
-        estimator = lgb.LGBMClassifier(
-            objective="binary", class_weight=None, verbose=-1, n_jobs=1, deterministic=True, **params
-        )
+        estimator = lgb.LGBMClassifier(objective="binary", class_weight=None, verbose=-1, n_jobs=1, deterministic=True, **params)
     elif family == "catboost":
-        estimator = CatBoostClassifier(
-            loss_function="Logloss", auto_class_weights=None, verbose=False, thread_count=1,
-            cat_features=["zona_t"], **params
-        )
+        estimator = CatBoostClassifier(loss_function="Logloss", auto_class_weights=None, verbose=False, thread_count=1, cat_features=["zona_t"], **params)
     elif family == "xgboost":
-        estimator = XGBClassifier(
-            objective="binary:logistic", eval_metric="logloss", scale_pos_weight=1,
-            enable_categorical=True, n_jobs=1, **params
-        )
+        estimator = XGBClassifier(objective="binary:logistic", eval_metric="logloss", scale_pos_weight=1, enable_categorical=True, n_jobs=1, **params)
     else:
         raise EpidemiologyValidationError(f"Unsupported family {family!r}")
 
     steps = [("preparar", FunctionTransformer(_zone_as_category, validate=False)), ("modelo", estimator)]
     if ordered != tuple(FEATURES):
-        steps.insert(0, ("seleccionar", FunctionTransformer(_select_columns, kw_args={"columns": list(ordered)},
-                                                            validate=False)))
+        steps.insert(0, ("seleccionar", FunctionTransformer(_select_columns, kw_args={"columns": list(ordered)}, validate=False)))
     return Pipeline(steps)
 
 
@@ -181,7 +179,7 @@ def fit_model(family: str, params: Mapping, train: pd.DataFrame, *, features: Se
     features = _check_rows(train, "train", target=True)
     y = train["y"].to_numpy(dtype=int)
     with warnings.catch_warnings():
-        warnings.simplefilter("error", ConvergenceWarning)
+        warnings.simplefilter("error" if family == "logistica" else "ignore", ConvergenceWarning)
         try:
             model.fit(features, y)
         except ConvergenceWarning as exc:

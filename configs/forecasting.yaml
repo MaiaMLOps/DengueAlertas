@@ -54,6 +54,15 @@ seguimiento:                       # especificación §9
     final: dengue_h8_final
 
 busqueda:
-  logistica:
-    C: [0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 7.5, 10.0, 15.0, 25.0, 50.0, 100.0]
-    max_iter: 5000
+  mlp:
+    n_candidatos: 40
+    semilla_muestreo: 20261112
+    semilla_modelo: 20261112
+    fijos: {}
+    espacio:
+      hidden_units:       {escala: entera, rango: [4, 64]}
+      n_layers:           {escala: entera, rango: [1, 2]}
+      alpha:              {escala: log,    rango: [1.0e-4, 10.0]}
+      learning_rate_init: {escala: log,    rango: [5.0e-4, 2.0e-2]}
+      max_iter:           {escala: entera, rango: [150, 600]}
+      batch_size:         {escala: entera, rango: [16, 64]}

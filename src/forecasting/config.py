@@ -182,13 +182,14 @@ class SearchSection(_Section):
     catboost: LightGBMSearch | None = None
     xgboost: LightGBMSearch | None = None
     svm: LightGBMSearch | None = None
+    mlp: LightGBMSearch | None = None
 
     @model_validator(mode="after")
     def _at_least_one_family(self):
-        if (self.logistica is None and self.lightgbm is None
-                and self.catboost is None and self.xgboost is None and self.svm is None):
+        if all(x is None for x in (self.logistica, self.lightgbm, self.catboost, self.xgboost, self.svm, self.mlp)):
             raise ValueError("busqueda must define at least one family")
         return self
+
 
 class ExperimentNames(_Section):
     desarrollo: str = Field(min_length=1)

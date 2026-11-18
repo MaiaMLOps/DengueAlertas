@@ -108,36 +108,42 @@ def _check_params(family: str, params) -> dict:
 
 
 def make_model(family: str, params: Mapping, *, features: Sequence[str] = FEATURES) -> Pipeline:
-    """Unfitted pipeline of a family with the candidate's hyperparameters, on `features` (all by default)."""
     params = _check_params(family, params)
     ordered = _check_features(features)
     numeric = [name for name in ordered if name != "zona_t"]
-    
-    if family == "logistica":
+
+    if family in ("logistica", "svm"):
         prepare = ColumnTransformer(
-            [("estandarizar", StandardScaler(), numeric),
-             ("zona", OneHotEncoder(categories=[list(ZONES)], drop=[_REFERENCE_ZONE], sparse_output=False,
-                                    handle_unknown="error"), ["zona_t"])],
-            remainder="drop")
-    elif family == "svm":
-        prepare = ColumnTransformer(
-            [("estandarizar", StandardScaler(), numeric),
-             ("zona", OneHotEncoder(categories=[list(ZONES)], drop=[_REFERENCE_ZONE], sparse_output=False,
-                                    handle_unknown="error"), ["zona_t"])],
-            remainder="drop")
-        return Pipeline([("preparar", prepare),
-                         ("modelo", SVC(kernel="rbf", probability=True, class_weight=None, **params))])
-                         
-    elif family == "lightgbm":
-        estimator = lgb.LGBMClassifier(objective="binary", class_weight=None, verbose=-1, n_jobs=1, deterministic=True,
-                                       **params)
-                                       
+            [
+                ("estandarizar", StandardScaler(), numeric),
+                ("zona", OneHotEncoder(categories=[list(ZONES)], drop=[_REFERENCE_ZONE], sparse_output=False,
+                                       handle_unknown="error"), ["zona_t"]),
+            ],
+            remainder="drop",
+        )
+        if family == "logistica":
+            estimator = LogisticRegression(penalty="l2", class_weight=None, **params)
+        else:
+            estimator = SVC(kernel="rbf", probability=True, class_weight=None, **params)
+        return Pipeline([("preparar", prepare), ("modelo", estimator)])
+
+    if family == "lightgbm":
+        estimator = lgb.LGBMClassifier(
+            objective="binary", class_weight=None, verbose=-1, n_jobs=1, deterministic=True, **params
+        )
     elif family == "catboost":
-        estimator = CatBoostClassifier(auto_class_weights=None, verbose=False, thread_count=1, cat_features=["zona_t"], **params)
-        
+        estimator = CatBoostClassifier(
+            loss_function="Logloss", auto_class_weights=None, verbose=False, thread_count=1,
+            cat_features=["zona_t"], **params
+        )
     elif family == "xgboost":
-        estimator = XGBClassifier(objective="binary:logistic", scale_pos_weight=1, enable_categorical=True, n_jobs=1, **params)
-        
+        estimator = XGBClassifier(
+            objective="binary:logistic", eval_metric="logloss", scale_pos_weight=1,
+            enable_categorical=True, n_jobs=1, **params
+        )
+    else:
+        raise EpidemiologyValidationError(f"Unsupported family {family!r}")
+
     steps = [("preparar", FunctionTransformer(_zone_as_category, validate=False)), ("modelo", estimator)]
     if ordered != tuple(FEATURES):
         steps.insert(0, ("seleccionar", FunctionTransformer(_select_columns, kw_args={"columns": list(ordered)},

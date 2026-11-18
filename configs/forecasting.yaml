@@ -54,43 +54,6 @@ seguimiento:                       # especificación §9
     final: dengue_h8_final
 
 busqueda:
-  catboost:
-    n_candidatos: 40
-    semilla_muestreo: 20261112
-    semilla_modelo: 20261112
-    fijos: {}
-    espacio:
-      depth: {escala: entera, rango: [2, 6]}
-      learning_rate: {escala: log, rango: [0.005, 0.15]}
-      iterations: {escala: entera, rango: [100, 800]}
-      l2_leaf_reg: {escala: real, rango: [0.1, 15.0]}
-      subsample: {escala: real, rango: [0.5, 1.0]}
-      random_strength: {escala: real, rango: [0.0, 5.0]}
-      rsm: {escala: real, rango: [0.5, 1.0]}
-      min_data_in_leaf: {escala: entera, rango: [5, 50]}
-  xgboost:
-    n_candidatos: 40
-    semilla_muestreo: 20261112
-    semilla_modelo: 20261112
-    fijos: {}
-    espacio:
-      max_depth: {escala: entera, rango: [2, 6]}
-      learning_rate: {escala: log, rango: [0.005, 0.15]}
-      n_estimators: {escala: entera, rango: [100, 800]}
-      min_child_weight: {escala: entera, rango: [1, 30]}
-      reg_lambda: {escala: real, rango: [0.0, 15.0]}
-      reg_alpha: {escala: real, rango: [0.0, 10.0]}
-      gamma: {escala: real, rango: [0.0, 5.0]}
-      subsample: {escala: real, rango: [0.5, 1.0]}
-      colsample_bytree: {escala: real, rango: [0.5, 1.0]}
-  svm:
-    n_candidatos: 40
-    semilla_muestreo: 20261112
-    semilla_modelo: 20261112
-    fijos: {}
-    espacio:
-      C: {escala: log, rango: [0.001, 100.0]}
-      gamma: {escala: log, rango: [0.0001, 1.0]}
-      tol: {escala: log, rango: [1.0e-5, 1.0e-2]}
-      coef0: {escala: real, rango: [0.0, 2.0]}
-      degree: {escala: entera, rango: [2, 4]}
+  logistica:
+    C: [0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 7.5, 10.0, 15.0, 25.0, 50.0, 100.0]
+    max_iter: 5000

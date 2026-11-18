@@ -107,32 +107,34 @@ def _sample(space, rng: np.random.Generator, upper_cap: float | None):
 def candidates_from_config(busqueda: SearchSection) -> dict[str, list[Candidate]]:
     """Expand the pre-registered section into the candidate lists, identical for every municipality.
 
-    Logistic regression: one candidate per C, in the given order. LightGBM: n_candidatos draws from
+    Logistic regression: one candidate per C, in the given order. Ensembles: n_candidatos draws from
     numpy default_rng(semilla_muestreo), each parameter drawn in alphabetical order (max_depth before
     num_leaves, so the cap 2^max_depth can apply), then the fixed values and random_state = semilla_modelo.
     """
     require(isinstance(busqueda, SearchSection), "busqueda must be the validated search section.")
     candidates: dict[str, list[Candidate]] = {}
+    
     if busqueda.logistica is not None:
         section = busqueda.logistica
         candidates["logistica"] = [Candidate(f"logistica_{i:02d}", {"C": float(c), "max_iter": section.max_iter})
                                    for i, c in enumerate(section.C)]
-    if busqueda.lightgbm is not None:
-        section = busqueda.lightgbm
-        rng = np.random.default_rng(section.semilla_muestreo)
-        drawn = []
-        for i in range(section.n_candidatos):
-            params: dict[str, Any] = {}
-            for name in sorted(section.espacio):
-                space = section.espacio[name]
-                cap = None
-                if space.tope_por_profundidad:
-                    cap = 2 ** int(params.get("max_depth", section.fijos.get("max_depth")))
-                params[name] = _sample(space, rng, cap)
-            params.update(section.fijos)
-            params["random_state"] = section.semilla_modelo
-            drawn.append(Candidate(f"lightgbm_{i:02d}", params))
-        candidates["lightgbm"] = drawn
+                                   
+    for f in ["lightgbm", "catboost", "xgboost"]:
+        section = getattr(busqueda, f, None)
+        if section is not None:
+            rng = np.random.default_rng(section.semilla_muestreo)
+            drawn = []
+            for i in range(section.n_candidatos):
+                params: dict[str, Any] = {}
+                for name in sorted(section.espacio):
+                    space = section.espacio[name]
+                    cap = 2 ** int(params.get("max_depth", section.fijos.get("max_depth"))) if space.tope_por_profundidad else None
+                    params[name] = _sample(space, rng, cap)
+                params.update(section.fijos)
+                params["random_state"] = section.semilla_modelo
+                drawn.append(Candidate(f"{f}_{i:02d}", params))
+            candidates[f] = drawn
+            
     return candidates
 
 

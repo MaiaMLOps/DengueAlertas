@@ -53,48 +53,44 @@ seguimiento:                       # especificación §9
     prueba: dengue_h8_prueba
     final: dengue_h8_final
 
-busqueda:                          # pre-registro (especificación §7; contrato §6.2–§6.3); responsable de la implementación, 2026-11-11
-  #logistica:                       # regresión logística L2: rejilla de C en escala log
-  #  C: [0.01, 0.03, 0.1, 0.3, 1.0, 3.0]
-  #  max_iter: 5000                 # la falta de convergencia es un error (models.py)
-  #lightgbm:                        # búsqueda aleatoria con presupuesto y semillas fijos
-  #  n_candidatos: 25
-  #  semilla_muestreo: 20261112     # numpy default_rng; parámetros sorteados en orden alfabético
-  #  semilla_modelo: 20261112       # random_state igual en todos los candidatos y municipios
-  #  fijos:
-  #    subsample_freq: 1            # LightGBM 4.6.0: con subsample_freq <= 0 no hay submuestreo
-  #  espacio:
-  #    max_depth:         {escala: entera, rango: [2, 5]}
-  #    num_leaves:        {escala: entera, rango: [4, 31], tope_por_profundidad: true}   # <= 2^max_depth
-  #    learning_rate:     {escala: log,    rango: [0.01, 0.1]}
-  #    n_estimators:      {escala: entera, rango: [100, 600]}
-  #    min_child_samples: {escala: entera, rango: [10, 50]}
-  #    reg_lambda:        {escala: real,   rango: [0.0, 10.0]}
-  #    subsample:         {escala: real,   rango: [0.6, 1.0]}
-  #    colsample_bytree:  {escala: real,   rango: [0.6, 1.0]}
-
+busqueda:
   catboost:
-    n_candidatos: 25
+    n_candidatos: 40
     semilla_muestreo: 20261112
     semilla_modelo: 20261112
     fijos: {}
     espacio:
-      depth:         {escala: entera, rango: [2, 5]}
-      learning_rate: {escala: log,    rango: [0.01, 0.1]}
-      iterations:    {escala: entera, rango: [100, 600]}
-      l2_leaf_reg:   {escala: real,   rango: [0.0, 10.0]}
-      subsample:     {escala: real,   rango: [0.6, 1.0]}
-
+      depth: {escala: entera, rango: [2, 6]}
+      learning_rate: {escala: log, rango: [0.005, 0.15]}
+      iterations: {escala: entera, rango: [100, 800]}
+      l2_leaf_reg: {escala: real, rango: [0.1, 15.0]}
+      subsample: {escala: real, rango: [0.5, 1.0]}
+      random_strength: {escala: real, rango: [0.0, 5.0]}
+      rsm: {escala: real, rango: [0.5, 1.0]}
+      min_data_in_leaf: {escala: entera, rango: [5, 50]}
   xgboost:
-    n_candidatos: 25
+    n_candidatos: 40
     semilla_muestreo: 20261112
     semilla_modelo: 20261112
     fijos: {}
     espacio:
-      max_depth:         {escala: entera, rango: [2, 5]}
-      learning_rate:     {escala: log,    rango: [0.01, 0.1]}
-      n_estimators:      {escala: entera, rango: [100, 600]}
-      min_child_weight:  {escala: entera, rango: [1, 20]}
-      reg_lambda:        {escala: real,   rango: [0.0, 10.0]}
-      subsample:         {escala: real,   rango: [0.6, 1.0]}
-      colsample_bytree:  {escala: real,   rango: [0.6, 1.0]}
+      max_depth: {escala: entera, rango: [2, 6]}
+      learning_rate: {escala: log, rango: [0.005, 0.15]}
+      n_estimators: {escala: entera, rango: [100, 800]}
+      min_child_weight: {escala: entera, rango: [1, 30]}
+      reg_lambda: {escala: real, rango: [0.0, 15.0]}
+      reg_alpha: {escala: real, rango: [0.0, 10.0]}
+      gamma: {escala: real, rango: [0.0, 5.0]}
+      subsample: {escala: real, rango: [0.5, 1.0]}
+      colsample_bytree: {escala: real, rango: [0.5, 1.0]}
+  svm:
+    n_candidatos: 40
+    semilla_muestreo: 20261112
+    semilla_modelo: 20261112
+    fijos: {}
+    espacio:
+      C: {escala: log, rango: [0.001, 100.0]}
+      gamma: {escala: log, rango: [0.0001, 1.0]}
+      tol: {escala: log, rango: [1.0e-5, 1.0e-2]}
+      coef0: {escala: real, rango: [0.0, 2.0]}
+      degree: {escala: entera, rango: [2, 4]}

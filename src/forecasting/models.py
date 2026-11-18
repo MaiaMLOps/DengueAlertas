@@ -41,6 +41,7 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
+from sklearn.svm import SVC
 
 from catboost import CatBoostClassifier
 from xgboost import XGBClassifier
@@ -51,7 +52,7 @@ from src.epidemiology.validation import require
 
 from .dataset import FEATURES
 
-FAMILIES = ("logistica", "lightgbm", "catboost", "xgboost")
+FAMILIES = ("logistica", "lightgbm", "catboost", "xgboost", "svm")
 NUMERIC_FEATURES = tuple(name for name in FEATURES if name != "zona_t")
 _REFERENCE_ZONE = ZONES[0]   # seguridad: reference category of the two indicators (contrato §5.5)
 
@@ -59,8 +60,9 @@ _REFERENCE_ZONE = ZONES[0]   # seguridad: reference category of the two indicato
 HYPERPARAMETERS = {
     "logistica": ("C", "max_iter"),
     "lightgbm": ("num_leaves", "max_depth", "learning_rate", "n_estimators", "min_child_samples", "reg_lambda", "subsample", "subsample_freq", "colsample_bytree", "random_state"),
-    "catboost": ("depth", "learning_rate", "iterations", "l2_leaf_reg", "subsample", "random_state"),
-    "xgboost": ("max_depth", "learning_rate", "n_estimators", "min_child_weight", "reg_lambda", "subsample", "colsample_bytree", "random_state")
+    "catboost": ("depth", "learning_rate", "iterations", "l2_leaf_reg", "subsample", "random_strength", "rsm", "min_data_in_leaf", "random_state"),
+    "xgboost": ("max_depth", "learning_rate", "n_estimators", "min_child_weight", "reg_lambda", "reg_alpha", "gamma", "subsample", "colsample_bytree", "random_state"),
+    "svm": ("C", "gamma", "tol", "coef0", "degree", "random_state"),
 }
 # Settings that a candidate may not change: class weights (contrato §4.2), early stopping (§6.3: the number
 # of trees is searched without early stopping) and the fixed settings of each estimator.
@@ -117,8 +119,14 @@ def make_model(family: str, params: Mapping, *, features: Sequence[str] = FEATUR
              ("zona", OneHotEncoder(categories=[list(ZONES)], drop=[_REFERENCE_ZONE], sparse_output=False,
                                     handle_unknown="error"), ["zona_t"])],
             remainder="drop")
+    elif family == "svm":
+        prepare = ColumnTransformer(
+            [("estandarizar", StandardScaler(), numeric),
+             ("zona", OneHotEncoder(categories=[list(ZONES)], drop=[_REFERENCE_ZONE], sparse_output=False,
+                                    handle_unknown="error"), ["zona_t"])],
+            remainder="drop")
         return Pipeline([("preparar", prepare),
-                         ("modelo", LogisticRegression(penalty="l2", class_weight=None, **params))])
+                         ("modelo", SVC(kernel="rbf", probability=True, class_weight=None, **params))])
                          
     elif family == "lightgbm":
         estimator = lgb.LGBMClassifier(objective="binary", class_weight=None, verbose=-1, n_jobs=1, deterministic=True,

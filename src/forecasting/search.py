@@ -119,7 +119,7 @@ def candidates_from_config(busqueda: SearchSection) -> dict[str, list[Candidate]
         candidates["logistica"] = [Candidate(f"logistica_{i:02d}", {"C": float(c), "max_iter": section.max_iter})
                                    for i, c in enumerate(section.C)]
                                    
-    for f in ["lightgbm", "catboost", "xgboost"]:
+    for f in ["lightgbm", "catboost", "xgboost", "svm"]:
         section = getattr(busqueda, f, None)
         if section is not None:
             rng = np.random.default_rng(section.semilla_muestreo)

@@ -49,7 +49,7 @@ seguimiento:                       # especificación §9
   uri_servidor: https://platform.arkoiot.com   # MLFLOW_TRACKING_URI tiene prioridad
   directorio_local: mlruns
   experimentos:
-    desarrollo: dengue_h8_desarrollo
+    desarrollo: dengue_h8_oscar_contraste
     prueba: dengue_h8_prueba
     final: dengue_h8_final
 

@@ -176,18 +176,17 @@ class LightGBMSearch(_Section):
             raise ValueError("tope_por_profundidad needs max_depth in espacio or fijos")
         return self
 
-
 class SearchSection(_Section):
-    # Pre-registration of especificación §7; optional only for configurations written before it.
     logistica: LogisticSearch | None = None
     lightgbm: LightGBMSearch | None = None
+    catboost: LightGBMSearch | None = None   # Reutilizamos LightGBMSearch porque la lógica (n_candidatos, espacio) es la misma
+    xgboost: LightGBMSearch | None = None
 
     @model_validator(mode="after")
     def _at_least_one_family(self):
-        if self.logistica is None and self.lightgbm is None:
+        if self.logistica is None and self.lightgbm is None and self.catboost is None and self.xgboost is None:
             raise ValueError("busqueda must define at least one family")
         return self
-
 
 class ExperimentNames(_Section):
     desarrollo: str = Field(min_length=1)

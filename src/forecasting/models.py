@@ -7,6 +7,10 @@ Flow (rows come from `build_examples`; train and evaluate are the rows of one `s
                       -> LogisticRegression(L2, class_weight=None, **params)
            lightgbm:  FunctionTransformer(zona_t -> pd.Categorical with fixed categories ZONES)
                       -> LGBMClassifier(binary, class_weight=None, verbose=-1, n_jobs=1, deterministic, **params)
+           catboost:  FunctionTransformer(zona_t -> pd.Categorical with fixed categories ZONES)
+                      -> CatBoostClassifier(class_weights=None, verbose=False, thread_count=1, **params)
+           xgboost:   FunctionTransformer(zona_t -> pd.Categorical with fixed categories ZONES)
+                      -> XGBClassifier(objective=binary:logistic, scale_pos_weight=1, n_jobs=1, **params)
       -> fit_model(family, params, train, features=FEATURES): every fitted quantity (scaler, coefficients, trees)
          sees only train
       -> predict_positive(model, rows): predict_proba[:, 1] in the order of rows
@@ -38,21 +42,25 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
 
+from catboost import CatBoostClassifier
+from xgboost import XGBClassifier
+
 from src.epidemiology.channel_epico import ZONES
 from src.epidemiology.config import EpidemiologyValidationError
 from src.epidemiology.validation import require
 
 from .dataset import FEATURES
 
-FAMILIES = ("logistica", "lightgbm")
+FAMILIES = ("logistica", "lightgbm", "catboost", "xgboost")
 NUMERIC_FEATURES = tuple(name for name in FEATURES if name != "zona_t")
 _REFERENCE_ZONE = ZONES[0]   # seguridad: reference category of the two indicators (contrato §5.5)
 
 # Names of the hyperparameters each candidate must give (values come from the pre-registration).
 HYPERPARAMETERS = {
     "logistica": ("C", "max_iter"),
-    "lightgbm": ("num_leaves", "max_depth", "learning_rate", "n_estimators", "min_child_samples",
-                 "reg_lambda", "subsample", "subsample_freq", "colsample_bytree", "random_state"),
+    "lightgbm": ("num_leaves", "max_depth", "learning_rate", "n_estimators", "min_child_samples", "reg_lambda", "subsample", "subsample_freq", "colsample_bytree", "random_state"),
+    "catboost": ("depth", "learning_rate", "iterations", "l2_leaf_reg", "subsample", "random_state"),
+    "xgboost": ("max_depth", "learning_rate", "n_estimators", "min_child_weight", "reg_lambda", "subsample", "colsample_bytree", "random_state")
 }
 # Settings that a candidate may not change: class weights (contrato §4.2), early stopping (§6.3: the number
 # of trees is searched without early stopping) and the fixed settings of each estimator.
@@ -102,6 +110,7 @@ def make_model(family: str, params: Mapping, *, features: Sequence[str] = FEATUR
     params = _check_params(family, params)
     ordered = _check_features(features)
     numeric = [name for name in ordered if name != "zona_t"]
+    
     if family == "logistica":
         prepare = ColumnTransformer(
             [("estandarizar", StandardScaler(), numeric),
@@ -110,8 +119,17 @@ def make_model(family: str, params: Mapping, *, features: Sequence[str] = FEATUR
             remainder="drop")
         return Pipeline([("preparar", prepare),
                          ("modelo", LogisticRegression(penalty="l2", class_weight=None, **params))])
-    estimator = lgb.LGBMClassifier(objective="binary", class_weight=None, verbose=-1, n_jobs=1, deterministic=True,
-                                   **params)
+                         
+    elif family == "lightgbm":
+        estimator = lgb.LGBMClassifier(objective="binary", class_weight=None, verbose=-1, n_jobs=1, deterministic=True,
+                                       **params)
+                                       
+    elif family == "catboost":
+        estimator = CatBoostClassifier(auto_class_weights=None, verbose=False, thread_count=1, cat_features=["zona_t"], **params)
+        
+    elif family == "xgboost":
+        estimator = XGBClassifier(objective="binary:logistic", scale_pos_weight=1, enable_categorical=True, n_jobs=1, **params)
+        
     steps = [("preparar", FunctionTransformer(_zone_as_category, validate=False)), ("modelo", estimator)]
     if ordered != tuple(FEATURES):
         steps.insert(0, ("seleccionar", FunctionTransformer(_select_columns, kw_args={"columns": list(ordered)},

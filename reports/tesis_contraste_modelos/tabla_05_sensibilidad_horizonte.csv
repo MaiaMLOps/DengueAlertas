@@ -1,0 +1,21 @@
+horizonte_h,modelo,candidato,mejora_b2_pct,logloss_medio,logloss_b2_medio,brier_medio,casillas_ganadas
+2,Regresión Logística L2,logistica_09,41.2,0.1756,0.2933,0.053,22
+2,GRU Secuencial,gru_00,36.06,0.1985,0.2933,0.061,20
+2,CatBoost,catboost_22,34.49,0.2142,0.2933,0.0656,22
+2,MLP Tabular,mlp_36,34.01,0.1938,0.2933,0.0581,22
+2,SVM (RBF),svm_05,32.9,0.192,0.2933,0.0571,22
+4,Regresión Logística L2,logistica_09,34.82,0.2075,0.3242,0.0643,20
+4,SVM (RBF),svm_05,33.75,0.2195,0.3242,0.0664,23
+4,CatBoost,catboost_22,30.93,0.2346,0.3242,0.0715,23
+4,MLP Tabular,mlp_36,27.69,0.2323,0.3242,0.0719,20
+4,GRU Secuencial,gru_00,20.47,0.2456,0.3242,0.0771,16
+8,Regresión Logística L2,logistica_09,22.45,0.311,0.3854,0.0998,16
+8,GRU Secuencial,gru_00,19.46,0.3319,0.3854,0.1029,17
+8,SVM (RBF),svm_05,17.26,0.3284,0.3854,0.1053,18
+8,MLP Tabular,mlp_36,16.68,0.3442,0.3854,0.1106,17
+8,CatBoost,catboost_22,15.68,0.3496,0.3854,0.1112,18
+12,Regresión Logística L2,logistica_09,10.2,0.4122,0.4744,0.1324,16
+12,MLP Tabular,mlp_36,7.81,0.4384,0.4744,0.1431,14
+12,SVM (RBF),svm_05,7.63,0.4389,0.4744,0.1464,15
+12,CatBoost,catboost_22,4.81,0.4625,0.4744,0.1499,13
+12,GRU Secuencial,gru_00,-10.44,0.4849,0.4744,0.151,14

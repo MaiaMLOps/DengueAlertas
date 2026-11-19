@@ -62,14 +62,14 @@ def cargar_todas_las_recetas(tabla_global: Path) -> list[dict]:
     df = pd.read_csv(tabla_global)
     recetas = []
     for _, row in df.iterrows():
-        modelo = str(row["Modelo"])
+        modelo = str(row["modelo"])
         if modelo not in MODELO_A_FAMILIA:
             continue
         recetas.append({
             "modelo": modelo,
             "familia": MODELO_A_FAMILIA[modelo],
-            "candidato": str(row["Candidato"]),
-            "params": json.loads(str(row["Hiperparámetros"])),
+            "candidato": str(row["candidato"]),
+            "params": json.loads(str(row["parametros"])),
         })
     return recetas
 
@@ -375,3 +375,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

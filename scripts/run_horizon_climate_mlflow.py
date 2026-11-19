@@ -1,7 +1,8 @@
 ﻿"""Sensibilidad de horizonte (h in {2, 4, 8, 12}) y ablación climática para las 8 familias.
 
-Incluye Regresión Logística L2, SVM (RBF), MLP Tabular, CatBoost, LightGBM, XGBoost, GRU y CNN-1D.
-Genera tabla_05, fig_05, tabla_06 y fig_06 y registra las corridas en MLflow sin duplicar las previas.
+Reutiliza el parquet previo de las 5 familias ya evaluadas, calcula únicamente las faltantes
+(LightGBM, XGBoost y CNN-1D), regenera tabla_05/fig_05 y tabla_06/fig_06 con las 8 familias
+y registra solo las corridas faltantes en MLflow.
 """
 
 from __future__ import annotations
@@ -42,8 +43,8 @@ MODELO_A_FAMILIA = {
     "CatBoost": "catboost",
     "LightGBM": "lightgbm",
     "XGBoost": "xgboost",
-    "GRU (1 capa, h=8)": "gru",
-    "CNN-1D": "cnn1d",
+    "GRU Secuencial": "gru",
+    "CNN-1D Secuencial": "cnn1d",
 }
 
 COLORES = {
@@ -53,23 +54,68 @@ COLORES = {
     "CatBoost": "#b9770e",
     "LightGBM": "#d35400",
     "XGBoost": "#7d3c98",
-    "GRU (1 capa, h=8)": "#6c3483",
-    "CNN-1D": "#922b21",
+    "GRU Secuencial": "#6c3483",
+    "CNN-1D Secuencial": "#922b21",
 }
+
+
+def buscar_params_en_manifiesto(candidato: str) -> dict | None:
+    rutas = [
+        Path("data/processed/forecasting/sin_clima/busqueda_manifest.json"),
+        Path("data/processed/forecasting/busqueda_manifest.json"),
+    ]
+    def _buscar(obj):
+        if isinstance(obj, dict):
+            if obj.get("candidato") == candidato or obj.get("id") == candidato or obj.get("name") == candidato:
+                for k in ("params", "parametros", "hyperparameters"):
+                    if isinstance(obj.get(k), dict):
+                        return dict(obj[k])
+            if candidato in obj and isinstance(obj[candidato], dict):
+                val = obj[candidato]
+                return dict(val.get("params", val.get("parametros", val)))
+            for v in obj.values():
+                res = _buscar(v)
+                if res is not None:
+                    return res
+        elif isinstance(obj, list):
+            for item in obj:
+                res = _buscar(item)
+                if res is not None:
+                    return res
+        return None
+
+    for ruta in rutas:
+        if ruta.exists():
+            data = json.loads(ruta.read_text(encoding="utf-8"))
+            res = _buscar(data)
+            if res is not None:
+                return res
+    return None
 
 
 def cargar_todas_las_recetas(tabla_global: Path) -> list[dict]:
     df = pd.read_csv(tabla_global)
     recetas = []
     for _, row in df.iterrows():
-        modelo = str(row["modelo"])
+        modelo = str(row["modelo"]).strip()
         if modelo not in MODELO_A_FAMILIA:
             continue
+        fam = MODELO_A_FAMILIA[modelo]
+        cand = str(row["candidato"]).strip()
+        params = json.loads(str(row["parametros"]))
+        if fam not in ("gru", "cnn1d"):
+            man_params = buscar_params_en_manifiesto(cand)
+            if man_params:
+                man_params.update(params)
+                params = man_params
+        if fam == "xgboost":
+            params.setdefault("reg_alpha", 0.0)
+            params.setdefault("gamma", 0.0)
         recetas.append({
             "modelo": modelo,
-            "familia": MODELO_A_FAMILIA[modelo],
-            "candidato": str(row["candidato"]),
-            "params": json.loads(str(row["parametros"])),
+            "familia": fam,
+            "candidato": cand,
+            "params": params,
         })
     return recetas
 
@@ -195,7 +241,6 @@ def main() -> None:
     parser.add_argument("--salida-datos", type=Path, default=Path("data/processed/forecasting/oscar_sensibilidad_horizonte"))
     parser.add_argument("--salida-reporte", type=Path, default=Path("reports/tesis_contraste_modelos"))
     parser.add_argument("--semilla", type=int, default=20261112)
-    parser.add_argument("--solo-faltantes-mlflow", action="store_true", default=True)
     args = parser.parse_args()
 
     cfg = load_config()
@@ -211,9 +256,19 @@ def main() -> None:
     dev_years = range(cfg.validacion.desarrollo[0], cfg.validacion.desarrollo[1] + 1)
 
     recetas = cargar_todas_las_recetas(args.tabla_ganadores)
-    recetas_tab = [r for r in recetas if r["familia"] not in ("gru", "cnn1d")]
-    recetas_seq = [r for r in recetas if r["familia"] in ("gru", "cnn1d")]
-    print(f"Dispositivo: {device} | 8 Familias: {[r['candidato'] for r in recetas]}", flush=True)
+    cache_path = args.salida_datos / "tabla_sensibilidad_horizonte_y_clima.parquet"
+    if cache_path.exists():
+        prev_df = pd.read_parquet(cache_path)
+        ya_hechas = set(prev_df["familia"].unique())
+        print(f"Reutilizando caché previa ({len(prev_df)} filas) con familias: {sorted(ya_hechas)}", flush=True)
+    else:
+        prev_df = pd.DataFrame()
+        ya_hechas = set()
+
+    pendientes = [r for r in recetas if r["familia"] not in ya_hechas]
+    recetas_tab = [r for r in pendientes if r["familia"] not in ("gru", "cnn1d")]
+    recetas_seq = [r for r in pendientes if r["familia"] in ("gru", "cnn1d")]
+    print(f"Dispositivo: {device} | Familias a ejecutar ahora: {[r['candidato'] for r in pendientes]}", flush=True)
 
     rows = []
     b2_rows = []
@@ -301,7 +356,9 @@ def main() -> None:
 
     args.salida_datos.mkdir(parents=True, exist_ok=True)
     args.salida_reporte.mkdir(parents=True, exist_ok=True)
-    out_df = pd.DataFrame(rows)
+
+    new_df = pd.DataFrame(rows)
+    out_df = pd.concat([prev_df, new_df], ignore_index=True) if not prev_df.empty else new_df
     out_df.to_parquet(args.salida_datos / "tabla_sensibilidad_horizonte_y_clima_8familias.parquet", index=False)
 
     b2_df = pd.DataFrame(b2_rows)
@@ -337,35 +394,34 @@ def main() -> None:
     guardar_tabla(piv, args.salida_reporte, "tabla_06_clima_por_horizonte")
     graficar_clima_por_horizonte(piv, args.salida_reporte)
 
-    # Registrar solo las familias faltantes (lightgbm, xgboost, cnn1d) para no duplicar las 36 corridas ya subidas
-    faltantes_df = out_df[out_df["familia"].isin(["lightgbm", "xgboost", "cnn1d"])]
-    grupos = list(faltantes_df.groupby(["horizonte_h", "variante", "familia", "modelo", "candidato", "params"], sort=True))
-    print(f"\nRegistrando {len(grupos)} corridas faltantes (LightGBM, XGBoost, CNN-1D) en MLflow...", flush=True)
-    for (h, var, fam, mod, cand, p_json), g in grupos:
-        run_name = f"horizonte_h{h:02d}__{var}__{fam}__{cand}"
-        metrics = {
-            "mejora_b2_media": float(g["mejora_b2"].mean()),
-            "logloss_medio": float(g["logloss"].mean()),
-            "brier_medio": float(g["brier"].mean()),
-            "logloss_b2_medio": float(g["logloss_b2"].mean()),
-            "casillas_ganadas_b2": float((g["mejora_b2"] > 0).sum()),
-        }
-        for muni, gm in g.groupby("municipality_code"):
-            metrics[f"mejora_b2_{muni}"] = float(gm["mejora_b2"].mean())
-            metrics[f"logloss_{muni}"] = float(gm["logloss"].mean())
+    if not new_df.empty:
+        grupos = list(new_df.groupby(["horizonte_h", "variante", "familia", "modelo", "candidato", "params"], sort=True))
+        print(f"\nRegistrando {len(grupos)} corridas faltantes en MLflow...", flush=True)
+        for (h, var, fam, mod, cand, p_json), g in grupos:
+            run_name = f"horizonte_h{h:02d}__{var}__{fam}__{cand}"
+            metrics = {
+                "mejora_b2_media": float(g["mejora_b2"].mean()),
+                "logloss_medio": float(g["logloss"].mean()),
+                "brier_medio": float(g["brier"].mean()),
+                "logloss_b2_medio": float(g["logloss_b2"].mean()),
+                "casillas_ganadas_b2": float((g["mejora_b2"] > 0).sum()),
+            }
+            for muni, gm in g.groupby("municipality_code"):
+                metrics[f"mejora_b2_{muni}"] = float(gm["mejora_b2"].mean())
+                metrics[f"logloss_{muni}"] = float(gm["logloss"].mean())
 
-        with mlflow.start_run(run_name=run_name):
-            mlflow.set_tags({
-                "modelo_tipo": "sensibilidad_horizonte",
-                "horizonte_h": str(h),
-                "variante": str(var),
-                "familia": str(fam),
-                "modelo": str(mod),
-                "candidato": str(cand),
-            })
-            mlflow.log_params({**json.loads(p_json), "horizonte_h": str(h), "variante": str(var)})
-            mlflow.log_metrics(metrics)
-    print("Registro en MLflow completado.", flush=True)
+            with mlflow.start_run(run_name=run_name):
+                mlflow.set_tags({
+                    "modelo_tipo": "sensibilidad_horizonte",
+                    "horizonte_h": str(h),
+                    "variante": str(var),
+                    "familia": str(fam),
+                    "modelo": str(mod),
+                    "candidato": str(cand),
+                })
+                mlflow.log_params({**json.loads(p_json), "horizonte_h": str(h), "variante": str(var)})
+                mlflow.log_metrics(metrics)
+        print("Registro en MLflow completado.", flush=True)
 
     print(f"\n=== TABLA 05 (8 FAMILIAS, SIN CLIMA) ({time.perf_counter() - t0:.1f}s) ===")
     print(res_h.to_string(index=False))
@@ -375,4 +431,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

@@ -1,6 +1,7 @@
-﻿"""Sensibilidad de horizonte (h in {2, 4, 8, 12}) y ablación climática por horizonte.
+﻿"""Sensibilidad de horizonte (h in {2, 4, 8, 12}) y ablación climática para las 8 familias.
 
-Genera tablas y gráficas en reports/tesis_contraste_modelos/ y registra todas las corridas en MLflow.
+Incluye Regresión Logística L2, SVM (RBF), MLP Tabular, CatBoost, LightGBM, XGBoost, GRU y CNN-1D.
+Genera tabla_05, fig_05, tabla_06 y fig_06 y registra las corridas en MLflow sin duplicar las previas.
 """
 
 from __future__ import annotations
@@ -18,7 +19,6 @@ import numpy as np
 import pandas as pd
 import torch
 
-from scripts.run_horizon_sensitivity import COLORES, MODELO_A_FAMILIA, cargar_recetas_ganadoras, graficar_sensibilidad
 from scripts.run_seq_dl import fit_and_predict, standardize_fold
 from src.forecasting.baselines import b2_predict
 from src.forecasting.config import load_config
@@ -35,6 +35,44 @@ from src.forecasting.models import fit_model, predict_positive
 from src.forecasting.splits import yearly_trials
 from src.forecasting.tracking import configure_tracking
 
+MODELO_A_FAMILIA = {
+    "Regresión Logística L2": "logistica",
+    "SVM (RBF)": "svm",
+    "MLP Tabular": "mlp",
+    "CatBoost": "catboost",
+    "LightGBM": "lightgbm",
+    "XGBoost": "xgboost",
+    "GRU (1 capa, h=8)": "gru",
+    "CNN-1D": "cnn1d",
+}
+
+COLORES = {
+    "Regresión Logística L2": "#1b4f72",
+    "SVM (RBF)": "#2874a6",
+    "MLP Tabular": "#117864",
+    "CatBoost": "#b9770e",
+    "LightGBM": "#d35400",
+    "XGBoost": "#7d3c98",
+    "GRU (1 capa, h=8)": "#6c3483",
+    "CNN-1D": "#922b21",
+}
+
+
+def cargar_todas_las_recetas(tabla_global: Path) -> list[dict]:
+    df = pd.read_csv(tabla_global)
+    recetas = []
+    for _, row in df.iterrows():
+        modelo = str(row["Modelo"])
+        if modelo not in MODELO_A_FAMILIA:
+            continue
+        recetas.append({
+            "modelo": modelo,
+            "familia": MODELO_A_FAMILIA[modelo],
+            "candidato": str(row["Candidato"]),
+            "params": json.loads(str(row["Hiperparámetros"])),
+        })
+    return recetas
+
 
 def guardar_tabla(df: pd.DataFrame, salida: Path, nombre: str) -> None:
     df.to_csv(salida / f"{nombre}.csv", index=False)
@@ -43,6 +81,55 @@ def guardar_tabla(df: pd.DataFrame, salida: Path, nombre: str) -> None:
     except Exception:
         md = df.to_string(index=False)
     (salida / f"{nombre}.md").write_text(md + "\n", encoding="utf-8")
+
+
+def graficar_sensibilidad(res_h: pd.DataFrame, b2_res: pd.DataFrame, salida: Path) -> None:
+    plt.rcParams.update({
+        "font.size": 10,
+        "axes.titlesize": 11.5,
+        "axes.titleweight": "bold",
+        "axes.labelsize": 10,
+        "savefig.dpi": 300,
+        "savefig.bbox": "tight",
+    })
+    horizontes = sorted(res_h["horizonte_h"].unique())
+    modelos = [m for m in MODELO_A_FAMILIA if m in set(res_h["modelo"])]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13.5, 5.2))
+    ax1.axhline(0, color="#222222", linewidth=1.0, linestyle="--", label="Línea base B2 (0.0%)")
+
+    for m in modelos:
+        sub = res_h[res_h["modelo"] == m].sort_values("horizonte_h")
+        ax1.plot(sub["horizonte_h"], sub["mejora_b2_pct"], marker="o", linewidth=2.0, color=COLORES[m], label=m)
+
+    ax1.set_xticks(horizontes)
+    ax1.set_xticklabels([f"h = {h}" for h in horizontes])
+    ax1.set_xlabel("Horizonte de pronóstico (semanas)")
+    ax1.set_ylabel("Mejora relativa frente a B2 (%)")
+    ax1.set_title("A. Mejora porcentual sobre B2 por horizonte (sin_clima)")
+    ax1.grid(True, linestyle=":", alpha=0.5)
+    ax1.spines["top"].set_visible(False)
+    ax1.spines["right"].set_visible(False)
+
+    b2_s = b2_res.sort_values("horizonte_h")
+    ax2.plot(b2_s["horizonte_h"], b2_s["logloss_medio"], marker="s", linewidth=2.2, linestyle="--", color="#222222", label="Línea base B2")
+    for m in modelos:
+        sub = res_h[res_h["modelo"] == m].sort_values("horizonte_h")
+        ax2.plot(sub["horizonte_h"], sub["logloss_medio"], marker="o", linewidth=2.0, color=COLORES[m], label=m)
+
+    ax2.set_xticks(horizontes)
+    ax2.set_xticklabels([f"h = {h}" for h in horizontes])
+    ax2.set_xlabel("Horizonte de pronóstico (semanas)")
+    ax2.set_ylabel("Log-loss medio (menor es mejor)")
+    ax2.set_title("B. Log-loss absoluto por horizonte (2019–2022)")
+    ax2.grid(True, linestyle=":", alpha=0.5)
+    ax2.legend(frameon=True, fontsize=8.2, ncol=2, loc="upper left")
+    ax2.spines["top"].set_visible(False)
+    ax2.spines["right"].set_visible(False)
+
+    for ext in ("png", "pdf"):
+        fig.savefig(salida / f"fig_05_sensibilidad_horizonte.{ext}")
+    plt.close(fig)
 
 
 def graficar_clima_por_horizonte(piv: pd.DataFrame, salida: Path) -> None:
@@ -54,29 +141,31 @@ def graficar_clima_por_horizonte(piv: pd.DataFrame, salida: Path) -> None:
         "savefig.dpi": 300,
         "savefig.bbox": "tight",
     })
-    modelos = ["Regresión Logística L2", "SVM (RBF)", "MLP Tabular", "CatBoost"]
+    modelos = ["Regresión Logística L2", "SVM (RBF)", "MLP Tabular", "CatBoost", "LightGBM", "XGBoost"]
     horizontes = sorted(piv["horizonte_h"].unique())
     x = np.arange(len(horizontes))
-    w = 0.19
+    w = 0.13
 
-    fig, ax = plt.subplots(figsize=(9.5, 4.8))
+    fig, ax = plt.subplots(figsize=(11.0, 5.0))
     ax.axhline(0, color="#222222", linewidth=1.0, linestyle="--")
 
     for idx, modelo in enumerate(modelos):
         sub = piv[piv["modelo"] == modelo].sort_values("horizonte_h")
         if sub.empty:
             continue
-        offset = (idx - 1.5) * w
-        bars = ax.bar(x + offset, sub["impacto_clima_pp"], width=w, color=COLORES[modelo], edgecolor="#222222", linewidth=0.5, label=modelo)
+        offset = (idx - 2.5) * w
+        bars = ax.bar(x + offset, sub["impacto_clima_pp"], width=w, color=COLORES[modelo], edgecolor="#222222", linewidth=0.4, label=modelo)
         for bar in bars:
             h_val = bar.get_height()
+            va = "top" if h_val < 0 else "bottom"
+            dy = -0.9 if h_val < 0 else 0.6
             ax.text(
                 bar.get_x() + bar.get_width() / 2,
-                h_val - 1.3,
+                h_val + dy,
                 f"{h_val:.1f}",
                 ha="center",
-                va="top",
-                fontsize=7.8,
+                va=va,
+                fontsize=7.0,
                 fontweight="bold",
             )
 
@@ -84,9 +173,9 @@ def graficar_clima_por_horizonte(piv: pd.DataFrame, salida: Path) -> None:
     ax.set_xticklabels([f"h = {h} sem." for h in horizontes])
     ax.set_ylabel("Cambio en mejora frente a B2 al incluir clima (pp)")
     ax.set_title("Impacto de las variables climáticas por horizonte (completo vs. sin_clima, 2019–2022)")
-    ax.set_ylim(piv["impacto_clima_pp"].min() - 4.5, 3.0)
+    ax.set_ylim(piv["impacto_clima_pp"].min() - 4.5, max(3.5, piv["impacto_clima_pp"].max() + 3.5))
     ax.grid(axis="y", linestyle=":", alpha=0.5)
-    ax.legend(frameon=True, loc="lower left", ncol=2)
+    ax.legend(frameon=True, loc="lower left", ncol=3, fontsize=8.5)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
@@ -106,26 +195,25 @@ def main() -> None:
     parser.add_argument("--salida-datos", type=Path, default=Path("data/processed/forecasting/oscar_sensibilidad_horizonte"))
     parser.add_argument("--salida-reporte", type=Path, default=Path("reports/tesis_contraste_modelos"))
     parser.add_argument("--semilla", type=int, default=20261112)
-    parser.add_argument("--sin-mlflow", action="store_true")
+    parser.add_argument("--solo-faltantes-mlflow", action="store_true", default=True)
     args = parser.parse_args()
 
     cfg = load_config()
-    if not args.sin_mlflow:
-        uri = configure_tracking(cfg)
-        exp_cfg = getattr(cfg.seguimiento, "experimentos", None)
-        exp_name = getattr(exp_cfg, "desarrollo", None) or "dengue_h8_oscar_contraste"
-        mlflow.set_experiment(exp_name)
-        print(f"MLflow conectado: {uri} | Experimento: {exp_name}", flush=True)
+    uri = configure_tracking(cfg)
+    exp_cfg = getattr(cfg.seguimiento, "experimentos", None)
+    exp_name = getattr(exp_cfg, "desarrollo", None) or "dengue_h8_oscar_contraste"
+    mlflow.set_experiment(exp_name)
+    print(f"MLflow conectado: {uri} | Experimento: {exp_name}", flush=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     access = RecipeAccess.from_config(cfg)
     prod = load_channel_product(cfg.datos.canal, expected_md5=cfg.datos.version_dvc_canal)
     dev_years = range(cfg.validacion.desarrollo[0], cfg.validacion.desarrollo[1] + 1)
 
-    recetas = cargar_recetas_ganadoras(args.tabla_ganadores)
-    recetas_tab = [r for r in recetas if r["familia"] != "gru"]
-    recetas_gru = [r for r in recetas if r["familia"] == "gru"]
-    print(f"Dispositivo: {device} | Recetas: {[r['candidato'] for r in recetas]}", flush=True)
+    recetas = cargar_todas_las_recetas(args.tabla_ganadores)
+    recetas_tab = [r for r in recetas if r["familia"] not in ("gru", "cnn1d")]
+    recetas_seq = [r for r in recetas if r["familia"] in ("gru", "cnn1d")]
+    print(f"Dispositivo: {device} | 8 Familias: {[r['candidato'] for r in recetas]}", flush=True)
 
     rows = []
     b2_rows = []
@@ -172,14 +260,14 @@ def main() -> None:
                         "mejora_b2": float(improvement(ll, ll_b2)),
                     })
 
-        if recetas_gru:
-            gru_data = build_gru_examples(prod, h=h, canal=cfg.canal, features=cfg.features)
-            keys = gru_data.keys.reset_index(drop=True)
-            keys["zona_t"] = [ZONES[i] for i in np.argmax(gru_data.sequence[:, -1, 2:5], axis=1)]
-            trials_gru = yearly_trials(keys, dev_years, first_train_year=cfg.validacion.primer_anio_entrenamiento)
+        if recetas_seq:
+            seq_data = build_gru_examples(prod, h=h, canal=cfg.canal, features=cfg.features)
+            keys = seq_data.keys.reset_index(drop=True)
+            keys["zona_t"] = [ZONES[i] for i in np.argmax(seq_data.sequence[:, -1, 2:5], axis=1)]
+            trials_seq = yearly_trials(keys, dev_years, first_train_year=cfg.validacion.primer_anio_entrenamiento)
 
-            for r in recetas_gru:
-                for tr in trials_gru:
+            for r in recetas_seq:
+                for tr in trials_seq:
                     tr_idx = keys.index.get_indexer(tr.train)
                     ev_idx = keys.index.get_indexer(tr.evaluate)
                     tr_df, ev_df = keys.loc[tr.train], keys.loc[tr.evaluate]
@@ -187,13 +275,13 @@ def main() -> None:
                     y_ev = ev_df["y"].to_numpy(dtype=int)
                     ll_b2, _ = b2_cache[(str(tr.municipality_code), int(tr.year))]
                     s_tr, s_ev, st_tr, st_ev = standardize_fold(
-                        gru_data.sequence[tr_idx][:, :, :5],
-                        gru_data.sequence[ev_idx][:, :, :5],
-                        gru_data.static[tr_idx],
-                        gru_data.static[ev_idx],
+                        seq_data.sequence[tr_idx][:, :, :5],
+                        seq_data.sequence[ev_idx][:, :, :5],
+                        seq_data.static[tr_idx],
+                        seq_data.static[ev_idx],
                         [0, 1],
                     )
-                    probs = fit_and_predict("gru", r["params"], s_tr, st_tr, y_tr, s_ev, st_ev, device, args.semilla)
+                    probs = fit_and_predict(r["familia"], r["params"], s_tr, st_tr, y_tr, s_ev, st_ev, device, args.semilla)
                     ll = float(log_loss(y_ev, probs, ev_df["target_week"], access=access, clip=cfg.metricas.recorte_log_loss))
                     br = float(brier(y_ev, probs, ev_df["target_week"], access=access))
                     rows.append({
@@ -214,7 +302,7 @@ def main() -> None:
     args.salida_datos.mkdir(parents=True, exist_ok=True)
     args.salida_reporte.mkdir(parents=True, exist_ok=True)
     out_df = pd.DataFrame(rows)
-    out_df.to_parquet(args.salida_datos / "tabla_sensibilidad_horizonte_y_clima.parquet", index=False)
+    out_df.to_parquet(args.salida_datos / "tabla_sensibilidad_horizonte_y_clima_8familias.parquet", index=False)
 
     b2_df = pd.DataFrame(b2_rows)
     b2_res = b2_df.groupby("horizonte_h", as_index=False).agg(logloss_medio=("logloss_b2", "mean"), brier_medio=("brier_b2", "mean"))
@@ -235,7 +323,7 @@ def main() -> None:
     guardar_tabla(res_h, args.salida_reporte, "tabla_05_sensibilidad_horizonte")
     graficar_sensibilidad(res_h, b2_res, args.salida_reporte)
 
-    tab_df = out_df[out_df["familia"] != "gru"]
+    tab_df = out_df[out_df["familia"].isin(["logistica", "svm", "mlp", "catboost", "lightgbm", "xgboost"])]
     agg_clima = (
         tab_df.groupby(["horizonte_h", "modelo", "candidato", "variante"], as_index=False)
         .agg(mejora_b2_pct=("mejora_b2", lambda s: round(float(s.mean() * 100.0), 2)))
@@ -249,36 +337,39 @@ def main() -> None:
     guardar_tabla(piv, args.salida_reporte, "tabla_06_clima_por_horizonte")
     graficar_clima_por_horizonte(piv, args.salida_reporte)
 
-    if not args.sin_mlflow:
-        grupos = list(out_df.groupby(["horizonte_h", "variante", "familia", "modelo", "candidato", "params"], sort=True))
-        print(f"\nRegistrando {len(grupos)} corridas de sensibilidad en MLflow...", flush=True)
-        for (h, var, fam, mod, cand, p_json), g in grupos:
-            run_name = f"horizonte_h{h:02d}__{var}__{fam}__{cand}"
-            metrics = {
-                "mejora_b2_media": float(g["mejora_b2"].mean()),
-                "logloss_medio": float(g["logloss"].mean()),
-                "brier_medio": float(g["brier"].mean()),
-                "logloss_b2_medio": float(g["logloss_b2"].mean()),
-                "casillas_ganadas_b2": float((g["mejora_b2"] > 0).sum()),
-            }
-            for muni, gm in g.groupby("municipality_code"):
-                metrics[f"mejora_b2_{muni}"] = float(gm["mejora_b2"].mean())
-                metrics[f"logloss_{muni}"] = float(gm["logloss"].mean())
+    # Registrar solo las familias faltantes (lightgbm, xgboost, cnn1d) para no duplicar las 36 corridas ya subidas
+    faltantes_df = out_df[out_df["familia"].isin(["lightgbm", "xgboost", "cnn1d"])]
+    grupos = list(faltantes_df.groupby(["horizonte_h", "variante", "familia", "modelo", "candidato", "params"], sort=True))
+    print(f"\nRegistrando {len(grupos)} corridas faltantes (LightGBM, XGBoost, CNN-1D) en MLflow...", flush=True)
+    for (h, var, fam, mod, cand, p_json), g in grupos:
+        run_name = f"horizonte_h{h:02d}__{var}__{fam}__{cand}"
+        metrics = {
+            "mejora_b2_media": float(g["mejora_b2"].mean()),
+            "logloss_medio": float(g["logloss"].mean()),
+            "brier_medio": float(g["brier"].mean()),
+            "logloss_b2_medio": float(g["logloss_b2"].mean()),
+            "casillas_ganadas_b2": float((g["mejora_b2"] > 0).sum()),
+        }
+        for muni, gm in g.groupby("municipality_code"):
+            metrics[f"mejora_b2_{muni}"] = float(gm["mejora_b2"].mean())
+            metrics[f"logloss_{muni}"] = float(gm["logloss"].mean())
 
-            with mlflow.start_run(run_name=run_name):
-                mlflow.set_tags({
-                    "modelo_tipo": "sensibilidad_horizonte",
-                    "horizonte_h": str(h),
-                    "variante": str(var),
-                    "familia": str(fam),
-                    "modelo": str(mod),
-                    "candidato": str(cand),
-                })
-                mlflow.log_params({**json.loads(p_json), "horizonte_h": str(h), "variante": str(var)})
-                mlflow.log_metrics(metrics)
-        print("Registro en MLflow completado.", flush=True)
+        with mlflow.start_run(run_name=run_name):
+            mlflow.set_tags({
+                "modelo_tipo": "sensibilidad_horizonte",
+                "horizonte_h": str(h),
+                "variante": str(var),
+                "familia": str(fam),
+                "modelo": str(mod),
+                "candidato": str(cand),
+            })
+            mlflow.log_params({**json.loads(p_json), "horizonte_h": str(h), "variante": str(var)})
+            mlflow.log_metrics(metrics)
+    print("Registro en MLflow completado.", flush=True)
 
-    print(f"\n=== TABLA 06: IMPACTO DEL CLIMA POR HORIZONTE ({time.perf_counter() - t0:.1f}s) ===")
+    print(f"\n=== TABLA 05 (8 FAMILIAS, SIN CLIMA) ({time.perf_counter() - t0:.1f}s) ===")
+    print(res_h.to_string(index=False))
+    print("\n=== TABLA 06 (6 FAMILIAS TABULARES, IMPACTO DEL CLIMA) ===")
     print(piv.to_string(index=False))
 
 

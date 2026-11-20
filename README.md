@@ -195,4 +195,4 @@ Pendiente de F8.
 
 ---
 
-La implementación se desarrolló con asistencia de una herramienta de IA para programación, bajo revisión y aprobación del equipo.
+En la escritura del código y de la documentación se usaron herramientas de asistencia a la programación basadas en inteligencia artificial. Las decisiones metodológicas, la revisión del código y la aprobación de los resultados corresponden al equipo del proyecto.

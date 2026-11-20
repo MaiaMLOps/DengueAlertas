@@ -78,7 +78,7 @@ M0 gana a B2 en 11 de 18 casillas por Brier (10 de 18 por log-loss) y a la recet
 
 **Definición.** La emisión de la semana t es positiva si p ≥ τ **y** la zona observada del canal en t no es `epidemia` (`events.model_positive_outside_epidemic`). Mismas probabilidades, τ = 0,05 de la receta, k = 2 y W = 12; `alerts` y `evaluate_period` no cambian. En la configuración, `decision.regla_emision` vale `umbral` (la regla del contrato) por defecto; la selección y la evaluación preregistradas no lo leen.
 
-**Origen.** Análisis posterior declarado: la regla se formuló después de conocer la evaluación preregistrada de prueba, a partir de un diagnóstico en desarrollo. Dos inicios de desarrollo no se avisaron porque la alerta ya estaba encendida antes de la ventana: no se confirmó ninguna alerta nueva en [s − W, s − 1]. Se evaluó una vez en prueba sin cambiar τ, k ni W y **no es un resultado confirmatorio**. Su adopción en el producto es una decisión pendiente.
+**Origen.** Análisis posterior declarado: la regla se formuló después de conocer la evaluación preregistrada de prueba, a partir de un diagnóstico en desarrollo. Dos inicios de desarrollo no se avisaron porque la alerta ya estaba encendida antes de la ventana: no se confirmó ninguna alerta nueva en [s − W, s − 1]. Se evaluó una vez en prueba sin cambiar τ, k ni W y **no es un resultado confirmatorio**. Después se adoptó como regla de alerta del producto (enmienda D10.1, DV-07); la justificación está en la sección «Justificación de la regla B01 en el producto».
 
 **Cálculo.** `scripts/analisis_b01.py` sobre las predicciones guardadas de la receta (`prueba_20261112/diag_serie.csv` y `diagnostico_desarrollo_sin_clima_20261112/diag_serie.csv`); la regla actual se verifica contra las emisiones guardadas. Evidencia: `reports/forecasting/evidence/complementario_20261120/` (`b01_resumen.json`, `b01_eventos.csv` por periodo, municipio y año, y `b01_inicios_entradas.csv`). La regresión de las cifras de control está en `tests/acceptance/test_b01_regla_emision.py`.
 
@@ -161,10 +161,40 @@ Cifras de desarrollo (2019–2022, 24 casillas, variables `sin_clima`). Las fila
 
 Con selección dentro de muestra, ninguna familia supera a la logística; la mejor cifra del contraste (0,2245) cae a 0,2049 con el procedimiento preregistrado. M0, con una sola variable y el mismo procedimiento que la receta, queda por encima de R0 en mejora media y en casillas ganadas a B2 en desarrollo, y por debajo en prueba.
 
+## Justificación de la regla B01 en el producto
+
+Sustenta la enmienda D10.1 (`docs/forecasting/enmienda_d10_1_propuesta.md`) y DV-07. No se hizo ninguna evaluación nueva: todas las cifras salen de la evidencia de las secciones anteriores (`complementario_20261120/` y `continuidad_20261120/`) y las comprueba `docs/forecasting/verificacion/verificar_cifras_b01.py` (51 de 51 coinciden). R0 designa la regla preregistrada (p̂_t ≥ τ) aplicada a las predicciones de la receta vigente; los tres sistemas usan las mismas predicciones, τ = 0,05, k = 2 y W = 12.
+
+**(1) Mecanismo sin parámetros ajustados.** Con R0, una racha de emisiones positivas puede empezar antes de un episodio, seguir durante él y prolongarse después. Mientras la racha no se interrumpe, no se confirma ninguna alerta nueva, de modo que una alerta encendida desde antes del episodio no puede contar como aviso del inicio siguiente: o su confirmación queda fuera de la ventana [s − 12, s − 1], o es una alerta de continuidad, que el contrato excluye de la detección (§7.4). B01 hace negativa la emisión de una semana que ya está en zona epidémica, así que corta la racha al entrar en el episodio y permite una confirmación nueva después de él. Aplica a la emisión el mismo principio con que D8 cuenta aparte las alertas de continuidad: lo que ocurre en zona epidémica no es aviso de un inicio. No introduce ni ajusta ningún parámetro: la condición sobre la zona observada en t es información disponible al emitir (§3.2), y τ, k y W son los congelados.
+
+**(2) Criterio del contrato.** El criterio de §7.5 (falsas alarmas por municipio-año no mayores que las del canal y, con esa restricción, la mayor capacidad de detección), aplicado aquí para comparar reglas con τ fijo, lo cumple B01 en los dos periodos:
+
+| Periodo | Sistema | Inicios avisados | Entradas avisadas | Falsas alarmas | Falsas alarmas por municipio-año | Semanas bajo alerta |
+|---|---|---|---|---|---|---|
+| Desarrollo (24 municipio-años) | R0 | 8 de 10 | 21 de 44 | 24 | 1,00 | 47,0 % |
+| Desarrollo | B01 | 10 de 10 | 38 de 44 | 37 | 1,54 | 19,6 % |
+| Desarrollo | Canal | 10 de 10 | 36 de 44 | 48 | 2,00 | 32,5 % |
+| Prueba (18 municipio-años) | R0 | 4 de 10 | 13 de 41 | 18 | 1,00 | 60,4 % |
+| Prueba | B01 | 9 de 10 | 24 de 41 | 26 | 1,44 | 20,5 % |
+| Prueba | Canal | 8 de 10 | 19 de 41 | 30 | 1,67 | 42,0 % |
+
+B01 respeta la restricción (1,54 ≤ 2,00 en desarrollo y 1,44 ≤ 1,67 en prueba) y tiene la mayor detección de los tres sistemas: 10 de 10 en desarrollo, empatada con el canal, y 9 de 10 en prueba. R0 también respeta la restricción, pero detecta menos (8 y 4 de 10). Semanas bajo alerta: semanas de emisión entre la confirmación de cada alerta y su última semana, sobre 1.248 (desarrollo) y 936 (prueba).
+
+**(3) Consistencia entre periodos.** B01 avisa más inicios que R0 en los dos periodos, y nunca al revés. En desarrollo hay 2 inicios discrepantes, ambos a favor de B01 (los dos del diagnóstico que originó la regla; McNemar exacto de una cola p = 0,25). En prueba hay 5 inicios discrepantes, todos a favor de B01: McNemar exacto de una cola, p = 0,5⁵ = 0,03125, por debajo del umbral de azar de D9 (5 %). Frente al canal, B01 avisa 1 inicio más en prueba y ninguno menos. La cifra de prueba no es confirmatoria: la regla se formuló después de consultar ese periodo.
+
+**(4) Costo explícito.**
+- **Más alertas y falsas alarmas que R0.** En prueba, 38 alertas y 26 falsas alarmas frente a 26 y 18; en desarrollo, 59 y 37 frente a 43 y 24. Sigue con menos falsas alarmas que el canal (30 en prueba y 48 en desarrollo).
+- **Menos semanas bajo alerta.** 20,5 % frente a 60,4 % de R0 y 42,0 % del canal, en prueba: las alertas de B01 son más cortas porque terminan al entrar en zona epidémica.
+- **Anticipación corta.** Mediana de 1,0 semanas desde la alerta más reciente (medida del contrato) y de 3,0 desde la primera, frente a 4,5 y 7,5 de R0 y 1,5 y 2,0 del canal, en prueba. B01 avisa con poca antelación.
+- **Composición.** 268 de las 272 emisiones positivas de B01 en prueba caen en zona de alerta: en la práctica es la zona de alerta del canal filtrada por la probabilidad del modelo, que descarta 196 de las 464 semanas en zona de alerta (42,2 %).
+- **Falsas alarmas posteriores a un episodio.** 11 de las 26 falsas alarmas de B01 en prueba, y 13 de 37 en desarrollo, empiezan en las 13 semanas siguientes al final de un episodio: parte del costo se concentra en el descenso de la epidemia.
+
+**Lo que la regla no cambia.** La probabilidad, la receta, las conclusiones preregistradas de §8.4 y la calidad de la estimación en continuidad (BSS frente a B2 de 0,252 en desarrollo y 0,136 en prueba en las semanas en zona epidémica) son las mismas: B01 solo decide cuándo se enciende la alerta.
+
 ## Limitaciones
 
 - **Periodo de prueba ya consultado.** M0, B01 y el análisis de continuidad se formularon o se calcularon después de la evaluación única de prueba. Sus cifras de prueba son descriptivas: no confirman ni sustituyen las conclusiones preregistradas de §8.4, y ninguna se usó para elegir τ, k, W, C, variables ni familia.
 - **Pocos eventos.** Hay 10 inicios evaluables en prueba y 10 en desarrollo. Una diferencia de pocos inicios cambia las proporciones en decenas de puntos, y las pruebas de McNemar descansan en 1 a 5 inicios discrepantes.
 - **Casillas correlacionadas.** Las casillas de un municipio comparten serie, entrenamiento y régimen, y las semanas consecutivas están autocorrelacionadas. Los conteos de casillas y la binomial suponen independencia y sobrestiman la evidencia.
 - **Optimismo dentro de muestra.** Las cifras del contraste de familias se eligen y se reportan sobre las mismas casillas (ver `reports/tesis_contraste_modelos/README.md`). Las familias secuenciales tienen además variación entre GPU y CPU, y tres familias no coinciden entre las tablas 01 y 05 en h = 8.
-- **B01 no está en el producto.** La API (`docs/forecasting/api_salida_d10.md`) y la receta siguen con la regla del contrato.
+- **B01 en el producto sin validación confirmatoria.** La API (`docs/forecasting/api_salida_d10.md`, esquema 0.2) usa B01 desde D10.1; la receta y la evaluación preregistrada siguen con la regla p̂_t ≥ τ. La evidencia de B01 en 2023–2025 es posterior a la consulta de la prueba; queda pendiente una validación prospectiva con datos posteriores a 2025.

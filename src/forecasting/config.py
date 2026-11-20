@@ -112,6 +112,10 @@ class DecisionSection(_Section):
     k: int = Field(ge=1)
     W: int = Field(ge=1)
     tau_grid: tuple[float, ...] = Field(min_length=1)
+    # Emission rule (events.EMISSION_RULES): "umbral" is the rule of the contract (p >= tau, §7.4) and the default;
+    # "umbral_fuera_de_epidemia" is rule B01 of the complementary analysis (p >= tau and zona_t != epidemia). The
+    # pre-registered selection and the test evaluation always apply the contract rule.
+    regla_emision: Literal["umbral", "umbral_fuera_de_epidemia"] = "umbral"
 
     @field_validator("tau_grid")
     @classmethod

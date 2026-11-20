@@ -24,7 +24,9 @@ The single table and the predictions are development rows only; every metric goe
 """
 
 from collections.abc import Sequence
+from datetime import timedelta
 import json
+import math
 import warnings
 
 import numpy as np
@@ -152,6 +154,33 @@ def common_by_year(table: pd.DataFrame) -> dict[int, str]:
     """Out-of-year common configuration of each development year (chosen without that year)."""
     own = table[table["familia"] == FAMILY]
     return {int(year): _choose(own[own["anio"] != year]) for year in sorted(set(own["anio"]))}
+
+
+# --------------------------------------------------------------------------- event helpers (rule B01)
+def first_alert_leads(onsets: pd.DataFrame, alert_table: pd.DataFrame, window: int) -> pd.Series:
+    """Lead of each onset or entry measured from the FIRST non-continuity alert confirmed in [s - W, s - 1].
+
+    events.evaluate_period measures it from the most recent one (the contract measure); both use the same set of
+    warning alerts, so an event is warned under one measure exactly when it is warned under the other. NaN when
+    the event is not warned.
+    """
+    leads = []
+    for row in onsets.itertuples(index=False):
+        own = alert_table[(alert_table["municipality_code"] == row.municipality_code) & ~alert_table["continuity"]]
+        confirmations = [c for c in own["confirmation"]
+                         if row.week - timedelta(weeks=window) <= c <= row.week - timedelta(weeks=1)]
+        leads.append(float((row.week - min(confirmations)).days // 7) if confirmations else math.nan)
+    return pd.Series(leads, index=onsets.index, dtype=float)
+
+
+def weeks_under_alert(rows: pd.DataFrame, alert_table: pd.DataFrame) -> pd.Series:
+    """True for the emission weeks t covered by an alert, from its confirmation t_c to its last week (inclusive)."""
+    covered = pd.Series(False, index=rows.index)
+    for alert in alert_table.itertuples(index=False):
+        mask = ((rows["municipality_code"] == alert.municipality_code) & (rows["t"] >= alert.confirmation)
+                & (rows["t"] <= alert.end))
+        covered |= mask
+    return covered
 
 
 # --------------------------------------------------------------------------- M0: minimal position model

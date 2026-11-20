@@ -4,7 +4,9 @@ especificación §4 and §6.F4).
 Flow, per municipality:
     emissions (weeks t, positive or not, observed zone at t)
       -> model_positive(p, tau) for a model (p >= tau) or channel_positive(zones) for the channel
-         (zone "alerta"): both feed the same `alerts`, so model and channel follow the same rule
+         (zone "alerta"): both feed the same `alerts`, so model and channel follow the same rule.
+         model_positive_outside_epidemic(p, zones, tau) is rule B01 of the complementary analysis (also negative
+         when zona_t is "epidemia"); emission_positive(rule, ...) dispatches on decision.regla_emision
       -> alerts(weeks, positive, zones, k): one Alert per maximal run of >= k positive emissions, dated at
          its confirmation week t_c (the k-th week of the run, when it is known); a continuity alert if the
          observed zone at t_c is "epidemia"
@@ -128,6 +130,29 @@ def _check_zones(zones, length: int | None = None) -> list[str]:
     unknown = sorted({str(zone) for zone in checked if zone not in ZONES})
     require(not unknown, f"Unknown zones {unknown}; expected {list(ZONES)}.")
     return checked
+
+
+def model_positive_outside_epidemic(p, zones, *, tau: float) -> np.ndarray:
+    """Rule B01 (análisis complementario): p >= tau and the observed zone at t is not "epidemia".
+
+    Same probabilities and tau as model_positive; the emission of a week already in the epidemic zone is negative,
+    so a run of positive emissions is split when the zone enters epidemia. Not the rule of the contract.
+    """
+    positive = model_positive(p, tau=tau)
+    checked = _check_zones(zones, len(positive))
+    return positive & np.asarray([zone != _EPIDEMIC_ZONE for zone in checked], dtype=bool)
+
+
+EMISSION_RULES = {"umbral": "p >= tau (contrato §7.4)",
+                  "umbral_fuera_de_epidemia": "p >= tau and zona_t != epidemia (B01, análisis complementario)"}
+
+
+def emission_positive(rule: str, p, zones, *, tau: float) -> np.ndarray:
+    """Positive model emissions under `rule` (decision.regla_emision); "umbral" is model_positive unchanged."""
+    require(rule in EMISSION_RULES, f"Unknown emission rule {rule!r}; expected one of {list(EMISSION_RULES)}.")
+    if rule == "umbral":
+        return model_positive(p, tau=tau)
+    return model_positive_outside_epidemic(p, zones, tau=tau)
 
 
 def channel_positive(zones) -> np.ndarray:

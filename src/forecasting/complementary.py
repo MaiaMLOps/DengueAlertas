@@ -16,20 +16,31 @@ the out-of-year scheme of the recipe (contrato §6.2; especificación §6.F6):
          log-loss, comparison.count_wins)
     common_choice(table): the common configuration chosen with all development years (comparison._choose)
 
+Reference M0 (minimal position model): position_table builds the same single table for a logistic regression on
+posicion_4s alone (position_model), so the same out-of-year summary applies; position_test_predictions refits it
+with fixed parameters once per (municipality, test year), as evaluate.run_test does, behind the test barrier.
+
 The single table and the predictions are development rows only; every metric goes through the test-period barrier.
 """
 
 from collections.abc import Sequence
 import json
+import warnings
 
 import numpy as np
 import pandas as pd
+from sklearn.compose import ColumnTransformer
+from sklearn.exceptions import ConvergenceWarning
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 from src.epidemiology.validation import require
 
 from .comparison import _choose, count_wins, out_of_year_scores
 from .config import ForecastConfig
-from .guard import RecipeAccess
+from .guard import RecipeAccess, check_test_access
+from .metrics import brier, improvement, log_loss
 from .search import Candidate, _development_years, _model_unit, _parameters_json, _trial_data, validate_score_table
 from .splits import yearly_trials
 
@@ -141,3 +152,77 @@ def common_by_year(table: pd.DataFrame) -> dict[int, str]:
     """Out-of-year common configuration of each development year (chosen without that year)."""
     own = table[table["familia"] == FAMILY]
     return {int(year): _choose(own[own["anio"] != year]) for year in sorted(set(own["anio"]))}
+
+
+# --------------------------------------------------------------------------- M0: minimal position model
+# M0 is a logistic regression (L2, no class weights) on posicion_4s alone, standardised with training statistics:
+# the same preprocessing and estimator as the recipe, without zona_t and the other features. models.make_model
+# requires zona_t in every contract model, so M0 has its own pipeline here; it is a reference, never a candidate.
+M0_FEATURES = ("posicion_4s",)
+
+
+def position_model(params: dict) -> Pipeline:
+    """Unfitted M0 pipeline: StandardScaler(posicion_4s) -> LogisticRegression(L2, class_weight=None, C, max_iter)."""
+    require(set(params) == {"C", "max_iter"}, f"M0 takes exactly C and max_iter; got {sorted(params)}.")
+    return Pipeline([("preparar", ColumnTransformer([("estandarizar", StandardScaler(), list(M0_FEATURES))],
+                                                    remainder="drop")),
+                     ("modelo", LogisticRegression(penalty="l2", class_weight=None, C=float(params["C"]),
+                                                   max_iter=int(params["max_iter"])))])
+
+
+def fit_predict_position(params: dict, train: pd.DataFrame, evaluate: pd.DataFrame) -> np.ndarray:
+    """Fit M0 on the training rows only and return p(y = 1) of the evaluated rows; non-convergence is an error."""
+    for name, rows in (("train", train), ("evaluate", evaluate)):
+        require(np.isfinite(rows["posicion_4s"].to_numpy(dtype=float)).all(), f"{name}.posicion_4s is not finite.")
+    y = train["y"].to_numpy(dtype=int)
+    require(set(np.unique(y)) == {0, 1}, "M0 needs both classes in the training rows.")
+    model = position_model(params)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", ConvergenceWarning)
+        model.fit(train[list(M0_FEATURES)], y)
+    require(list(model.classes_) == [0, 1], f"M0 classes must be [0, 1]; got {list(model.classes_)}.")
+    return np.asarray(model.predict_proba(evaluate[list(M0_FEATURES)])[:, 1], dtype=float)
+
+
+def position_table(trial_data: dict, grid: Sequence[float], *, max_iter: int, access: RecipeAccess,
+                   clip: float) -> pd.DataFrame:
+    """Single development table of M0 on the grid, with the columns of tabla_unica_desarrollo used here."""
+    rows = []
+    for code in sorted(trial_data):
+        for position, candidate in enumerate(grid_candidates(grid, max_iter=max_iter)):
+            for data in trial_data[code]:
+                y = data.evaluate["y"].to_numpy()
+                p = fit_predict_position(dict(candidate.params), data.train, data.evaluate)
+                loss, squared = log_loss(y, p, data.weeks, access=access, clip=clip), brier(y, p, data.weeks,
+                                                                                            access=access)
+                loss_b2 = log_loss(y, data.references["B2"], data.weeks, access=access, clip=clip)
+                brier_b2 = brier(y, data.references["B2"], data.weeks, access=access)
+                rows.append({"municipality_code": code, "familia": FAMILY, "candidato": candidate.name,
+                             "orden": position, "parametros": _parameters_json(candidate.params), "anio": data.year,
+                             "logloss": loss, "logloss_b2": loss_b2, "mejora_b2": improvement(loss, loss_b2),
+                             "brier": squared, "brier_b2": brier_b2, "n_filas": len(data.evaluate),
+                             "primera_semana_objetivo": min(data.weeks), "ultima_semana_objetivo": max(data.weeks)})
+    table = pd.DataFrame(rows)
+    validate_score_table(table, municipalities=sorted(trial_data), years=sorted(set(table["anio"])))
+    return table
+
+
+def position_test_predictions(examples: pd.DataFrame, config: ForecastConfig, params: dict,
+                              access: RecipeAccess) -> pd.DataFrame:
+    """M0 with fixed parameters, refitted once per (municipality, test year) as evaluate.run_test does (D7.1).
+
+    Behind the test-period barrier: the frozen, approved recipe must exist (guard.check_test_access).
+    """
+    first, last = config.validacion.prueba
+    target_year = examples["target_week"].map(lambda week: week.year)
+    check_test_access(examples.loc[(target_year >= first) & (target_year <= last), "target_week"], access)
+    trials = yearly_trials(examples, range(first, last + 1),
+                           first_train_year=config.validacion.primer_anio_entrenamiento)
+    frames = []
+    for trial in trials:
+        train, evaluate = examples.loc[trial.train], examples.loc[trial.evaluate]
+        frames.append(pd.DataFrame({"municipality_code": trial.municipality_code, "t": list(evaluate["t"]),
+                                    "target_week": list(evaluate["target_week"]), "anio": trial.year,
+                                    "y": evaluate["y"].to_numpy(dtype="int8"),
+                                    "p": fit_predict_position(params, train, evaluate)}))
+    return pd.concat(frames, ignore_index=True)

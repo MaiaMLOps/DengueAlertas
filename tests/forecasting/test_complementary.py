@@ -55,6 +55,25 @@ def test_out_of_year_cells_and_summary():
     assert summary["logloss_medio"] == pytest.approx((5 * 0.30 + 0.50) / 6)
 
 
+def test_position_model_uses_only_the_position():
+    import numpy as np
+
+    from src.forecasting.complementary import fit_predict_position, position_model
+
+    rng = np.random.default_rng(0)
+    train = pd.DataFrame({"posicion_4s": rng.normal(size=200), "crecimiento_4s": rng.normal(size=200)})
+    train["y"] = (train["posicion_4s"] + rng.normal(scale=0.5, size=200) > 0).astype(int)
+    evaluate = train.head(10).copy()
+    p = fit_predict_position({"C": 3.0, "max_iter": 1000}, train, evaluate)
+    shuffled = evaluate.assign(crecimiento_4s=evaluate["crecimiento_4s"] * 100)
+    assert np.array_equal(p, fit_predict_position({"C": 3.0, "max_iter": 1000}, train, shuffled))
+    assert np.all(np.diff(p[np.argsort(evaluate["posicion_4s"].to_numpy())]) > 0)   # increasing in the position
+    model = position_model({"C": 3.0, "max_iter": 1000}).named_steps["modelo"]
+    assert (model.penalty, model.class_weight, model.C) == ("l2", None, 3.0)
+    with pytest.raises(EpidemiologyValidationError):
+        position_model({"C": 3.0})
+
+
 def test_fixed_cells_and_paired_wins():
     table = _table()
     low, high = fixed_cells(table, "logistica_00"), fixed_cells(table, "logistica_01")

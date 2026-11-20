@@ -181,7 +181,7 @@ def _development_years(config: ForecastConfig) -> list[int]:
     years = list(range(first, last + 1))
     overlap = [year for year in years if test_first <= year <= test_last]
     require(not overlap, f"Development years {years} include test years {overlap}; the search never scores the "
-                         f"test period (contrato §6.1, CLAUDE.md rule 1).")
+                         f"test period (contrato §6.1, barrera del periodo de prueba).")
     return years
 
 

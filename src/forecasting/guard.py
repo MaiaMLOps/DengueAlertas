@@ -138,7 +138,7 @@ def load_frozen_recipe(path: str | Path, *, channel_version: str) -> dict:
     path = Path(path)
     if not path.is_file():
         raise FrozenRecipeError(f"No frozen recipe at {path}: scores on test-period rows require the recipe "
-                                f"approved by Jesús (CLAUDE.md rule 1).")
+                                f"approved by the person responsible for the implementation (barrera del periodo de prueba).")
     try:
         recipe = yaml.load(path.read_text(encoding="utf-8"), Loader=_UniqueKeyLoader)
     except yaml.YAMLError as exc:

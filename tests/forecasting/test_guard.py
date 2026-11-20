@@ -94,7 +94,7 @@ def _mutated(change):
     ("short commit", _mutated(lambda r: r["procedencia"].update(commit_codigo="abc123")), "commit_codigo"),
     ("uppercase commit", _mutated(lambda r: r["procedencia"].update(commit_contrato="D" * 40)), "commit_contrato"),
     ("bad channel format", _mutated(lambda r: r["procedencia"].update(version_dvc_canal="xyz")), "version_dvc_canal"),
-    ("section not a mapping", _mutated(lambda r: r.update(aprobacion="Jesús")), "aprobacion"),
+    ("section not a mapping", _mutated(lambda r: r.update(aprobacion="responsable de la implementación")), "aprobacion"),
     ("hash not sha256", {**_recipe(), "hash_sha256": "abc"}, "hash_sha256"),
 ])
 def test_invalid_formats_are_rejected(tmp_path, label, recipe, message):

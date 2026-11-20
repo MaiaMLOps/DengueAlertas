@@ -1,15 +1,30 @@
-"""Genera tablas y gráficas consolidadas de contraste de modelos (desarrollo 2019-2022) para la tesis."""
+"""Consolidated tables and figures of the family contrast (development 2019–2022; análisis complementario).
+
+Reads the single development table of every run declared in configs/contraste_familias.yaml (the run name is its
+folder name) and keeps, per family and variant, the candidate with the largest mean improvement over B2 on the 24
+development cells, ties broken by the smaller mean log-loss. The choice and the reported figures use the same 24
+cells (in-sample selection), unlike the out-of-year selection of the frozen recipe: see the README of
+reports/tesis_contraste_modelos/. Writes tables 01–04 and figures 01–04 to the report folder.
+
+Run from the repository root:
+    .venv/Scripts/python.exe -B scripts/build_thesis_report.py --config configs/contraste_familias.yaml
+"""
 
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import sys
 
 import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from src.forecasting.config import CONTRAST_CONFIG_PATH, load_contrast_config, resolve_path  # noqa: E402
 
 MUNICIPIOS = {
     "08001": "Barranquilla",
@@ -49,13 +64,16 @@ COLORES_TIPO = {
 }
 
 
-def cargar_tablas(base_dir: Path) -> pd.DataFrame:
-    archivos = sorted(base_dir.rglob("tabla_unica_desarrollo.parquet"))
-    if not archivos:
-        raise FileNotFoundError(f"No se encontraron archivos tabla_unica_desarrollo.parquet en {base_dir}")
+def cargar_tablas(carpetas: dict[str, Path], variante_por_defecto: str) -> pd.DataFrame:
+    """Single development tables of the declared runs, labelled by run name (= folder name)."""
+    faltan = [str(c / "tabla_unica_desarrollo.parquet") for c in carpetas.values()
+              if not (c / "tabla_unica_desarrollo.parquet").is_file()]
+    if faltan:
+        raise FileNotFoundError(f"Missing single development tables of declared runs: {faltan}")
 
     frames = []
-    for ruta in archivos:
+    for corrida, carpeta in carpetas.items():
+        ruta = carpeta / "tabla_unica_desarrollo.parquet"
         df = pd.read_parquet(ruta).copy()
         if "familia" not in df.columns or "mejora_b2" not in df.columns:
             continue
@@ -63,17 +81,19 @@ def cargar_tablas(base_dir: Path) -> pd.DataFrame:
         df = df[df["familia"].isin(ETIQUETA_FAMILIA.keys())].copy()
         if df.empty:
             continue
-        if "variante" not in df.columns:
-            df["variante"] = "sin_clima"
+        if "variante" not in df.columns:   # tabular tables of search.run_search: one variant per run
+            df["variante"] = variante_por_defecto
         if "brier" not in df.columns:
             df["brier"] = np.nan
+        if "year" not in df.columns and "anio" in df.columns:   # tabular tables name the year column anio
+            df = df.rename(columns={"anio": "year"})
         df["municipality_code"] = df["municipality_code"].astype(str).str.zfill(5)
-        df["corrida"] = ruta.parent.name
+        df["corrida"] = corrida
         frames.append(df)
-        print(f"Cargado: {ruta} | familias={sorted(df['familia'].unique())} | filas={len(df)}")
+        print(f"Loaded: {ruta} | families={sorted(df['familia'].unique())} | rows={len(df)}")
 
     if not frames:
-        raise RuntimeError("No se encontraron registros válidos de las familias esperadas.")
+        raise RuntimeError("The declared runs have no rows of the expected families.")
     return pd.concat(frames, ignore_index=True)
 
 
@@ -90,7 +110,7 @@ def seleccionar_ganadores(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]
         )
         .sort_values(["mejora_b2_media", "logloss_medio"], ascending=[False, True])
     )
-    # Exigir las 24 casillas completas si existen
+    # Only candidates with the 24 cells complete, when there are any
     completos = resumen[resumen["n_casillas"] == 24]
     base = completos if not completos.empty else resumen
     ganadores = (
@@ -103,7 +123,7 @@ def seleccionar_ganadores(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]
     ganadores["categoria"] = ganadores["familia"].map(TIPO_FAMILIA)
     ganadores["mejora_b2_pct"] = ganadores["mejora_b2_media"] * 100.0
 
-    # Extraer filas de detalle (24 casillas) de cada ganador
+    # Per-cell rows (24 cells) of each winner
     llaves = ganadores[["variante", "familia", "corrida", "candidato"]]
     detalle = df.merge(llaves, on=["variante", "familia", "corrida", "candidato"], how="inner")
     detalle["municipio"] = detalle["municipality_code"].map(MUNICIPIOS).fillna(detalle["municipality_code"])
@@ -214,7 +234,7 @@ def graficar_heatmap_municipal(detalle_sc: pd.DataFrame, orden_modelos: list[str
     piv_val = agg.pivot(index="municipio", columns="modelo", values="mejora_pct")[orden_modelos]
     piv_an = agg.pivot(index="municipio", columns="modelo", values="anios")[orden_modelos]
 
-    # Ordenar municipios por desempeño promedio
+    # Municipalities ordered by mean improvement
     orden_mun = piv_val.mean(axis=1).sort_values(ascending=False).index
     piv_val = piv_val.loc[orden_mun]
     piv_an = piv_an.loc[orden_mun]
@@ -288,16 +308,20 @@ def graficar_ablacion_dl(ganadores: pd.DataFrame, salida: Path) -> pd.DataFrame:
     return dl
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--entrada", type=Path, default=Path("data/processed/forecasting"))
-    parser.add_argument("--salida", type=Path, default=Path("reports/tesis_contraste_modelos"))
-    args = parser.parse_args()
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Tables and figures of the family contrast (development only).")
+    parser.add_argument("--config", type=Path, default=CONTRAST_CONFIG_PATH,
+                        help="Family contrast configuration (configs/contraste_familias.yaml).")
+    parser.add_argument("--salida", type=Path, default=None, help="Output folder (default: reporte).")
+    args = parser.parse_args(argv)
 
+    contrast = load_contrast_config(args.config)
+    args.salida = args.salida or resolve_path(contrast.reporte)
+    carpetas = {nombre: resolve_path(corrida.carpeta) for nombre, corrida in contrast.corridas.items()}
     args.salida.mkdir(parents=True, exist_ok=True)
     configurar_estilo()
 
-    df = cargar_tablas(args.entrada)
+    df = cargar_tablas(carpetas, contrast.variante)
     ganadores, detalle = seleccionar_ganadores(df)
 
     sin_clima = (
@@ -319,7 +343,7 @@ def main() -> None:
     tabla_global["brier_medio"] = tabla_global["brier_medio"].round(4)
     guardar_tabla(tabla_global, args.salida, "tabla_01_ranking_global_sin_clima")
 
-    # Gráficas y tablas derivadas
+    # Derived figures and tables
     graficar_ranking(sin_clima, args.salida)
     graficar_calibracion(sin_clima, args.salida)
 
@@ -336,7 +360,7 @@ def main() -> None:
         t_ab["brier_medio"] = t_ab["brier_medio"].round(4)
         guardar_tabla(t_ab, args.salida, "tabla_02_ablacion_clima_dl")
 
-    # Detalle anual de las 4 mejores familias
+    # Yearly detail of the four best families
     top4 = orden_modelos[:4]
     col_anio = "year" if "year" in detalle_sc.columns else "anio"
     if col_anio in detalle_sc.columns:
@@ -354,10 +378,11 @@ def main() -> None:
 
     print("\n=== TABLA GLOBAL CONSOLIDADA (sin_clima) ===")
     print(tabla_global[["puesto", "modelo", "candidato", "corrida", "mejora_b2_pct", "logloss_medio", "brier_medio", "casillas_ganadas"]].to_string(index=False))
-    print(f"\nArchivos generados en: {args.salida}")
+    print(f"\nFiles written to: {args.salida}")
     for f in sorted(args.salida.iterdir()):
         print(f"  - {f.name}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

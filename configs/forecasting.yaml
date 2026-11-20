@@ -49,20 +49,26 @@ seguimiento:                       # especificación §9
   uri_servidor: https://platform.arkoiot.com   # MLFLOW_TRACKING_URI tiene prioridad
   directorio_local: mlruns
   experimentos:
-    desarrollo: dengue_h8_oscar_contraste
+    desarrollo: dengue_h8_desarrollo
     prueba: dengue_h8_prueba
     final: dengue_h8_final
 
-busqueda:
-  mlp:
-    n_candidatos: 40
-    semilla_muestreo: 20261112
-    semilla_modelo: 20261112
-    fijos: {}
+busqueda:                          # pre-registro (especificación §7; contrato §6.2–§6.3); responsable de la implementación, 2026-11-11
+  logistica:                       # regresión logística L2: rejilla de C en escala log
+    C: [0.01, 0.03, 0.1, 0.3, 1.0, 3.0]
+    max_iter: 5000                 # la falta de convergencia es un error (models.py)
+  lightgbm:                        # búsqueda aleatoria con presupuesto y semillas fijos
+    n_candidatos: 25
+    semilla_muestreo: 20261112     # numpy default_rng; parámetros sorteados en orden alfabético
+    semilla_modelo: 20261112       # random_state igual en todos los candidatos y municipios
+    fijos:
+      subsample_freq: 1            # LightGBM 4.6.0: con subsample_freq <= 0 no hay submuestreo
     espacio:
-      hidden_units:       {escala: entera, rango: [4, 64]}
-      n_layers:           {escala: entera, rango: [1, 2]}
-      alpha:              {escala: log,    rango: [1.0e-4, 10.0]}
-      learning_rate_init: {escala: log,    rango: [5.0e-4, 2.0e-2]}
-      max_iter:           {escala: entera, rango: [150, 600]}
-      batch_size:         {escala: entera, rango: [16, 64]}
+      max_depth:         {escala: entera, rango: [2, 5]}
+      num_leaves:        {escala: entera, rango: [4, 31], tope_por_profundidad: true}   # <= 2^max_depth
+      learning_rate:     {escala: log,    rango: [0.01, 0.1]}
+      n_estimators:      {escala: entera, rango: [100, 600]}
+      min_child_samples: {escala: entera, rango: [10, 50]}
+      reg_lambda:        {escala: real,   rango: [0.0, 10.0]}
+      subsample:         {escala: real,   rango: [0.6, 1.0]}
+      colsample_bytree:  {escala: real,   rango: [0.6, 1.0]}

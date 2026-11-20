@@ -1,0 +1,140 @@
+# Contraste de familias de modelos: análisis complementario de desarrollo (2019–2022).
+# No alimenta la selección, la receta congelada ni la evaluación de prueba, y no reemplaza la receta vigente.
+# Se valida con load_contrast_config (src/forecasting/config.py). Los datos, el canal, el horizonte, la validación,
+# las líneas base y las métricas son los de la configuración base, sin cambios.
+#
+# Cada corrida es una carpeta con una tabla única de desarrollo (tabla_unica_desarrollo.parquet); el nombre de la
+# corrida es el nombre de la carpeta. Los espacios son los usados al generar las tablas versionadas en
+# reports/tesis_contraste_modelos/ (ver su README para el método de selección y la normalización de nombres).
+# Las corridas tabulares se reproducen con scripts/run_contrast_search.py; la secuencial, con scripts/run_seq_dl.py.
+# Dependencias opcionales: requirements/contraste.txt.
+
+configuracion_base: configs/forecasting.yaml
+experimento: dengue_h8_contraste_familias      # experimento de MLflow para corridas nuevas del contraste
+experimento_registrado_id: "11"                # ID del experimento de MLflow que ya contiene las corridas registradas
+variante: sin_clima                            # conjunto de variables de todas las corridas (contrato §6.6, D7.2)
+reporte: reports/tesis_contraste_modelos
+
+corridas:
+  sin_clima:                                   # LightGBM y logística de la búsqueda preregistrada (F7, D7.2)
+    carpeta: data/processed/forecasting/sin_clima
+    busqueda_preregistrada: true
+
+  logistica_ampliada:                          # rejilla de 19 valores de C (de 0,001 a 100)
+    carpeta: data/processed/forecasting/contraste/logistica_ampliada
+    busqueda:
+      logistica:
+        C: [0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 7.5, 10.0, 15.0, 25.0, 50.0, 100.0]
+        max_iter: 5000
+
+  cb_xgb:                                      # primera búsqueda de CatBoost y XGBoost (25 candidatos)
+    carpeta: data/processed/forecasting/contraste/cb_xgb
+    busqueda:
+      catboost:
+        n_candidatos: 25
+        semilla_muestreo: 20261112
+        semilla_modelo: 20261112
+        fijos:                                 # valores por defecto de CatBoost; no se muestrearon en esta corrida
+          min_data_in_leaf: 1
+          random_strength: 1.0
+          rsm: 1.0
+        espacio:
+          depth:         {escala: entera, rango: [2, 5]}
+          learning_rate: {escala: log,    rango: [0.01, 0.1]}
+          iterations:    {escala: entera, rango: [100, 600]}
+          l2_leaf_reg:   {escala: real,   rango: [0.0, 10.0]}
+          subsample:     {escala: real,   rango: [0.6, 1.0]}
+      xgboost:
+        n_candidatos: 25
+        semilla_muestreo: 20261112
+        semilla_modelo: 20261112
+        fijos:                                 # valores por defecto de XGBoost; no se muestrearon en esta corrida
+          gamma: 0.0
+          reg_alpha: 0.0
+        espacio:
+          max_depth:        {escala: entera, rango: [2, 5]}
+          learning_rate:    {escala: log,    rango: [0.01, 0.1]}
+          n_estimators:     {escala: entera, rango: [100, 600]}
+          min_child_weight: {escala: entera, rango: [1, 20]}
+          reg_lambda:       {escala: real,   rango: [0.0, 10.0]}
+          subsample:        {escala: real,   rango: [0.6, 1.0]}
+          colsample_bytree: {escala: real,   rango: [0.6, 1.0]}
+
+  svm_ampliado:                                # SVM y búsqueda ampliada de CatBoost y XGBoost (40 candidatos)
+    carpeta: data/processed/forecasting/contraste/svm_ampliado
+    busqueda:
+      catboost:
+        n_candidatos: 40
+        semilla_muestreo: 20261112
+        semilla_modelo: 20261112
+        espacio:
+          depth:            {escala: entera, rango: [2, 6]}
+          learning_rate:    {escala: log,    rango: [0.005, 0.15]}
+          iterations:       {escala: entera, rango: [100, 800]}
+          l2_leaf_reg:      {escala: real,   rango: [0.1, 15.0]}
+          subsample:        {escala: real,   rango: [0.5, 1.0]}
+          random_strength:  {escala: real,   rango: [0.0, 5.0]}
+          rsm:              {escala: real,   rango: [0.5, 1.0]}
+          min_data_in_leaf: {escala: entera, rango: [5, 50]}
+      xgboost:
+        n_candidatos: 40
+        semilla_muestreo: 20261112
+        semilla_modelo: 20261112
+        espacio:
+          max_depth:        {escala: entera, rango: [2, 6]}
+          learning_rate:    {escala: log,    rango: [0.005, 0.15]}
+          n_estimators:     {escala: entera, rango: [100, 800]}
+          min_child_weight: {escala: entera, rango: [1, 30]}
+          reg_lambda:       {escala: real,   rango: [0.0, 15.0]}
+          reg_alpha:        {escala: real,   rango: [0.0, 10.0]}
+          gamma:            {escala: real,   rango: [0.0, 5.0]}
+          subsample:        {escala: real,   rango: [0.5, 1.0]}
+          colsample_bytree: {escala: real,   rango: [0.5, 1.0]}
+      svm:                                     # núcleo rbf: degree y coef0 se muestrean pero no afectan al modelo
+        n_candidatos: 40
+        semilla_muestreo: 20261112
+        semilla_modelo: 20261112
+        espacio:
+          C:      {escala: log,    rango: [0.001, 100.0]}
+          gamma:  {escala: log,    rango: [0.0001, 1.0]}
+          tol:    {escala: log,    rango: [1.0e-5, 1.0e-2]}
+          coef0:  {escala: real,   rango: [0.0, 2.0]}
+          degree: {escala: entera, rango: [2, 4]}
+
+  mlp_sin_clima:                               # MLP tabular (40 candidatos)
+    carpeta: data/processed/forecasting/contraste/mlp_sin_clima
+    busqueda:
+      mlp:
+        n_candidatos: 40
+        semilla_muestreo: 20261112
+        semilla_modelo: 20261112
+        espacio:
+          hidden_units:       {escala: entera, rango: [4, 64]}
+          n_layers:           {escala: entera, rango: [1, 2]}
+          alpha:              {escala: log,    rango: [1.0e-4, 10.0]}
+          learning_rate_init: {escala: log,    rango: [5.0e-4, 2.0e-2]}
+          max_iter:           {escala: entera, rango: [150, 600]}
+          batch_size:         {escala: entera, rango: [16, 64]}
+
+  dl_secuencial:                               # GRU y CNN-1D sobre la ventana de 12 semanas (features.ventana_semanas)
+    carpeta: data/processed/forecasting/contraste/dl_secuencial
+    secuencial:
+      familias: [gru, cnn1d]
+      variantes: [sin_clima, con_clima]        # 5 canales sin clima; 8 canales con las tres series climáticas
+      n_candidatos: 25
+      semilla: 20261112                        # muestreo, inicialización de pesos y orden de los lotes
+      espacio:
+        lr: [3.0e-4, 1.5e-2]                   # log-uniforme
+        weight_decay: [1.0e-4, 5.0e-1]         # log-uniforme
+        dropout: [0.0, 0.45]                   # uniforme
+        epochs: [40, 180]                      # entero uniforme, extremos incluidos
+        batch_size: [64, 128, 256]             # elección uniforme
+        num_layers: [1, 2]                     # elección uniforme
+        gru_hidden_size: [8, 12, 16, 24, 32, 48]
+        cnn1d_channels: [8, 12, 16, 24, 32, 48]
+        cnn1d_kernel_size: [2, 3, 4]
+
+sensibilidad_horizonte:                        # configuraciones ganadoras de la tabla 01, re-puntuadas por horizonte
+  horizontes: [2, 4, 8, 12]                    # los horizontes permitidos de la configuración base (contrato §3.6)
+  datos: data/processed/forecasting/contraste/sensibilidad_horizonte
+  tabla_ganadores: reports/tesis_contraste_modelos/tabla_01_ranking_global_sin_clima.csv

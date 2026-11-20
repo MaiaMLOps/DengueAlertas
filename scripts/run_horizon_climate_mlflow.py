@@ -1,8 +1,16 @@
-﻿"""Sensibilidad de horizonte (h in {2, 4, 8, 12}) y ablación climática para las 8 familias.
+"""Horizon sensitivity (h in {2, 4, 8, 12}) and climate ablation of the family contrast, eight families.
 
-Reutiliza el parquet previo de las 5 familias ya evaluadas, calcula únicamente las faltantes
-(LightGBM, XGBoost y CNN-1D), regenera tabla_05/fig_05 y tabla_06/fig_06 con las 8 familias
-y registra solo las corridas faltantes en MLflow.
+Re-scores the winning configurations of table 01 at every horizon on the 24 development cells (2019–2022), with B2
+recomputed for each h. The six tabular families are scored with the sin_clima and the full (completo) feature sets;
+the sequential ones with sin_clima. Writes tables 05 and 06 and figures 05 and 06 of reports/tesis_contraste_modelos/
+and logs to MLflow (`experimento` of configs/contraste_familias.yaml) only the runs it computes.
+
+Cache: when `tabla_sensibilidad_horizonte_y_clima.parquet` exists in the data folder (a previous five-family run),
+its families are reused and only the missing ones are computed; the combined table is written as
+`tabla_sensibilidad_horizonte_y_clima_8familias.parquet`. Development only (análisis complementario).
+
+Run from the repository root (optional dependencies: requirements/contraste.txt):
+    .venv/Scripts/python.exe -B scripts/run_horizon_climate_mlflow.py --config configs/contraste_familias.yaml
 """
 
 from __future__ import annotations
@@ -10,31 +18,36 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import sys
 import time
 
 import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import mlflow
-import numpy as np
-import pandas as pd
-import torch
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
 
-from scripts.run_seq_dl import fit_and_predict, standardize_fold
-from src.forecasting.baselines import b2_predict
-from src.forecasting.config import load_config
-from src.forecasting.dataset import (
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from scripts.run_seq_dl import fit_and_predict, import_torch, standardize_fold  # noqa: E402
+from src.forecasting.baselines import b2_predict  # noqa: E402
+from src.forecasting.config import (  # noqa: E402
+    CONTRAST_CONFIG_PATH,
+    contrast_base_config,
+    load_contrast_config,
+    resolve_path,
+)
+from src.forecasting.dataset import (  # noqa: E402
     FEATURE_SETS,
     ZONES,
     build_examples,
     build_gru_examples,
     load_channel_product,
 )
-from src.forecasting.guard import RecipeAccess
-from src.forecasting.metrics import brier, improvement, log_loss
-from src.forecasting.models import fit_model, predict_positive
-from src.forecasting.splits import yearly_trials
-from src.forecasting.tracking import configure_tracking
+from src.forecasting.guard import RecipeAccess  # noqa: E402
+from src.forecasting.metrics import brier, improvement, log_loss  # noqa: E402
+from src.forecasting.models import fit_model, predict_positive  # noqa: E402
+from src.forecasting.splits import yearly_trials  # noqa: E402
 
 MODELO_A_FAMILIA = {
     "Regresión Logística L2": "logistica",
@@ -60,9 +73,10 @@ COLORES = {
 
 
 def buscar_params_en_manifiesto(candidato: str) -> dict | None:
+    """Parameters of a candidate in the manifests of the pre-registered searches (sin_clima first), if present."""
     rutas = [
-        Path("data/processed/forecasting/sin_clima/busqueda_manifest.json"),
-        Path("data/processed/forecasting/busqueda_manifest.json"),
+        resolve_path("data/processed/forecasting/sin_clima/busqueda_manifest.json"),
+        resolve_path("data/processed/forecasting/busqueda_manifest.json"),
     ]
     def _buscar(obj):
         if isinstance(obj, dict):
@@ -108,7 +122,7 @@ def cargar_todas_las_recetas(tabla_global: Path) -> list[dict]:
             if man_params:
                 man_params.update(params)
                 params = man_params
-        if fam == "xgboost":
+        if fam == "xgboost":   # XGBoost defaults for candidates of a space that did not sample them
             params.setdefault("reg_alpha", 0.0)
             params.setdefault("gamma", 0.0)
         recetas.append({
@@ -230,29 +244,39 @@ def graficar_clima_por_horizonte(piv: pd.DataFrame, salida: Path) -> None:
     plt.close(fig)
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--horizontes", nargs="+", type=int, default=[2, 4, 8, 12])
-    parser.add_argument(
-        "--tabla-ganadores",
-        type=Path,
-        default=Path("reports/tesis_contraste_modelos/tabla_01_ranking_global_sin_clima.csv"),
-    )
-    parser.add_argument("--salida-datos", type=Path, default=Path("data/processed/forecasting/oscar_sensibilidad_horizonte"))
-    parser.add_argument("--salida-reporte", type=Path, default=Path("reports/tesis_contraste_modelos"))
-    parser.add_argument("--semilla", type=int, default=20261112)
-    args = parser.parse_args()
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Horizon sensitivity and climate ablation of the family contrast "
+                                                 "(development only).")
+    parser.add_argument("--config", type=Path, default=CONTRAST_CONFIG_PATH,
+                        help="Family contrast configuration (configs/contraste_familias.yaml).")
+    parser.add_argument("--horizontes", nargs="+", type=int, default=None, help="Default: sensibilidad_horizonte.")
+    parser.add_argument("--tabla-ganadores", type=Path, default=None, help="Default: sensibilidad_horizonte.")
+    parser.add_argument("--salida-datos", type=Path, default=None, help="Default: sensibilidad_horizonte.datos.")
+    parser.add_argument("--salida-reporte", type=Path, default=None, help="Default: reporte.")
+    args = parser.parse_args(argv)
 
-    cfg = load_config()
+    import mlflow
+
+    from src.forecasting.tracking import configure_tracking
+
+    contrast = load_contrast_config(args.config)
+    horizon = contrast.sensibilidad_horizonte
+    args.horizontes = args.horizontes or list(horizon.horizontes)
+    args.tabla_ganadores = args.tabla_ganadores or resolve_path(horizon.tabla_ganadores)
+    args.salida_datos = args.salida_datos or resolve_path(horizon.datos)
+    args.salida_reporte = args.salida_reporte or resolve_path(contrast.reporte)
+    args.semilla = contrast.secuencial[1].semilla
+
+    cfg = contrast_base_config(contrast)
     uri = configure_tracking(cfg)
-    exp_cfg = getattr(cfg.seguimiento, "experimentos", None)
-    exp_name = getattr(exp_cfg, "desarrollo", None) or "dengue_h8_oscar_contraste"
+    exp_name = contrast.experimento
     mlflow.set_experiment(exp_name)
-    print(f"MLflow conectado: {uri} | Experimento: {exp_name}", flush=True)
+    print(f"MLflow: {uri} | experiment: {exp_name}", flush=True)
 
+    torch = import_torch()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     access = RecipeAccess.from_config(cfg)
-    prod = load_channel_product(cfg.datos.canal, expected_md5=cfg.datos.version_dvc_canal)
+    prod = load_channel_product(resolve_path(cfg.datos.canal), expected_md5=cfg.datos.version_dvc_canal)
     dev_years = range(cfg.validacion.desarrollo[0], cfg.validacion.desarrollo[1] + 1)
 
     recetas = cargar_todas_las_recetas(args.tabla_ganadores)
@@ -427,7 +451,8 @@ def main() -> None:
     print(res_h.to_string(index=False))
     print("\n=== TABLA 06 (6 FAMILIAS TABULARES, IMPACTO DEL CLIMA) ===")
     print(piv.to_string(index=False))
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -1,7 +1,12 @@
-"""Contraste 3: Sensibilidad del horizonte temporal (h in {2, 4, 8, 12}).
+"""Horizon sensitivity of the family contrast (h in {2, 4, 8, 12}), five families, development 2019–2022.
 
-Evalúa las 5 recetas ganadoras (sin_clima) con sus hiperparámetros fijos del desarrollo
-2019-2022 y recalcula B2 para cada horizonte h sin fuga de datos.
+Re-scores the winning configurations of table 01 (sin_clima, hyperparameters fixed from the development contrast)
+at every horizon, with B2 recomputed for each h on the same cells. First version of the horizon contrast (five
+families); the versioned tables 05 and 06 come from scripts/run_horizon_climate_mlflow.py (eight families and the
+climate ablation). Development only (análisis complementario): nothing here feeds the recipe or the test period.
+
+Run from the repository root (optional dependencies: requirements/contraste.txt):
+    .venv/Scripts/python.exe -B scripts/run_horizon_sensitivity.py --config configs/contraste_familias.yaml
 """
 
 from __future__ import annotations
@@ -9,29 +14,36 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import sys
 import time
 
 import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import torch
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
 
-from scripts.run_seq_dl import fit_and_predict, standardize_fold
-from src.forecasting.baselines import b2_predict
-from src.forecasting.config import load_config
-from src.forecasting.dataset import (
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from scripts.run_seq_dl import fit_and_predict, import_torch, standardize_fold  # noqa: E402
+from src.forecasting.baselines import b2_predict  # noqa: E402
+from src.forecasting.config import (  # noqa: E402
+    CONTRAST_CONFIG_PATH,
+    contrast_base_config,
+    load_contrast_config,
+    resolve_path,
+)
+from src.forecasting.dataset import (  # noqa: E402
     FEATURE_SETS,
     ZONES,
     build_examples,
     build_gru_examples,
     load_channel_product,
 )
-from src.forecasting.guard import RecipeAccess
-from src.forecasting.metrics import brier, improvement, log_loss
-from src.forecasting.models import fit_model, predict_positive
-from src.forecasting.splits import yearly_trials
+from src.forecasting.guard import RecipeAccess  # noqa: E402
+from src.forecasting.metrics import brier, improvement, log_loss  # noqa: E402
+from src.forecasting.models import fit_model, predict_positive  # noqa: E402
+from src.forecasting.splits import yearly_trials  # noqa: E402
 
 MODELO_A_FAMILIA = {
     "Regresión Logística L2": "logistica",
@@ -79,7 +91,7 @@ def graficar_sensibilidad(res: pd.DataFrame, b2_res: pd.DataFrame, salida: Path)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.5, 4.8))
     horizontes = sorted(res["horizonte_h"].unique())
 
-    # Panel izquierdo: Log-Loss absoluto (incluyendo B2)
+    # Left panel: absolute log-loss (B2 included)
     ax1.plot(
         b2_res["horizonte_h"],
         b2_res["logloss_medio"],
@@ -110,7 +122,7 @@ def graficar_sensibilidad(res: pd.DataFrame, b2_res: pd.DataFrame, salida: Path)
     ax1.spines["top"].set_visible(False)
     ax1.spines["right"].set_visible(False)
 
-    # Panel derecho: Mejora relativa frente a B2 (%)
+    # Right panel: relative improvement over B2 (%)
     ax2.axhline(0, color="#222222", linestyle="--", linewidth=1.1)
     ax2.axvline(8, color="#888888", linestyle=":", linewidth=1.1)
     for modelo in MODELO_A_FAMILIA.keys():
@@ -143,23 +155,29 @@ def graficar_sensibilidad(res: pd.DataFrame, b2_res: pd.DataFrame, salida: Path)
     plt.close(fig)
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--horizontes", nargs="+", type=int, default=[2, 4, 8, 12])
-    parser.add_argument(
-        "--tabla-ganadores",
-        type=Path,
-        default=Path("reports/tesis_contraste_modelos/tabla_01_ranking_global_sin_clima.csv"),
-    )
-    parser.add_argument("--salida-datos", type=Path, default=Path("data/processed/forecasting/oscar_sensibilidad_horizonte"))
-    parser.add_argument("--salida-reporte", type=Path, default=Path("reports/tesis_contraste_modelos"))
-    parser.add_argument("--semilla", type=int, default=20261112)
-    args = parser.parse_args()
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Horizon sensitivity of the family contrast (development only).")
+    parser.add_argument("--config", type=Path, default=CONTRAST_CONFIG_PATH,
+                        help="Family contrast configuration (configs/contraste_familias.yaml).")
+    parser.add_argument("--horizontes", nargs="+", type=int, default=None, help="Default: sensibilidad_horizonte.")
+    parser.add_argument("--tabla-ganadores", type=Path, default=None, help="Default: sensibilidad_horizonte.")
+    parser.add_argument("--salida-datos", type=Path, default=None, help="Default: sensibilidad_horizonte.datos.")
+    parser.add_argument("--salida-reporte", type=Path, default=None, help="Default: reporte.")
+    args = parser.parse_args(argv)
 
+    contrast = load_contrast_config(args.config)
+    horizon = contrast.sensibilidad_horizonte
+    args.horizontes = args.horizontes or list(horizon.horizontes)
+    args.tabla_ganadores = args.tabla_ganadores or resolve_path(horizon.tabla_ganadores)
+    args.salida_datos = args.salida_datos or resolve_path(horizon.datos)
+    args.salida_reporte = args.salida_reporte or resolve_path(contrast.reporte)
+    args.semilla = contrast.secuencial[1].semilla
+
+    torch = import_torch()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    cfg = load_config()
+    cfg = contrast_base_config(contrast)
     access = RecipeAccess.from_config(cfg)
-    prod = load_channel_product(cfg.datos.canal, expected_md5=cfg.datos.version_dvc_canal)
+    prod = load_channel_product(resolve_path(cfg.datos.canal), expected_md5=cfg.datos.version_dvc_canal)
     dev_years = range(cfg.validacion.desarrollo[0], cfg.validacion.desarrollo[1] + 1)
     features_sc = FEATURE_SETS["sin_clima"]
 
@@ -176,7 +194,7 @@ def main() -> None:
         t_h = time.perf_counter()
         print(f"\n--- Evaluando horizonte h = {h} semanas ---", flush=True)
 
-        # 1. Modelos tabulares + línea base B2
+        # 1. Tabular models and the B2 baseline
         examples = build_examples(prod, h=h, canal=cfg.canal, features=cfg.features)
         trials = yearly_trials(examples, dev_years, first_train_year=cfg.validacion.primer_anio_entrenamiento)
 
@@ -225,7 +243,7 @@ def main() -> None:
                 })
             print(f"  h={h:2d} | {r['modelo']:22s} ({r['candidato']}) -> mejora_b2={np.mean(imps)*100:+.2f}%", flush=True)
 
-        # 2. GRU Secuencial (sin_clima, 5 canales)
+        # 2. Sequential GRU (sin_clima, 5 channels)
         if recetas_gru:
             gru_data = build_gru_examples(prod, h=h, canal=cfg.canal, features=cfg.features)
             keys = gru_data.keys.reset_index(drop=True)
@@ -270,7 +288,7 @@ def main() -> None:
 
         print(f"  Horizonte h={h} completado en {time.perf_counter() - t_h:.1f}s", flush=True)
 
-    # Guardar resultados crudos y resumen
+    # Per-cell results and summary
     args.salida_datos.mkdir(parents=True, exist_ok=True)
     args.salida_reporte.mkdir(parents=True, exist_ok=True)
 
@@ -309,7 +327,8 @@ def main() -> None:
     print(res.to_string(index=False))
     print("\n=== LÍNEA BASE B2 POR HORIZONTE ===")
     print(b2_res.round(4).to_string(index=False))
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

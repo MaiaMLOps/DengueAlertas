@@ -1,0 +1,17 @@
+# Dependencias opcionales del contraste de familias (análisis complementario de desarrollo):
+# configs/contraste_familias.yaml, scripts/run_contrast_search.py, run_seq_dl.py, run_horizon_*.py,
+# log_seq_dl_mlflow.py y build_thesis_report.py. El pipeline principal, la API y las pruebas no las requieren:
+# models.py importa catboost y xgboost solo al construir esas familias, y los scripts importan torch solo al entrenar.
+#
+# Instalación, en el .venv del repositorio y después de forecasting.txt:
+#   .venv/Scripts/python.exe -m pip install -r requirements/contraste.txt
+# PyTorch con CUDA se instala con el índice de su sitio oficial para la versión de CUDA disponible; sin GPU
+# se usa la rueda de CPU. Los resultados de las familias secuenciales no son idénticos entre GPU y CPU.
+#
+# Versiones: las tablas versionadas en reports/tesis_contraste_modelos/ no registran las versiones con que se
+# generaron. Al instalar, fijar aquí las versiones exactas (pip freeze) para que una regeneración sea trazable.
+-r forecasting.txt
+
+catboost
+xgboost
+torch

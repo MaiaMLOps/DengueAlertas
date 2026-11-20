@@ -26,6 +26,67 @@ En cualquier otro caso se mantiene la receta congelada, y el resultado se report
 
 **Cálculo.** `scripts/analisis_regularizacion.py ampliada`, sobre la reproducción verificada de R0 (`reports/forecasting/evidence/reproduccion_r0_20261120/`). Una casilla se gana con un log-loss estrictamente menor; un empate no es victoria. Solo se usan semanas objetivo de desarrollo (2019–2022). Tras el cálculo, el trabajo se detiene hasta que el responsable de la implementación confirme cómo seguir.
 
+## Resultado: rejilla ampliada de C
+
+Calculado después del protocolo anterior (commit 7d33839), sin cambiar el procedimiento. Evidencia: `reports/forecasting/evidence/regularizacion_c_ampliada_20261120/` (`resumen_regularizacion.json`, `casillas_fuera_de_anio.csv`, `rejilla_dentro_de_muestra.csv`). R0 se reconstruyó antes con el código integrado y coincide con la evidencia versionada (`reproduccion_r0_20261120/`: tabla única idéntica a la almacenada; casillas fuera de año con una diferencia máxima de 1,1e-16 y la misma elección en las 24).
+
+| | Rejilla ampliada (19 C) | R0 (6 C, receta) | C = 2 fijo |
+|---|---|---|---|
+| C común con los cuatro años | 2 | 3 | 2 |
+| C fuera de año (2019 / 2020 / 2021 / 2022) | 1,5 / 15 / 1 / 1 | 1 / 3 / 1 / 1 | 2 en todos |
+| Mejora media de log-loss frente a B2 | 0,2049 | 0,2109 | 0,2245 |
+| Log-loss (B2: 0,3854) | 0,3164 | 0,3145 | 0,3110 |
+| Brier (B2: 0,1243) | 0,1013 | 0,1010 | 0,0998 |
+| Casillas ganadas a B2 | 16 de 24 | 16 de 24 | 16 de 24 |
+| Frente a R0: ganadas / perdidas / empates | 6 / 6 / 12 | — | 19 / 5 / 0 |
+
+**Regla.** (1) El C común con los cuatro años (2) es distinto de 3: se cumple. (2) La mejora media fuera de año (0,2049) no supera la de R0 (0,2109): no se cumple. (3) La rejilla ampliada gana 6 de 24 casillas frente a R0: no se cumple. **Se mantiene la receta congelada**; el responsable de la implementación confirmó la decisión y F4 (nueva receta y nueva evaluación) no se ejecutó.
+
+**Lectura como análisis de sensibilidad.** Con el procedimiento preregistrado, ampliar la rejilla no mejora la receta: la elección fuera de año es inestable (en 2020 elige C = 15) y empata con R0 en la mitad de las casillas. C = 2 fijo reproduce exactamente la cifra del contraste de familias (22,45 %, log-loss 0,311, Brier 0,0998, 16 casillas), pero ese C se eligió con los cuatro años: su 19–5 frente a R0 es una comparación dentro de muestra y no cuenta para la regla. La diferencia entre la cifra del contraste (0,2245) y la de la rejilla ampliada con el procedimiento preregistrado (0,2049) mide el optimismo de elegir y reportar sobre las mismas casillas.
+
+## Referencia M0: modelo mínimo de posición
+
+**Definición.** Regresión logística L2 sin pesos de clase, con `posicion_4s` como única variable, estandarizada con estadísticas de entrenamiento: el mismo preprocesamiento y estimador que la receta, sin `zona_t` ni las demás variables. Misma rejilla de C (6 valores), mismo corte D7.1 y misma configuración común fuera de año. Mide cuánto del desempeño de la receta ya está contenido en la posición continua frente al canal. Código: `src/forecasting/complementary.py` (`position_model`) y `scripts/analisis_m0.py`. Evidencia: `reports/forecasting/evidence/m0_posicion_20261120/`.
+
+**Desarrollo (fuera de año).** C = 3 elegido en los cuatro años y con los cuatro años. Mejora media de log-loss frente a B2 0,2311; log-loss 0,3328; Brier 0,1036; 21 de 24 casillas ganadas a B2; frente a R0, 13 casillas ganadas y 11 perdidas por log-loss.
+
+**Prueba (solo reporte).** M0 con C = 3 fijado en desarrollo, reentrenado una vez por municipio y año de prueba como en la evaluación única (`evaluate.run_test`), sobre las mismas 936 filas:
+
+| Sistema | Log-loss | Brier | AP |
+|---|---|---|---|
+| M0 | 0,4525 | 0,1494 | 0,751 |
+| Receta vigente | 0,4409 | 0,1413 | 0,765 |
+| B2 | 0,4708 | 0,1537 | 0,612 |
+
+M0 gana a B2 en 11 de 18 casillas por Brier (10 de 18 por log-loss) y a la receta en 7 de 18 por Brier y por log-loss. Las cifras de la receta y de B2, calculadas sobre las predicciones guardadas, coinciden con `prueba_20261112/resumen_prueba.json`.
+
+**Lectura.** En desarrollo, M0 iguala o supera a la receta en mejora media frente a B2 y en casillas ganadas a B2, aunque con mayor log-loss medio (la mejora media promedia cocientes por casilla); en prueba, la receta es mejor en las tres métricas globales y en 11 de 18 casillas. La mayor parte de la ventaja sobre B2 ya está en la posición continua frente al canal; las otras cinco variables aportan una mejora pequeña y no uniforme.
+
+## Regla de emisión alternativa B01
+
+**Definición.** La emisión de la semana t es positiva si p ≥ τ **y** la zona observada del canal en t no es `epidemia` (`events.model_positive_outside_epidemic`). Mismas probabilidades, τ = 0,05 de la receta, k = 2 y W = 12; `alerts` y `evaluate_period` no cambian. En la configuración, `decision.regla_emision` vale `umbral` (la regla del contrato) por defecto; la selección y la evaluación preregistradas no lo leen.
+
+**Origen.** Análisis posterior declarado: la regla se formuló después de conocer la evaluación preregistrada de prueba, a partir de un diagnóstico en desarrollo. Dos inicios de desarrollo no se avisaron porque la alerta ya estaba encendida antes de la ventana: no se confirmó ninguna alerta nueva en [s − W, s − 1]. Se evaluó una vez en prueba sin cambiar τ, k ni W y **no es un resultado confirmatorio**. Su adopción en el producto es una decisión pendiente.
+
+**Cálculo.** `scripts/analisis_b01.py` sobre las predicciones guardadas de la receta (`prueba_20261112/diag_serie.csv` y `diagnostico_desarrollo_sin_clima_20261112/diag_serie.csv`); la regla actual se verifica contra las emisiones guardadas. Evidencia: `reports/forecasting/evidence/complementario_20261120/` (`b01_resumen.json`, `b01_eventos.csv` por periodo, municipio y año, y `b01_inicios_entradas.csv`). La regresión de las cifras de control está en `tests/acceptance/test_b01_regla_emision.py`.
+
+| Periodo | Sistema | Inicios avisados | Entradas avisadas | Alertas | Falsas alarmas | Semanas bajo alerta | Anticipación mediana (contrato / primera alerta) |
+|---|---|---|---|---|---|---|---|
+| Prueba | Regla actual | 4 de 10 | 13 de 41 | 26 | 18 | 565 de 936 | 4,5 / 7,5 |
+| Prueba | B01 | 9 de 10 | 24 de 41 | 38 | 26 | 192 de 936 | 1,0 / 3,0 |
+| Prueba | Canal | 8 de 10 | 19 de 41 | 39 | 30 | 393 de 936 | 1,5 / 2,0 |
+| Desarrollo (fuera de año) | Regla actual | 8 de 10 | 21 de 44 | 43 | 24 | 586 de 1.248 | 7,5 / 8,0 |
+| Desarrollo (fuera de año) | B01 | 10 de 10 | 38 de 44 | 59 | 37 | 244 de 1.248 | 2,0 / 8,0 |
+| Desarrollo (fuera de año) | Canal | 10 de 10 | 36 de 44 | 65 | 48 | 406 de 1.248 | 3,0 / 5,5 |
+
+Semanas bajo alerta: semanas de emisión entre la confirmación de cada alerta y su última semana. Anticipación del contrato: desde la alerta más reciente confirmada en la ventana; «primera alerta»: desde la primera. Alertas: todas, incluidas las de continuidad (4 de la regla actual en prueba y 5 en desarrollo); las falsas alarmas se cuentan sobre las alertas juzgables que no son de continuidad.
+
+**Inicios discrepantes (McNemar, una cola).** En prueba, B01 frente a la regla actual: 5 discrepantes, los 5 a favor de B01 (nivel «mejora consistente»); B01 frente al canal: 1, a favor de B01 («tendencia favorable»). En desarrollo: 2 frente a la regla actual (ambos a favor de B01) y ninguno frente al canal.
+
+**Composición.** En prueba, 268 de las 272 emisiones positivas de B01 caen en zona de alerta (4 en zona de seguridad); el filtro de probabilidad descarta 196 de las 464 semanas en zona de alerta (42,2 %). En desarrollo: 294 de 355 en zona de alerta (61 en seguridad) y 217 de 511 semanas de alerta descartadas (42,5 %).
+
+**Lectura.** B01 avisa casi todos los inicios con muchas menos semanas bajo alerta que la regla actual y que el canal, pero con poca anticipación (mediana de 1 semana en prueba con la medida del contrato) y más falsas alarmas que la regla actual. En la práctica, se comporta como el canal filtrado por la probabilidad del modelo.
+
 ## Protocolo declarado: continuidad
 
 Fijado el 2026-11-20, antes de calcular el resultado. Análisis descriptivo y posterior a la evaluación única de prueba: no se selecciona nada y se reporta salga como salga.
@@ -48,3 +109,50 @@ Fijado el 2026-11-20, antes de calcular el resultado. Análisis descriptivo y po
 **Conteo descriptivo adicional.** Cuántas falsas alarmas de B01 (regla de la sección anterior, con τ, k y W de la receta) empiezan en las 13 semanas siguientes al final de un episodio, en prueba y en desarrollo. Episodio: racha de al menos 3 semanas elegibles consecutivas con `target_u1e = 1` en toda la serie elegible (contrato §8.8; `diagnostics.EPISODE_MIN_RUN`); su final es la última semana de la racha, e. Una falsa alarma empieza en la primera semana de su racha de emisiones positivas (`Alert.start`); se cuenta si esa semana está en [e + 1, e + 13] para algún episodio del mismo municipio. Se reporta también el total de falsas alarmas de B01 en cada periodo.
 
 **Cálculo.** `scripts/analisis_continuidad.py`. Las métricas de prueba pasan por la barrera del periodo de prueba (receta congelada aprobada).
+
+## Resultado: continuidad
+
+Calculado después del protocolo anterior (commit 8bb73ee), primero desarrollo y luego prueba. Evidencia: `reports/forecasting/evidence/continuidad_20261120/` (`continuidad_resumen.json` y `continuidad_casillas.csv`).
+
+| Periodo | Estrato | Filas (positivas) | Log-loss receta / B2 | Brier receta / B2 | BSS frente a B2 | Confiabilidad receta / B2 | Resolución receta / B2 | Casillas (≥ 5 semanas) ganadas por Brier / log-loss |
+|---|---|---|---|---|---|---|---|---|
+| Desarrollo | zona_t = epidemia | 310 (231) | 0,5595 / 0,6950 | 0,1873 / 0,2503 | 0,252 | 0,0230 / 0,0919 | 0,0249 / 0,0302 | 8 / 8 de 12 |
+| Desarrollo | zona_t ≠ epidemia | 938 (88) | 0,2335 / 0,2831 | 0,0725 / 0,0827 | 0,123 | 0,0026 / 0,0030 | 0,0152 / 0,0064 | 16 / 16 de 23 |
+| Prueba | zona_t = epidemia | 340 (243) | 0,5769 / 0,6422 | 0,1935 / 0,2240 | 0,136 | 0,0124 / 0,0469 | 0,0244 / 0,0264 | 10 / 9 de 14 |
+| Prueba | zona_t ≠ epidemia | 596 (79) | 0,3633 / 0,3730 | 0,1115 / 0,1136 | 0,018 | 0,0063 / 0,0100 | 0,0131 / 0,0117 | 8 / 9 de 17 |
+
+Confiabilidad y resolución: descomposición de Murphy con 10 intervalos de igual frecuencia dentro de cada estrato (B2 en zona epidémica de desarrollo tiene 7 intervalos por empates de p).
+
+**Lectura descriptiva.** En las semanas ya en zona epidémica, la probabilidad de la receta de seguir sobre U1e en t + 8 es mejor que la de B2 en los dos periodos (BSS 0,252 y 0,136). La mejora viene sobre todo de la confiabilidad (0,023 frente a 0,092 en desarrollo; 0,012 frente a 0,047 en prueba); la resolución es similar o algo menor que la de B2. Fuera de la zona epidémica, la ventaja de la receta en prueba es pequeña (BSS 0,018; 8 de 17 casillas por Brier).
+
+**Conteo adicional.** Falsas alarmas de B01 que empiezan en las 13 semanas siguientes al final de un episodio: 13 de 37 en desarrollo y 11 de 26 en prueba (por municipio en `continuidad_resumen.json`).
+
+## Tabla comparativa
+
+Cifras de desarrollo (2019–2022, 24 casillas, variables `sin_clima`). Las filas del contraste de familias son las versionadas en `reports/tesis_contraste_modelos/tabla_01_ranking_global_sin_clima.csv` y no se recalcularon. Las filas con distinto método de selección no son comparables entre sí sin ajuste.
+
+| Sistema | Método de selección | Mejora media frente a B2 | Log-loss | Brier | Casillas ganadas a B2 |
+|---|---|---|---|---|---|
+| Receta vigente (R0): logística, 6 valores de C | Fuera de año (preregistrado) | 0,2109 | 0,3145 | 0,1010 | 16 |
+| M0: logística con `posicion_4s`, 6 valores de C | Fuera de año | 0,2311 | 0,3328 | 0,1036 | 21 |
+| Logística, rejilla ampliada de 19 C | Fuera de año | 0,2049 | 0,3164 | 0,1013 | 16 |
+| Logística, C = 2 fijo | C elegido con los cuatro años (dentro de muestra) | 0,2245 | 0,3110 | 0,0998 | 16 |
+| Contraste: logística L2 (`logistica_09`, C = 2) | Dentro de muestra, 25 candidatos | 0,2245 | 0,3110 | 0,0998 | 16 |
+| Contraste: SVM rbf (`svm_05`) | Dentro de muestra, 40 candidatos | 0,1726 | 0,3284 | 0,1053 | 18 |
+| Contraste: MLP tabular (`mlp_36`) | Dentro de muestra, 40 candidatos | 0,1668 | 0,3442 | 0,1106 | 17 |
+| Contraste: CatBoost (`catboost_22`) | Dentro de muestra, 65 candidatos | 0,1568 | 0,3496 | 0,1112 | 18 |
+| Contraste: GRU (`gru_00`) | Dentro de muestra, 25 candidatos | 0,1568 | 0,3419 | 0,1058 | 17 |
+| Contraste: LightGBM (`lightgbm_20`) | Dentro de muestra, 25 candidatos | 0,1207 | 0,3838 | 0,1190 | 14 |
+| Contraste: XGBoost (`xgboost_09`) | Dentro de muestra, 65 candidatos | 0,0922 | 0,3722 | 0,1195 | 14 |
+| Contraste: CNN-1D (`cnn1d_03`) | Dentro de muestra, 25 candidatos | −0,0377 | 0,4351 | 0,1367 | 11 |
+| B2 | Línea base (sin selección) | 0 | 0,3854 | 0,1243 | — |
+
+Con selección dentro de muestra, ninguna familia supera a la logística; la mejor cifra del contraste (0,2245) cae a 0,2049 con el procedimiento preregistrado. M0, con una sola variable y el mismo procedimiento que la receta, queda por encima de R0 en mejora media y en casillas ganadas a B2 en desarrollo, y por debajo en prueba.
+
+## Limitaciones
+
+- **Periodo de prueba ya consultado.** M0, B01 y el análisis de continuidad se formularon o se calcularon después de la evaluación única de prueba. Sus cifras de prueba son descriptivas: no confirman ni sustituyen las conclusiones preregistradas de §8.4, y ninguna se usó para elegir τ, k, W, C, variables ni familia.
+- **Pocos eventos.** Hay 10 inicios evaluables en prueba y 10 en desarrollo. Una diferencia de pocos inicios cambia las proporciones en decenas de puntos, y las pruebas de McNemar descansan en 1 a 5 inicios discrepantes.
+- **Casillas correlacionadas.** Las casillas de un municipio comparten serie, entrenamiento y régimen, y las semanas consecutivas están autocorrelacionadas. Los conteos de casillas y la binomial suponen independencia y sobrestiman la evidencia.
+- **Optimismo dentro de muestra.** Las cifras del contraste de familias se eligen y se reportan sobre las mismas casillas (ver `reports/tesis_contraste_modelos/README.md`). Las familias secuenciales tienen además variación entre GPU y CPU, y tres familias no coinciden entre las tablas 01 y 05 en h = 8.
+- **B01 no está en el producto.** La API (`docs/forecasting/api_salida_d10.md`) y la receta siguen con la regla del contrato.

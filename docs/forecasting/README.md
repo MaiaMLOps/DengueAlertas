@@ -11,6 +11,7 @@ Guía para entender, reproducir y auditar el MVP de pronóstico con solo el repo
 | [`api_salida_d10.md`](api_salida_d10.md) | Esquema de salida de la API |
 | [`verificacion/`](verificacion/) | Cálculos independientes con los que se obtuvieron y contrastaron las cifras |
 | [`analisis_resultados.md`](analisis_resultados.md) | Análisis integrado de los resultados de la prueba (contrato §8.8): calidad de la estimación, municipios, eventos, robustez y valor práctico. Lo exploratorio va marcado |
+| [`analisis_complementario.md`](analisis_complementario.md) | Análisis posteriores con protocolo propio (rejilla ampliada de C, referencia M0, regla de emisión B01 y continuidad) y su comparación con el contraste de familias de `reports/tesis_contraste_modelos/`. No modifican la receta ni las conclusiones de §8.4 |
 | [`../../reports/forecasting/entregables/`](../../reports/forecasting/entregables/) | Versiones en Word y presentación del análisis, una carpeta por corrida |
 | [`../../reports/forecasting/INDICE.md`](../../reports/forecasting/INDICE.md) | Mapa de datos, evidencia, figuras y configuración, con su estado |
 

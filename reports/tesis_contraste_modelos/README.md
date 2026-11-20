@@ -13,7 +13,6 @@ Configuración: `configs/contraste_familias.yaml` (validada por `load_contrast_c
 | `tabla_01_ranking_global_sin_clima.{csv,md}` y `fig_01_ranking_familias_b2` | Mejor candidato de cada una de las ocho familias: mejora media de log-loss frente a B2 (%) y su desviación estándar entre casillas, log-loss y Brier medios, casillas ganadas a B2 (de 24), corrida de origen y parámetros | `build_thesis_report.py` |
 | `fig_02_calibracion_logloss_brier` | Log-loss medio frente a Brier medio de los ocho ganadores | `build_thesis_report.py` |
 | `tabla_03_desglose_municipal.md` y `fig_03_heatmap_municipal` | Mejora media frente a B2 (%) por municipio y familia; la figura añade los años ganados (de 4) | `build_thesis_report.py` |
-| `tabla_04_detalle_anual_top4.md` | Detalle anual de las cuatro primeras familias. **Vacía en la versión versionada** (ver «Diferencias conocidas») | `build_thesis_report.py` |
 | `tabla_02_ablacion_clima_dl.md` y `fig_04_ablacion_clima_dl` | GRU y CNN-1D con 5 canales (sin clima) y con 8 canales (con las tres series climáticas); mejor candidato de cada variante | `build_thesis_report.py` |
 | `tabla_05_sensibilidad_horizonte.{csv,md}` y `fig_05_sensibilidad_horizonte` | Los ocho ganadores de la tabla 01, con sus hiperparámetros fijos, re-puntuados en h = 2, 4, 8 y 12 con B2 recalculada para cada h | `run_horizon_climate_mlflow.py` |
 | `tabla_06_clima_por_horizonte.{csv,md}` y `fig_06_clima_por_horizonte` | Seis familias tabulares con `sin_clima` y con el conjunto completo, por horizonte; diferencia en puntos porcentuales | `run_horizon_climate_mlflow.py` |
@@ -62,7 +61,7 @@ Desde la raíz del repositorio, con el `.venv` y las dependencias opcionales ins
 
 Todos los scripts leen `--config` (por defecto `configs/contraste_familias.yaml`) y la configuración base que esta nombra (`configs/forecasting.yaml`). `run_contrast_search.py` reutiliza `search.run_search` sin cambios (mismas filas, casillas, líneas base, manifiesto y registro en MLflow), con la sección de búsqueda de la corrida. `run_horizon_sensitivity.py` es la primera versión del análisis de horizonte (cinco familias); las tablas versionadas vienen de `run_horizon_climate_mlflow.py`. Las salidas no se sobrescriben: para regenerar, usar carpetas nuevas.
 
-Dependencias opcionales (`requirements/contraste.txt`): `catboost` y `xgboost` (familias tabulares) y `torch` (GRU y CNN-1D). El pipeline principal, la API y la suite de pruebas no las requieren: `src/forecasting/models.py` las importa solo al construir esas familias. Las versiones con que se generaron las tablas no quedaron registradas.
+Dependencias opcionales (`requirements/contraste.txt`): `catboost` y `xgboost` (familias tabulares) y `torch` (GRU y CNN-1D). El pipeline principal, la API y la suite de pruebas no las requieren: `src/forecasting/models.py` las importa solo al construir esas familias. Las versiones con que se generaron las tablas no quedaron registradas; `requirements/contraste.txt` fija las de `catboost` y `xgboost` instaladas para las pruebas de construcción de pipelines (sin entrenamiento).
 
 Los parámetros de los cinco ganadores tabulares se regeneran exactamente desde `configs/contraste_familias.yaml` (prueba `tests/forecasting/test_contraste_familias.py`). En la corrida `cb_xgb`, los hiperparámetros que la lista vigente de `models.py` exige y que esa corrida no muestreó figuran en `fijos` con el valor por defecto de la biblioteca (XGBoost: `gamma = 0`, `reg_alpha = 0`; CatBoost: `min_data_in_leaf = 1`, `random_strength = 1`, `rsm = 1`). Con el núcleo rbf, `degree` y `coef0` de SVM se muestrean pero no afectan al modelo.
 
@@ -74,8 +73,27 @@ GRU y CNN-1D fijan la semilla de PyTorch (inicialización y orden de los lotes),
 
 La columna `corrida` de la tabla 01 (CSV y Markdown) contenía, en seis filas, un prefijo con un nombre propio delante del nombre de la carpeta. Se eliminó ese prefijo; ningún otro valor cambió. Las rutas por defecto de los scripts se cambiaron en el mismo sentido: las carpetas de las corridas del contraste están ahora bajo `data/processed/forecasting/contraste/` y se declaran en `configs/contraste_familias.yaml`.
 
+## Discrepancia entre las tablas 05 y 01 en h = 8
+
+La tabla 05 re-puntúa en h = 8 los mismos ganadores de la tabla 01, con los mismos hiperparámetros, las mismas 24 casillas y la misma B2 (log-loss medio 0,3854). Deberían coincidir; cinco familias coinciden exactamente y tres no:
+
+| Familia | Candidato | Mejora frente a B2 (01 / 05) | Log-loss (01 / 05) | Brier (01 / 05) | Casillas ganadas a B2 (01 / 05) |
+|---|---|---|---|---|---|
+| Logística L2 | `logistica_09` | 22,45 % / 22,45 % | 0,3110 / 0,3110 | 0,0998 / 0,0998 | 16 / 16 |
+| SVM (rbf) | `svm_05` | 17,26 % / 17,26 % | 0,3284 / 0,3284 | 0,1053 / 0,1053 | 18 / 18 |
+| MLP tabular | `mlp_36` | 16,68 % / 16,68 % | 0,3442 / 0,3442 | 0,1106 / 0,1106 | 17 / 17 |
+| CatBoost | `catboost_22` | 15,68 % / 15,68 % | 0,3496 / 0,3496 | 0,1112 / 0,1112 | 18 / 18 |
+| LightGBM | `lightgbm_20` | 12,07 % / 12,07 % | 0,3838 / 0,3838 | 0,1190 / 0,1190 | 14 / 14 |
+| **GRU** | `gru_00` | **15,68 % / 19,46 %** | 0,3419 / 0,3319 | 0,1058 / 0,1029 | 17 / 17 |
+| **XGBoost** | `xgboost_09` | **9,22 % / 10,59 %** | 0,3722 / 0,3684 | 0,1195 / 0,1179 | 14 / 13 |
+| **CNN-1D** | `cnn1d_03` | **−3,77 % / −4,62 %** | 0,4351 / 0,4413 | 0,1367 / 0,1384 | 11 / 11 |
+
+- **GRU y CNN-1D.** Es compatible con el no determinismo de PyTorch descrito arriba (entrenamientos distintos con la misma semilla). La diferencia cambia el orden de la tabla 05 en h = 8: GRU pasa del quinto al segundo puesto.
+- **XGBoost.** No se determinó la causa. El candidato y sus hiperparámetros son los mismos (`gamma` y `reg_alpha` se completan con 0, el valor por defecto de XGBoost) y entre las dos ejecuciones solo se añadió `eval_metric="logloss"`, que para `binary:logistic` es la métrica por defecto y no interviene en el ajuste. Quedan como hipótesis una versión distinta de XGBoost o de su compilación entre las dos ejecuciones; no se verificaron.
+- No se re-ejecutó nada para diagnosticarlo (ninguna familia del contraste se entrena en esta integración). Para cifras de h = 8, la referencia de cada familia es la tabla 01; la tabla 05 se lee como sensibilidad relativa entre horizontes.
+
 ## Diferencias conocidas
 
-- **Tabla 04 vacía.** La versión de `build_thesis_report.py` que la generó agrupaba por la columna `year`, que solo tienen las tablas secuenciales; las tabulares la llaman `anio`. Como ninguna familia secuencial está entre las cuatro primeras, la tabla quedó sin filas. El script corregido renombra `anio` a `year` al cargar; la tabla no se regeneró.
-- **Tabla 05 frente a tabla 01 en h = 8.** Cinco familias coinciden exactamente (logística, SVM, MLP, CatBoost y LightGBM). Tres no: GRU (19,46 % frente a 15,68 %, 17 casillas en ambas), XGBoost (10,59 % y 13 casillas frente a 9,22 % y 14) y CNN-1D (−4,62 % frente a −3,77 %, 11 casillas en ambas). En las secuenciales es compatible con el no determinismo descrito arriba; para XGBoost no se determinó la causa. No se re-ejecutó nada para diagnosticarlo.
+- **Tabla 04 retirada.** `tabla_04_detalle_anual_top4.md` (detalle anual de las cuatro primeras familias) se generó vacía: la versión de `build_thesis_report.py` que la produjo agrupaba por la columna `year`, que solo tienen las tablas secuenciales (las tabulares la llaman `anio`), y ninguna familia secuencial estaba entre las cuatro primeras. El script corregido renombra `anio` a `year` al cargar. La tabla no se pudo regenerar porque las tablas únicas de las corridas del contraste (`logistica_ampliada`, `cb_xgb`, `svm_ampliado`, `mlp_sin_clima` y `dl_secuencial`) no están en este repositorio ni en el almacenamiento DVC; se retiró de la carpeta. Una ejecución de `build_thesis_report.py` con esas tablas disponibles la vuelve a escribir.
+
 - **Lectura de tablas en la versión anterior.** `build_thesis_report.py` recorría todas las tablas únicas bajo `data/processed/forecasting/` y etiquetaba como `sin_clima` las que no tenían columna de variante, entre ellas la de F5b (conjunto completo). Las tablas de las búsquedas preregistradas no declaradas no aportan un ganador: en F5b, la mejor mejora media es 2,21 % (logística) y −1,94 % (LightGBM); en `ablacion_clima`, 22,35 % (logística), por debajo del 22,45 % de `logistica_ampliada`. Restringir la lectura a las corridas declaradas no cambia la tabla 01.

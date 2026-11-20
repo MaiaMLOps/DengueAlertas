@@ -9,9 +9,11 @@
 # se usa la rueda de CPU. Los resultados de las familias secuenciales no son idénticos entre GPU y CPU.
 #
 # Versiones: las tablas versionadas en reports/tesis_contraste_modelos/ no registran las versiones con que se
-# generaron. Al instalar, fijar aquí las versiones exactas (pip freeze) para que una regeneración sea trazable.
+# generaron. catboost y xgboost están fijadas a las instaladas en el .venv para las pruebas de construcción de
+# pipelines (2026-11-20; añaden graphviz, plotly y narwhals como dependencias). torch no está instalado en el .venv:
+# fijar su versión exacta al instalarlo.
 -r forecasting.txt
 
-catboost
-xgboost
+catboost==1.2.10
+xgboost==3.2.0
 torch

@@ -138,7 +138,11 @@ def test_pipeline_of_each_tabular_family_builds_without_fitting(contrast, base, 
     for features in (FEATURE_SETS["sin_clima"], FEATURE_SETS["completo"]):
         model = make_model(family, candidate.params, features=features)
         assert isinstance(model, Pipeline)
-        assert not hasattr(model.named_steps["modelo"], "classes_")   # not fitted
+        estimator = model.named_steps["modelo"]
+        if family == "catboost":   # CatBoost defines classes_ before fitting
+            assert not estimator.is_fitted()
+        else:
+            assert not hasattr(estimator, "classes_")   # not fitted
 
 
 def test_mlp_layers():

@@ -76,7 +76,7 @@ M0 gana a B2 en 11 de 18 casillas por Brier (10 de 18 por log-loss) y a la recet
 
 ## Regla de emisión alternativa B01
 
-**Definición.** La emisión de la semana t es positiva si p ≥ τ **y** la zona observada del canal en t no es `epidemia` (`events.model_positive_outside_epidemic`). Mismas probabilidades, τ = 0,05 de la receta, k = 2 y W = 12; `alerts` y `evaluate_period` no cambian. En la configuración, `decision.regla_emision` vale `umbral` (la regla del contrato) por defecto; la selección y la evaluación preregistradas no lo leen.
+**Definición.** La emisión de la semana t es positiva si p ≥ τ **y** la zona observada del canal en t no es `epidemia` (`events.model_positive_outside_epidemic`). Mismas probabilidades, τ = 0,05 de la receta, k = 2 y W = 12; `alerts` y `evaluate_period` no cambian. En la configuración, la regla preregistrada queda fija en `decision.regla_emision: umbral` y la del producto se fija aparte en `producto.regla_alerta` (D10.1), que solo lee la API.
 
 **Origen.** Análisis posterior declarado: la regla se formuló después de conocer la evaluación preregistrada de prueba, a partir de un diagnóstico en desarrollo. Dos inicios de desarrollo no se avisaron porque la alerta ya estaba encendida antes de la ventana: no se confirmó ninguna alerta nueva en [s − W, s − 1]. Se evaluó una vez en prueba sin cambiar τ, k ni W y **no es un resultado confirmatorio**. Después se adoptó como regla de alerta del producto (enmienda D10.1, DV-07); la justificación está en la sección «Justificación de la regla B01 en el producto».
 

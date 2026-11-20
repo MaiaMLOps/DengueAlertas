@@ -112,10 +112,9 @@ class DecisionSection(_Section):
     k: int = Field(ge=1)
     W: int = Field(ge=1)
     tau_grid: tuple[float, ...] = Field(min_length=1)
-    # Emission rule (events.EMISSION_RULES): "umbral" is the rule of the contract (p >= tau, §7.4) and the default;
-    # "umbral_fuera_de_epidemia" is rule B01 of the complementary analysis (p >= tau and zona_t != epidemia). The
-    # pre-registered selection and the test evaluation always apply the contract rule.
-    regla_emision: Literal["umbral", "umbral_fuera_de_epidemia"] = "umbral"
+    # Emission rule of the pre-registered selection and test evaluation (contrato §7.4): p >= tau. Fixed: it cannot be
+    # set to another rule here. The rule shown to the user is producto.regla_alerta (D10.1).
+    regla_emision: Literal["umbral"] = "umbral"
 
     @field_validator("tau_grid")
     @classmethod
@@ -196,6 +195,13 @@ class SearchSection(_Section):
         return self
 
 
+class ProductSection(_Section):
+    # Alert rule of the product (API and frontend; enmienda D10.1, DV-07), read only by the code that serves the user.
+    # "umbral_fuera_de_epidemia" is rule B01 (p >= tau and zona_t != epidemia); "umbral" is the pre-registered rule.
+    # tau and k are always those of the frozen recipe; the selection and the evaluation never read this section.
+    regla_alerta: Literal["umbral", "umbral_fuera_de_epidemia"] = "umbral"
+
+
 class ExperimentNames(_Section):
     desarrollo: str = Field(min_length=1)
     prueba: str = Field(min_length=1)
@@ -221,6 +227,7 @@ class ForecastConfig(_Section):
     decision: DecisionSection
     seguimiento: TrackingSection
     busqueda: SearchSection | None = None
+    producto: ProductSection = Field(default_factory=ProductSection)
 
 
 def _horizon_override(raw: str, allowed: tuple[int, ...]) -> int:

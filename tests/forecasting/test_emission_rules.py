@@ -5,12 +5,13 @@ from datetime import date, timedelta
 import numpy as np
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 
 from src.epidemiology.config import EpidemiologyValidationError
 from src.forecasting.complementary import first_alert_leads, weeks_under_alert
-from src.forecasting.config import load_config
+from src.forecasting.config import DecisionSection, ProductSection, load_config
 from src.forecasting.events import (alerts, emission_positive, model_positive,
-                                    model_positive_outside_epidemic)
+                                    model_positive_outside_epidemic, product_alert_states)
 
 MONDAY = date(2020, 1, 6)
 
@@ -54,6 +55,28 @@ def test_emission_rule_dispatch_and_default():
     with pytest.raises(EpidemiologyValidationError):
         model_positive_outside_epidemic(p, ["alerta"], tau=0.5)
     assert load_config().decision.regla_emision == "umbral"
+
+
+def test_preregistered_and_product_rules_are_separate_settings():
+    config = load_config()
+    assert config.decision.regla_emision == "umbral"                       # selection and evaluation
+    assert config.producto.regla_alerta == "umbral_fuera_de_epidemia"      # API (D10.1)
+    with pytest.raises(ValidationError):
+        DecisionSection.model_validate({"k": 2, "W": 12, "tau_grid": [0.05], "regla_emision": "umbral_fuera_de_epidemia"})
+    assert ProductSection().regla_alerta == "umbral"
+    with pytest.raises(ValidationError):
+        ProductSection.model_validate({"regla_alerta": "otra"})
+
+
+def test_product_alert_states():
+    weeks = _weeks(8)
+    p = [0.01, 0.9, 0.9, 0.9, 0.9, 0.9, 0.01, 0.9]
+    zones = ["seguridad", "alerta", "alerta", "alerta", "epidemia", "alerta", "alerta", "alerta"]
+    states = product_alert_states(weeks, p, zones, tau=0.05, k=2, rule="umbral_fuera_de_epidemia")
+    assert states == ["sin_alerta", "senal_en_observacion", "alerta_inicio_confirmada", "alerta_inicio_confirmada",
+                      "continuidad_epidemica", "senal_en_observacion", "sin_alerta", "senal_en_observacion"]
+    # under the pre-registered rule the run continues through the epidemic week
+    assert product_alert_states(weeks, p, zones, tau=0.05, k=2, rule="umbral")[5] == "alerta_inicio_confirmada"
 
 
 def test_first_alert_lead_and_weeks_under_alert():

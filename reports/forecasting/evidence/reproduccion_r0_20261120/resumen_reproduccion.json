@@ -1,0 +1,43 @@
+{
+  "rejilla_C": [
+    0.01,
+    0.03,
+    0.1,
+    0.3,
+    1.0,
+    3.0
+  ],
+  "C_comun_cuatro_anios": 3.0,
+  "C_fuera_de_anio_por_anio": {
+    "2019": 1.0,
+    "2020": 3.0,
+    "2021": 1.0,
+    "2022": 1.0
+  },
+  "resumen_fuera_de_anio": {
+    "casillas": 24,
+    "mejora_b2_media": 0.21090958293979548,
+    "logloss_medio": 0.3145009597018718,
+    "brier_medio": 0.10099354945392584,
+    "logloss_b2_medio": 0.3854347594635978,
+    "brier_b2_medio": 0.124308162053807,
+    "victorias_b2": 16
+  },
+  "max_diferencia_tabla_almacenada": {
+    "logloss": 0.0,
+    "brier": 0.0,
+    "logloss_b2": 0.0,
+    "brier_b2": 0.0,
+    "mejora_b2": 0.0,
+    "logloss_b1": 0.0,
+    "brier_b1": 0.0
+  },
+  "max_diferencia_casillas_versionadas": {
+    "logloss": 9.020562075079397e-17,
+    "mejora_b2": 1.1102230246251565e-16,
+    "logloss_b2": 8.326672684688674e-17
+  },
+  "misma_eleccion_por_casilla": true,
+  "tolerancia": 1e-09,
+  "coincide": true
+}

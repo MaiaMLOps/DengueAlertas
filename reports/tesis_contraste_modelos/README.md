@@ -35,6 +35,15 @@ Cada corrida es una carpeta con una tabla única de desarrollo (`tabla_unica_des
 
 Las corridas del contraste se registraron en MLflow en el experimento con ID `11` (`experimento_registrado_id`). Las corridas nuevas usan el experimento `dengue_h8_contraste_familias`. No se borra ni se renombra ningún experimento o corrida existente.
 
+## Método de selección
+
+Determinado leyendo el código que generó las tablas (`build_thesis_report.py`, `run_seq_dl.py` y `run_horizon_climate_mlflow.py`); no se re-ejecutó nada.
+
+- **Dentro de muestra.** Para cada familia y variante, el ganador es el candidato con la mayor mejora media de log-loss frente a B2 sobre las 24 casillas de desarrollo (media simple de `mejora_b2 = 1 − logloss / logloss_B2` por casilla; con cuatro años por municipio equivale a promediar primero por municipio). El empate se rompe con el menor log-loss medio. Solo compiten candidatos con las 24 casillas completas. Las cifras de la tabla 01 (mejora, desviación estándar, log-loss, Brier y casillas ganadas a B2) se calculan sobre **las mismas 24 casillas** con que se eligió el candidato. Son, por tanto, estimaciones optimistas del desempeño fuera de muestra, y el sesgo crece con el número de candidatos de la familia (logística: 25 valores de C entre sus dos corridas; CatBoost y XGBoost: 65 cada una; SVM y MLP: 40; LightGBM, GRU y CNN-1D: 25).
+- **Candidatos de varias corridas.** Una familia presente en varias corridas compite con todos sus candidatos juntos (logística: `sin_clima` y `logistica_ampliada`; CatBoost y XGBoost: `cb_xgb` y `svm_ampliado`).
+- **Horizonte y clima.** Las tablas 05 y 06 no vuelven a elegir: re-puntúan en cada horizonte los ganadores elegidos en h = 8 con las mismas 24 casillas. La variante con clima de la tabla 06 usa los hiperparámetros elegidos sin clima.
+- **Diferencia con la receta vigente (R0).** La receta elige la configuración común **fuera de año**: para cada año y de desarrollo, la configuración se elige con los otros tres años (media por municipio y luego entre municipios; empate a la menor posición de la rejilla) y se puntúa en y; ninguna casilla interviene en su propia elección (`comparison.out_of_year_scores`, contrato §6.2). Las cifras de control de R0 en desarrollo (mejora media 0,2109; log-loss 0,3145 frente a 0,3854 de B2; 16 de 24 casillas ganadas a B2; C = 3 con los cuatro años) son fuera de año y se reproducen exactamente con el código integrado (`reports/forecasting/evidence/reproduccion_r0_20261120/`). Las de la tabla 01 son dentro de muestra y no se comparan directamente con ellas.
+
 ## Cómo reproducir
 
 Desde la raíz del repositorio, con el `.venv` y las dependencias opcionales instaladas:

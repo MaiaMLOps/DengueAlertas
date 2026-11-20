@@ -1,0 +1,30 @@
+{
+  "C2_frente_a_C3": {
+    "ganadas": 10,
+    "perdidas": 14,
+    "empates": 0
+  },
+  "diferencia_mejora_b2_media": 0.000933469033403897,
+  "por_anio": {
+    "2019": {
+      "diferencia_mejora_b2_media": -0.0008165186742135622,
+      "diferencia_logloss_media": 0.0002100987898012626,
+      "casillas_ganadas_c2": 1
+    },
+    "2020": {
+      "diferencia_mejora_b2_media": 0.014322889786524148,
+      "diferencia_logloss_media": -0.005008792187228579,
+      "casillas_ganadas_c2": 5
+    },
+    "2021": {
+      "diferencia_mejora_b2_media": -0.005327114028020959,
+      "diferencia_logloss_media": -0.00011898652847228506,
+      "casillas_ganadas_c2": 2
+    },
+    "2022": {
+      "diferencia_mejora_b2_media": -0.004445380950674038,
+      "diferencia_logloss_media": 0.001395388783390956,
+      "casillas_ganadas_c2": 2
+    }
+  }
+}

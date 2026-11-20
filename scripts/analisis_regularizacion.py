@@ -9,12 +9,15 @@ log-loss improvement over B2, out-of-year scoring, training cut D7.1, sin_clima 
   ampliada      scores the 19-value grid of configs/contraste_familias.yaml (logistica_ampliada) out of year, C = 2
                 fixed in every year, and compares both with R0 cell by cell (protocol declared in
                 docs/forecasting/analisis_complementario.md before the calculation).
+  c2c3          compares C = 2 and C = 3 fixed in every development year, cell by cell (log-loss wins) and by year
+                (mean difference of the improvement over B2); adds two new files to the extended-grid folder.
 
 No test-period target week is scored. Evidence goes to a new folder; existing files are never overwritten.
 
 Run from the repository root:
     .venv/Scripts/python.exe -B scripts/analisis_regularizacion.py reproduccion --salida reports/forecasting/evidence/reproduccion_r0_20261120
     .venv/Scripts/python.exe -B scripts/analisis_regularizacion.py ampliada --salida reports/forecasting/evidence/regularizacion_c_ampliada_20261120
+    .venv/Scripts/python.exe -B scripts/analisis_regularizacion.py c2c3 --salida reports/forecasting/evidence/regularizacion_c_ampliada_20261120
 """
 
 from __future__ import annotations
@@ -172,10 +175,46 @@ def extended(config_path: Path, contrast_path: Path, output: Path | None) -> dic
     return result
 
 
+def c2_against_c3(config_path: Path, contrast_path: Path, output: Path | None) -> dict:
+    """C = 2 and C = 3 fixed in every development year, on the extended-grid table (same cells and B2)."""
+    config, access, trial_data = _prepare(config_path)
+    ext = load_contrast_config(contrast_path).corridas["logistica_ampliada"].busqueda.logistica
+    table, _ = logistic_table(trial_data, ext.C, max_iter=ext.max_iter, features=FEATURE_SETS["sin_clima"],
+                              access=access, clip=config.metricas.recorte_log_loss)
+    name_of = {c: name for name, c in candidate_c(table).items()}
+    require(FIXED_C in name_of and 3.0 in name_of, "C = 2 and C = 3 must be in the extended grid.")
+    c2, c3 = fixed_cells(table, name_of[FIXED_C]), fixed_cells(table, name_of[3.0])
+    cells = c2.merge(c3, on=["municipality_code", "anio"], suffixes=("_c2", "_c3"), validate="one_to_one")
+    cells["diferencia_mejora_b2"] = cells["mejora_b2_c2"] - cells["mejora_b2_c3"]
+    cells["diferencia_logloss"] = cells["logloss_c2"] - cells["logloss_c3"]
+    cells["gana_c2"] = cells["logloss_c2"] < cells["logloss_c3"]
+    by_year = cells.groupby("anio").agg(diferencia_mejora_b2_media=("diferencia_mejora_b2", "mean"),
+                                        diferencia_logloss_media=("diferencia_logloss", "mean"),
+                                        casillas_ganadas_c2=("gana_c2", "sum"))
+    result = {"C2_frente_a_C3": paired_wins(c2, c3),
+              "diferencia_mejora_b2_media": float(cells["diferencia_mejora_b2"].mean()),
+              "por_anio": {int(year): {"diferencia_mejora_b2_media": float(row.diferencia_mejora_b2_media),
+                                       "diferencia_logloss_media": float(row.diferencia_logloss_media),
+                                       "casillas_ganadas_c2": int(row.casillas_ganadas_c2)}
+                           for year, row in by_year.iterrows()}}
+    if output is not None:
+        files = {"c2_frente_a_c3_casillas.csv": cells, "c2_frente_a_c3.json": result}
+        existing = [name for name in files if (output / name).exists()]
+        require(output.is_dir() and not existing, f"{output} must exist without {existing}; files are never "
+                                                  f"overwritten.")
+        for name, content in files.items():
+            if isinstance(content, pd.DataFrame):
+                content.to_csv(output / name, index=False, lineterminator="\n")
+            else:
+                (output / name).write_text(json.dumps(content, indent=2, ensure_ascii=False) + "\n",
+                                           encoding="utf-8")
+    return result
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Regularisation analyses of the frozen logistic recipe "
                                                  "(development only).")
-    parser.add_argument("parte", choices=["reproduccion", "ampliada"])
+    parser.add_argument("parte", choices=["reproduccion", "ampliada", "c2c3"])
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
     parser.add_argument("--contraste", type=Path, default=CONTRAST_CONFIG_PATH)
     parser.add_argument("--salida", type=Path, default=None, help="New evidence folder (omitted: print only).")
@@ -183,6 +222,8 @@ def main(argv: list[str] | None = None) -> int:
     output = resolve_path(args.salida) if args.salida is not None else None
     if args.parte == "reproduccion":
         result = reproduction(args.config, output)
+    elif args.parte == "c2c3":
+        result = c2_against_c3(args.config, args.contraste, output)
     else:
         result = extended(args.config, args.contraste, output)
     print(json.dumps(result, indent=2, ensure_ascii=False))

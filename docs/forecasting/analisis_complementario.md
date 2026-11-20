@@ -44,6 +44,18 @@ Calculado después del protocolo anterior (commit 7d33839), sin cambiar el proce
 
 **Lectura como análisis de sensibilidad.** Con el procedimiento preregistrado, ampliar la rejilla no mejora la receta: la elección fuera de año es inestable (en 2020 elige C = 15) y empata con R0 en la mitad de las casillas. C = 2 fijo reproduce exactamente la cifra del contraste de familias (22,45 %, log-loss 0,311, Brier 0,0998, 16 casillas), pero ese C se eligió con los cuatro años: su 19–5 frente a R0 es una comparación dentro de muestra y no cuenta para la regla. La diferencia entre la cifra del contraste (0,2245) y la de la rejilla ampliada con el procedimiento preregistrado (0,2049) mide el optimismo de elegir y reportar sobre las mismas casillas.
 
+**C = 2 frente a C = 3, ambos fijos.** La comparación directa usa las mismas 24 casillas y la misma B2, con C fijo en los cuatro años (C = 3 es el C común de la receta con los cuatro años; R0, en cambio, usa el C elegido fuera de año en cada año). C = 2 gana 10 casillas y pierde 14 por log-loss. La diferencia media de la mejora frente a B2 (C = 2 menos C = 3) es:
+
+| Año | Diferencia media de la mejora frente a B2 | Casillas ganadas por C = 2 (de 6) |
+|---|---|---|
+| 2019 | −0,0008 | 1 |
+| 2020 | +0,0143 | 5 |
+| 2021 | −0,0053 | 2 |
+| 2022 | −0,0044 | 2 |
+| Los cuatro años | +0,0009 | 10 |
+
+La ventaja media de C = 2 (+0,0009) proviene de 2020: es el único año en que C = 2 mejora en promedio, y su diferencia (+0,0143) compensa las de los otros tres años, en los que C = 3 es mejor. Con una ventaja media tan pequeña y concentrada en un año, la elección entre C = 2 y C = 3 depende de qué años entran en el promedio. Evidencia: `c2_frente_a_c3.json` y `c2_frente_a_c3_casillas.csv` en `reports/forecasting/evidence/regularizacion_c_ampliada_20261120/` (`scripts/analisis_regularizacion.py c2c3`).
+
 ## Referencia M0: modelo mínimo de posición
 
 **Definición.** Regresión logística L2 sin pesos de clase, con `posicion_4s` como única variable, estandarizada con estadísticas de entrenamiento: el mismo preprocesamiento y estimador que la receta, sin `zona_t` ni las demás variables. Misma rejilla de C (6 valores), mismo corte D7.1 y misma configuración común fuera de año. Mide cuánto del desempeño de la receta ya está contenido en la posición continua frente al canal. Código: `src/forecasting/complementary.py` (`position_model`) y `scripts/analisis_m0.py`. Evidencia: `reports/forecasting/evidence/m0_posicion_20261120/`.

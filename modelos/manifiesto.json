@@ -1,0 +1,77 @@
+{
+  "receta_hash": "de74d4abd33537433ffc9d1572c6cdd8620a2608fcc2b67ee4a1752aa865fda5",
+  "modelos": {
+    "08001": {
+      "familia": "logistica",
+      "candidato": "logistica_05",
+      "conjunto_variables": "sin_clima",
+      "hiperparametros": {
+        "C": 3.0,
+        "max_iter": 5000
+      },
+      "filas": 711,
+      "ultima_emision": "2025-10-27",
+      "ultima_objetivo": "2025-12-22"
+    },
+    "08758": {
+      "familia": "logistica",
+      "candidato": "logistica_05",
+      "conjunto_variables": "sin_clima",
+      "hiperparametros": {
+        "C": 3.0,
+        "max_iter": 5000
+      },
+      "filas": 711,
+      "ultima_emision": "2025-10-27",
+      "ultima_objetivo": "2025-12-22"
+    },
+    "41001": {
+      "familia": "logistica",
+      "candidato": "logistica_05",
+      "conjunto_variables": "sin_clima",
+      "hiperparametros": {
+        "C": 3.0,
+        "max_iter": 5000
+      },
+      "filas": 711,
+      "ultima_emision": "2025-10-27",
+      "ultima_objetivo": "2025-12-22"
+    },
+    "50001": {
+      "familia": "logistica",
+      "candidato": "logistica_05",
+      "conjunto_variables": "sin_clima",
+      "hiperparametros": {
+        "C": 3.0,
+        "max_iter": 5000
+      },
+      "filas": 711,
+      "ultima_emision": "2025-10-27",
+      "ultima_objetivo": "2025-12-22"
+    },
+    "54001": {
+      "familia": "logistica",
+      "candidato": "logistica_05",
+      "conjunto_variables": "sin_clima",
+      "hiperparametros": {
+        "C": 3.0,
+        "max_iter": 5000
+      },
+      "filas": 711,
+      "ultima_emision": "2025-10-27",
+      "ultima_objetivo": "2025-12-22"
+    },
+    "76001": {
+      "familia": "logistica",
+      "candidato": "logistica_05",
+      "conjunto_variables": "sin_clima",
+      "hiperparametros": {
+        "C": 3.0,
+        "max_iter": 5000
+      },
+      "filas": 711,
+      "ultima_emision": "2025-10-27",
+      "ultima_objetivo": "2025-12-22"
+    }
+  }
+}

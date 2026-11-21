@@ -12,23 +12,34 @@ La pregunta del proyecto es: **¿qué tan probable es que un municipio esté en 
 
 - **Datos.** Registros confirmados del evento 210 (dengue) de SIVIGILA por municipio de ocurrencia y semana de inicio de síntomas (lunes a domingo), con covariables climáticas semanales, 2007–2025. Seis municipios piloto: Barranquilla `08001`, Soledad `08758`, Neiva `41001`, Villavicencio `50001`, Cúcuta `54001` y Cali `76001`.
 - **Variable objetivo.** `target_u1e` = 1 si los casos de la semana superan el límite superior U1e del canal endémico calculado como en epiCo (cinco años previos, media geométrica, intervalo t). El modelo predice ese estado 8 semanas después de la última semana con datos completos.
-- **Modelo.** Un modelo independiente por municipio que emite una probabilidad semanal. Se compara con dos líneas base: B2 (probabilidad según la zona actual del canal) y B1 (estacionalidad de la semana objetivo). Una regla fija (dos emisiones consecutivas sobre un umbral τ) convierte las probabilidades en alertas, que se comparan con la alerta del canal.
+- **Modelo (receta congelada).** Una regresión logística con penalización L2 por municipio, entrenada con seis variables sin clima: la zona actual del canal (`zona_t`), la posición reciente frente al umbral (`posicion_4s`), el crecimiento del último mes (`crecimiento_4s`), el cambio del umbral hasta la semana objetivo (`cambio_umbral`) y la época del año de la semana objetivo (`sem_sin`, `sem_cos`). Cada semana emite una probabilidad de zona epidémica en t + 8. Se compara con dos líneas base: B2 (probabilidad según la zona actual del canal) y B1 (estacionalidad de la semana objetivo). Familia, hiperparámetros, variables, τ, k y W están en [`configs/receta_congelada.yaml`](configs/receta_congelada.yaml).
+- **Regla de la evaluación preregistrada.** Una emisión es positiva si p̂ ≥ τ, y k = 2 emisiones positivas consecutivas confirman una alerta, que se compara con la alerta del canal (contrato §7.4). Es la regla de la selección y de la prueba única, y la única que sostiene las conclusiones del contrato; queda fija en `decision.regla_emision` de `configs/forecasting.yaml`.
+- **Regla de alerta del producto (enmienda D10.1).** Es la que verá el usuario en la API y el frontend: una emisión es positiva si p̂ ≥ τ **y** la zona observada en t no es epidémica, de modo que el modelo no emite alertas en zona epidémica. Cada emisión toma uno de cuatro estados: `sin_alerta`, `senal_en_observacion`, `alerta_inicio_confirmada` (k emisiones positivas consecutivas) y `continuidad_epidemica` (el municipio ya está en zona epidémica). La probabilidad es siempre la misma p̂, pero se etiqueta según el estado: probabilidad de **seguir** en zona epidémica en `continuidad_epidemica` y de **entrar** en ella en los demás. Se fija en `producto.regla_alerta`, usa el τ y el k de la receta y no cambia la receta ni la evaluación preregistrada (DV-07; esquema en [`docs/forecasting/api_salida_d10.md`](docs/forecasting/api_salida_d10.md)).
 - **Validación.** Origen móvil con reentrenamiento anual: desarrollo 2019–2022 para elegir; prueba 2023–2025 evaluada una sola vez, después de congelar la receta.
-- **Entrega.** API FastAPI y frontend React con cuatro vistas: pronóstico vigente, historial fuera de muestra, carga de datos y desempeño en prueba (pendiente de F8).
+- **Análisis complementario.** Posterior a la prueba y descriptivo: contraste de familias de modelos en desarrollo, modelo mínimo de posición (M0), sensibilidad a la regularización, regla de alerta del producto (B01) y calidad de la probabilidad en continuidad epidémica. Está en [`docs/forecasting/analisis_complementario.md`](docs/forecasting/analisis_complementario.md); no modifica la receta ni las conclusiones preregistradas.
+- **Entrega.** Modelos finales en [`modelos/`](modelos/README.md), cuadernos de lectura en [`notebooks/`](notebooks/README.md) y, pendientes de F8, la API FastAPI y el frontend React con cuatro vistas: pronóstico vigente, historial fuera de muestra, carga de datos y desempeño en prueba.
 
 La metodología completa, sus decisiones (D0–D10) y la secuencia de fases están en [`docs/forecasting/README.md`](docs/forecasting/README.md). Este README no reporta resultados: están en la evidencia indexada en [`reports/forecasting/INDICE.md`](reports/forecasting/INDICE.md). El análisis integrado de los resultados está en [`docs/forecasting/analisis_resultados.md`](docs/forecasting/analisis_resultados.md), con versiones en Word y presentación en [`reports/forecasting/entregables/`](reports/forecasting/entregables/).
 
 ## 3. Estructura del repositorio
 
 ```
-configs/                  Parámetros del pronóstico (forecasting.yaml) y receta congelada (receta_congelada.yaml)
+configs/                  Parámetros del pronóstico (forecasting.yaml), receta congelada (receta_congelada.yaml)
+                          y contraste de familias del análisis complementario (contraste_familias.yaml)
 data/processed/           Descriptores .dvc y manifiestos; el contenido está en el remoto DVC
 docs/                     Documentación de datos, selección de pilotos y etiquetas epidemiológicas
-docs/forecasting/         Contrato predictivo, especificación, decisiones, desviaciones, API y scripts de verificación
+docs/forecasting/         Contrato predictivo, especificación, decisiones, desviaciones, API, análisis de resultados,
+                          análisis complementario (analisis_complementario.md) y scripts de verificación
 frontend/                 Aplicación React/Vite (Cloudflare Pages)
+modelos/                  Modelos finales: seis .joblib y su manifiesto, copia de la salida DVC de la prueba (README propio)
+notebooks/                Cuadernos de lectura con salidas guardadas: canal, resultados y uso del modelo (README propio)
 reports/                  Evidencia versionada: selección de pilotos, etiquetas y pronóstico (tablas, figuras, bitácora, entregables)
-requirements/             Dependencias por etapa
-scripts/                  Utilidades (descripción del canal, comprobación de MLflow en solo lectura)
+reports/tesis_contraste_modelos/   Tablas y figuras del contraste de familias (desarrollo 2019–2022)
+requirements/             Dependencias por etapa; opcionales: contraste.txt (contraste de familias) y notebooks.txt (cuadernos)
+scripts/                  Utilidades (descripción del canal, comprobación de MLflow en solo lectura) y scripts del análisis
+                          complementario: analisis_b01.py, analisis_continuidad.py, analisis_m0.py, analisis_regularizacion.py
+                          y el contraste de familias (run_contrast_search.py, run_seq_dl.py, run_horizon_sensitivity.py,
+                          run_horizon_climate_mlflow.py, log_seq_dl_mlflow.py, build_thesis_report.py)
 src/data/                 Integración de SIVIGILA y covariables (panel maestro)
 src/pilot_selection/      Selección descriptiva de los seis pilotos y derivado territorial
 src/epidemiology/         Canal de epiCo (channel_epico.py) y etiquetas EWT de legado
@@ -54,6 +65,8 @@ Dockerfile                Imagen de la API
   | `requirements/forecasting.lock.txt` | Entorno completo verificado del modelado, con DVC (`pip freeze`) |
   | `requirements/data-test.txt` | Pruebas de la integración de datos |
   | `requirements/serve.txt` | Dependencias de la API |
+  | `requirements/contraste.txt` | Opcional: familias del contraste (CatBoost, XGBoost, PyTorch); incluye `forecasting.txt` |
+  | `requirements/notebooks.txt` | Opcional: ejecución de los cuadernos (nbformat, nbclient, ipykernel); incluye `forecasting.txt` |
 
 Instalación del entorno de modelado:
 
@@ -66,6 +79,20 @@ py -3.11 -m venv .venv
 ```
 
 `requirements/forecasting.lock.txt` reproduce las versiones exactas con las que se generaron los resultados; `requirements/forecasting.txt` fija solo las directas.
+
+**Dependencias opcionales.** El pipeline principal, la API y las pruebas no las necesitan; se instalan en el mismo `.venv`, después del entorno de modelado.
+
+- Contraste de familias del análisis complementario (`configs/contraste_familias.yaml` y sus scripts). Solo las familias secuenciales (GRU y CNN-1D) usan PyTorch; para usarlo con GPU, el archivo indica instalar la rueda de CUDA desde el índice del sitio oficial de PyTorch, y sin GPU basta la de CPU:
+
+  ```bash
+  .venv/Scripts/python.exe -m pip install -r requirements/contraste.txt
+  ```
+
+- Cuadernos de `notebooks/`. La ejecución con salidas guardadas, incluido el registro del kernel del `.venv`, se describe en [`notebooks/README.md`](notebooks/README.md):
+
+  ```bash
+  .venv/Scripts/python.exe -m pip install -r requirements/notebooks.txt
+  ```
 
 ## 5. Datos con DVC
 
@@ -143,16 +170,30 @@ Sin las opciones, las pruebas con datos se omiten; con una opción y sin el arch
 - **Familia.** Regresión logística con penalización L2, un modelo por municipio, entrenada con el conjunto de variables *sin clima* (estado y dinámica frente al canal y semana del año). Familia, hiperparámetros, conjunto de variables, τ, k y W están en [`configs/receta_congelada.yaml`](configs/receta_congelada.yaml), con su hash SHA-256 y su aprobación. Cómo se eligió: [`docs/forecasting/README.md`](docs/forecasting/README.md).
 - **Tamaño.** Seis archivos `joblib` de unos 4 KB cada uno, más un manifiesto: unos 28 KB en total.
 - **Dónde están.**
-  - **DVC:** `data/processed/forecasting/prueba/modelos_finales/` (`<código>.joblib` y `manifiesto.json`, con la familia, el candidato, el conjunto de variables, las filas y el hash de la receta). Copia del manifiesto en git: `reports/forecasting/evidence/prueba_20261112/manifiesto_modelos_finales.json`.
+  - **DVC (fuente de verdad):** `data/processed/forecasting/prueba/modelos_finales/` (`<código>.joblib` y `manifiesto.json`, con la familia, el candidato, el conjunto de variables, las filas y el hash de la receta). Los modelos son salidas del pipeline y se versionan con DVC junto a las salidas de la prueba de la que dependen (especificación §4, «Ubicación de resultados»). Copia del manifiesto en git: `reports/forecasting/evidence/prueba_20261112/manifiesto_modelos_finales.json`.
+  - **`modelos/` (copia de entrega):** los seis `.joblib` y el manifiesto, idénticos byte a byte a la salida DVC, para consultarlos sin acceso al remoto. Su [`README`](modelos/README.md) describe cada archivo (municipio, tamaño y md5), la entrada que esperan (las variables que construye `src.forecasting.dataset.build_features`), un ejemplo de carga y predicción y su relación con DVC y MLflow. `tests/forecasting/test_modelos_entrega.py` comprueba que la copia coincide con la salida DVC cuando está disponible y que el manifiesto corresponde a la receta congelada. El uso completo, con el estado de alerta del producto, está en [`notebooks/03_uso_del_modelo.ipynb`](notebooks/03_uso_del_modelo.ipynb).
   - **MLflow:** la prueba única quedó registrada en el experimento `dengue_h8_prueba` del servidor del equipo; la búsqueda de desarrollo, en `dengue_h8_desarrollo`. El registro de los modelos finales como `DengueAlertas_<Municipio>` (nombre del municipio; propuesta de la especificación §9) en el registro de modelos, que es lo que lee la API, es parte de F8.
-- **Por qué no hay carpeta `modelos/`.** Los modelos son salidas del pipeline, como las predicciones y la ficha: se versionan con DVC junto a las salidas de la prueba de la que dependen (especificación §4, «Ubicación de resultados»), y git solo guarda su descriptor. El punto de distribución para la API es el registro de modelos de MLflow, no una carpeta del repositorio.
+- **Requerimientos de hardware.** Solo CPU; ni el entrenamiento ni la inferencia de la receta usan GPU. Cada modelo es una regresión logística sobre seis variables, y los seis ocupan unos 28 KB en disco. La inferencia requiere scikit-learn 1.7.2, la versión con la que se serializaron (`requirements/forecasting.txt`). Solo las familias secuenciales del contraste de familias (GRU y CNN-1D, fuera de la receta) se entrenaron con PyTorch y admiten GPU.
+- **Tiempos de inferencia.** Medición local del 2026-11-20 en un portátil con Intel Core i7-12650H (10 núcleos, 16 hilos), 64 GB de RAM y Windows 11, con Python 3.11.0 y scikit-learn 1.7.2, en un proceso de Python sin MLflow ni API. No es una medición de la API desplegada, que añadirá la carga desde el registro de MLflow, la red y la serialización de la respuesta.
+
+  | Operación | Tiempo |
+  |---|---|
+  | Carga de los seis modelos desde `modelos/` (`joblib.load`) | 7 ms la primera vez; mediana de 6,5 ms en 50 repeticiones |
+  | Predicción de una emisión para un municipio (`predict_positive`, una fila) | Mediana de 2,5 ms en 1.000 repeticiones (percentil 95: 3,2 ms) |
+  | Predicción de una emisión para los seis municipios | Mediana de 19 ms en 200 repeticiones |
+  | Construcción de las variables de una emisión (`build_features` sobre la base completa) | Mediana de 0,10 s en 5 repeticiones |
+
+  La importación de pandas, scikit-learn y joblib al iniciar el proceso tomó 1,3 s y ocurre una sola vez.
 
 ## 8. Parametrización
 
 | Dónde | Qué fija |
 |---|---|
 | `configs/forecasting.yaml` | Rutas de datos y versión DVC del canal; parámetros del canal; horizonte h; ventanas de las variables; años de desarrollo y prueba; líneas base; recorte del log-loss; α de las comparaciones; k, W y rejilla de τ; pre-registro de la búsqueda (candidatos y semillas); seguimiento en MLflow. Se valida con Pydantic al cargarse (`src/forecasting/config.py`) |
+| `configs/forecasting.yaml`, `decision.regla_emision` | Regla de emisión de la selección y la evaluación preregistrada: `umbral` (p̂ ≥ τ, contrato §7.4). Es fija: la validación de la configuración no admite otro valor |
+| `configs/forecasting.yaml`, `producto.regla_alerta` | Regla de alerta del producto (enmienda D10.1, DV-07): `umbral_fuera_de_epidemia` (p̂ ≥ τ y zona observada en t distinta de epidemia), con τ y k de la receta. La lee la API (F8), que calcula el estado con `events.product_alert_states`; la evaluación nunca la usa |
 | `configs/receta_congelada.yaml` | Receta elegida en desarrollo y aprobada antes de la prueba. No se edita: cualquier cambio invalida su hash y la barrera de prueba la rechaza |
+| `configs/contraste_familias.yaml` | Contraste de familias del análisis complementario (solo desarrollo 2019–2022): corridas, espacios de búsqueda, semillas y sensibilidad al horizonte. Se valida con `load_contrast_config` (`src/forecasting/config.py`); no participa en la receta ni en la prueba |
 
 Variables de entorno existentes:
 
@@ -166,6 +207,18 @@ Variables de entorno existentes:
 Las variables nuevas de la API (`ALERT_K`, `DATA_VERSION` y la URL de la API en el frontend) se definen en F8; su diseño está en la especificación §10.
 
 ## 9. Despliegue
+
+### Estrategia de despliegue
+
+Definida en el contrato predictivo (§9.6) y en el esquema de salida de la API, versión 0.2 ([`docs/forecasting/api_salida_d10.md`](docs/forecasting/api_salida_d10.md)):
+
+- **Modelos pequeños cargados al iniciar.** La API carga los seis modelos por municipio (unos 28 KB en total) una sola vez, al arrancar, desde el registro de modelos de MLflow (`DengueAlertas_<Municipio>`).
+- **Inferencia solo en el pronóstico vigente.** `/predict` y `/predict/upload` construyen las variables de la emisión y calculan p̂ con el modelo final, y luego el estado de alerta con la regla del producto (`producto.regla_alerta`).
+- **Historial y ficha precalculados.** `/historial` (predicciones fuera de muestra 2019–2025 y eventos) y `/desempeno` (ficha de desempeño en prueba) sirven tablas generadas por `src.forecasting.artifacts`; esas vistas no hacen inferencia.
+- **Inferencia en CPU.** La receta no requiere GPU (§7).
+- **Parámetros congelados.** τ y k se toman de la receta; si se cambian, la API lo indica y la ficha de desempeño deja de aplicar.
+
+Los apartados 9.1 a 9.4 se completan con la implementación de F8.
 
 ### 9.1 Aplicación
 
@@ -190,6 +243,8 @@ Pendiente de F8.
 - [`docs/forecasting/contrato_predictivo.md`](docs/forecasting/contrato_predictivo.md): qué se construye y cómo se evalúa (vinculante).
 - [`docs/forecasting/especificacion_implementacion.md`](docs/forecasting/especificacion_implementacion.md): cómo se implementa.
 - [`docs/forecasting/registro_decisiones.md`](docs/forecasting/registro_decisiones.md) y [`docs/forecasting/desviaciones.md`](docs/forecasting/desviaciones.md): por qué, y qué cambió durante la implementación.
+- [`docs/forecasting/analisis_complementario.md`](docs/forecasting/analisis_complementario.md): contraste de familias, M0, regularización, regla de alerta del producto y continuidad, posteriores a la prueba.
+- [`modelos/README.md`](modelos/README.md) y [`notebooks/README.md`](notebooks/README.md): artefactos del modelo final y cuadernos de lectura, con el mapa de etapas, módulos y documentación.
 - [`docs/contexto_metodologico.md`](docs/contexto_metodologico.md), [`docs/data_dictionary.md`](docs/data_dictionary.md), [`docs/data_pipeline.md`](docs/data_pipeline.md), [`docs/pilot_selection.md`](docs/pilot_selection.md) y [`docs/epidemiology_labels.md`](docs/epidemiology_labels.md): etapas anteriores al pronóstico.
 - [`AGENTS.md`](AGENTS.md) y [`CLAUDE.md`](CLAUDE.md): reglas de trabajo en el repositorio.
 

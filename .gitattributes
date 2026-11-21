@@ -7,3 +7,6 @@
 /reports/data_quality/integration_quality_fixed_20261020.json -text
 
 reports/epidemiology/evidence/labels_20261021/*.svg binary
+
+# Delivery copy of the final models (modelos/README.md): exact bytes, so their md5 match the DVC output.
+/modelos/** -text

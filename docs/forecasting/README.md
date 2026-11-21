@@ -206,6 +206,7 @@ La dependencia va de `src/forecasting/` a `src/epidemiology/`, nunca al revés. 
 | F0–F8 | Fases de la implementación (§2). Sufijos: F5a/F5b (arnés y búsqueda), F6b (D7.2), F7b (pruebas que reemplazan a las de F7 sustituidas por DV-02), F7c (pruebas de U7.5) |
 | U*x.y* | Unidad de trabajo *y* de la fase *x*: uno o dos requisitos del contrato y un commit |
 | contrato §10.*n* | Requisito *n* de la lista acumulada del contrato |
+| [H], [C], [D], [I], [R], [P], [X] | Marcas de los documentos: hecho verificado, cálculo reproducible con un script, decisión, inferencia, recomendación, pendiente y exploratorio (cálculo no declarado antes de abrir la prueba; describe, no concluye) |
 
 **Decisiones de plan de las unidades.** No son decisiones del contrato (D0–D10). Se citan así en el código y en las pruebas congeladas de F6b, F7 y F7c, y se reconstruyen aquí desde esos archivos:
 
@@ -223,8 +224,7 @@ La dependencia va de `src/forecasting/` a `src/epidemiology/`, nunca al revés. 
 | U7.5-D5, sentido (b) | Insumos de cada periodo: en desarrollo, la receta y la ablación con su configuración común fuera de año y las líneas base guardadas; en prueba, los cuatro sistemas de `predicciones_prueba.parquet` | `tests/acceptance/test_f7c_identidades_real.py`, `src/forecasting/reports.py` («decision D5 of U7.5»). El plan usa «D5» con dos sentidos; ambos se conservan tal como están en los archivos |
 | PARADA 2 (plan de F6b) | Reconstruida a partir del docstring de `test_f6breal_seleccion.py`: punto de detención en que el responsable de la implementación revisó la selección real de D7.2 y su verificación independiente (`caso_f6b.py`) antes de congelar esa prueba | `tests/acceptance/test_f6breal_seleccion.py` |
 
-No se encontró en el repositorio ninguna U7.1-D1 ni U7.1-D5 con sentido propio.
-| [H], [C], [D], [I], [R], [P], [X] | Marcas de los documentos: hecho verificado, cálculo reproducible con un script, decisión, inferencia, recomendación, pendiente y exploratorio (cálculo no declarado antes de abrir la prueba; describe, no concluye) |
+*Nota.* No se encontró en el repositorio ninguna U7.1-D1 ni U7.1-D5 con sentido propio.
 
 **Tiempo y canal**
 

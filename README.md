@@ -39,7 +39,8 @@ requirements/             Dependencias por etapa; opcionales: contraste.txt (con
 scripts/                  Utilidades (descripción del canal, comprobación de MLflow en solo lectura) y scripts del análisis
                           complementario: analisis_b01.py, analisis_continuidad.py, analisis_m0.py, analisis_regularizacion.py
                           y el contraste de familias (run_contrast_search.py, run_seq_dl.py, run_horizon_sensitivity.py,
-                          run_horizon_climate_mlflow.py, log_seq_dl_mlflow.py, build_thesis_report.py)
+                          run_horizon_climate_mlflow.py, log_seq_dl_mlflow.py, build_thesis_report.py); registro de
+                          los modelos finales en MLflow (registrar_modelos_finales.py)
 src/data/                 Integración de SIVIGILA y covariables (panel maestro)
 src/pilot_selection/      Selección descriptiva de los seis pilotos y derivado territorial
 src/epidemiology/         Canal de epiCo (channel_epico.py) y etiquetas EWT de legado
@@ -172,7 +173,32 @@ Sin las opciones, las pruebas con datos se omiten; con una opción y sin el arch
 - **Dónde están.**
   - **DVC (fuente de verdad):** `data/processed/forecasting/prueba/modelos_finales/` (`<código>.joblib` y `manifiesto.json`, con la familia, el candidato, el conjunto de variables, las filas y el hash de la receta). Los modelos son salidas del pipeline y se versionan con DVC junto a las salidas de la prueba de la que dependen (especificación §4, «Ubicación de resultados»). Copia del manifiesto en git: `reports/forecasting/evidence/prueba_20261112/manifiesto_modelos_finales.json`.
   - **`modelos/` (copia de entrega):** los seis `.joblib` y el manifiesto, idénticos byte a byte a la salida DVC, para consultarlos sin acceso al remoto. Su [`README`](modelos/README.md) describe cada archivo (municipio, tamaño y md5), la entrada que esperan (las variables que construye `src.forecasting.dataset.build_features`), un ejemplo de carga y predicción y su relación con DVC y MLflow. `tests/forecasting/test_modelos_entrega.py` comprueba que la copia coincide con la salida DVC cuando está disponible y que el manifiesto corresponde a la receta congelada. El uso completo, con el estado de alerta del producto, está en [`notebooks/03_uso_del_modelo.ipynb`](notebooks/03_uso_del_modelo.ipynb).
-  - **MLflow:** la prueba única quedó registrada en el experimento `dengue_h8_prueba` del servidor del equipo; la búsqueda de desarrollo, en `dengue_h8_desarrollo`. El registro de los modelos finales como `DengueAlertas_<Municipio>` (nombre del municipio; propuesta de la especificación §9) en el registro de modelos, que es lo que lee la API, es parte de F8.
+  - **MLflow:** la prueba única quedó registrada en el experimento `dengue_h8_prueba` del servidor del equipo; la búsqueda de desarrollo, en `dengue_h8_desarrollo`. Los seis modelos finales están en el registro de modelos, que es lo que leerá la API, como `DengueAlertas_Barranquilla`, `DengueAlertas_Soledad`, `DengueAlertas_Neiva`, `DengueAlertas_Villavicencio`, `DengueAlertas_Cucuta` y `DengueAlertas_Cali`, **todos en versión 1** (2026-11-20).
+    - **Ruta de registro.** El servidor no admite escrituras en el registro con el token del equipo, así que el registro sigue tres pasos (DV-08):
+      1. `scripts/registrar_modelos_finales.py --solo-runs` crea un run por municipio en el experimento `dengue_h8_final`, con parámetros, etiquetas, el `.joblib` original y el modelo guardado con firma;
+      2. cada modelo se registra manualmente desde la interfaz de MLflow;
+      3. `--verificar`, de solo lectura, comprueba la versión, el run (por id y md5) y que las probabilidades cargadas desde `models:/` son idénticas a las del `.joblib`.
+
+      Los run id y el detalle están en [`modelos/README.md`](modelos/README.md), «Registro en MLflow».
+    - **Registrados sin habilitar.** Están sin la etiqueta `enabled` y sin alias, para que la API anterior, que descubre solo los modelos con `enabled = true`, no los cargue antes de F8. La habilitación y los alias forman parte del despliegue de F8: el webhook (`src/webhook_api.py`) promueve la versión a la etapa del alias y sincroniza la API correspondiente.
+- **Habilitación en F8.** El responsable del despliegue pone en cada modelo registrado estas etiquetas, que lee `src/api.py`:
+
+  | Modelo registrado | `enabled` | `municipality_code` | `department` | `depto_id` |
+  |---|---|---|---|---|
+  | `DengueAlertas_Barranquilla` | `true` | `08001` | `Atlántico` | `COATL` |
+  | `DengueAlertas_Soledad` | `true` | `08758` | `Atlántico` | `COATL` |
+  | `DengueAlertas_Neiva` | `true` | `41001` | `Huila` | `COHUI` |
+  | `DengueAlertas_Villavicencio` | `true` | `50001` | `Meta` | `COMET` |
+  | `DengueAlertas_Cucuta` | `true` | `54001` | `Norte de Santander` | `CONSA` |
+  | `DengueAlertas_Cali` | `true` | `76001` | `Valle del Cauca` | `COVAC` |
+
+  Luego sigue este orden:
+  1. alias `staging` en la versión 1;
+  2. prueba en el ambiente de pruebas;
+  3. alias `production`.
+
+  `src/api.py` carga cada modelo por el alias igual a `STAGE`. Si no lo encuentra, recurre a la etapa clásica y después a la última versión. Por eso, con `enabled = true`, la API de producción cargaría la versión 1 aunque aún no tenga el alias `production`; F8 decide cómo tratar ese último recurso antes de habilitar (detalle en [`modelos/README.md`](modelos/README.md)).
+- **Dependencias de la API (nota para F8).** `requirements/serve.txt` debe fijar `scikit-learn==1.7.2`, la versión con la que se serializaron los modelos, y `mlflow==3.17.0`, la versión del servidor. Hoy fija `scikit-learn>=1.3.0` y `mlflow>=2.0.0`. Este cambio y el del `Dockerfile` corresponden al responsable del despliegue.
 - **Requerimientos de hardware.** Solo CPU; ni el entrenamiento ni la inferencia de la receta usan GPU. Cada modelo es una regresión logística sobre seis variables, y los seis ocupan unos 28 KB en disco. La inferencia requiere scikit-learn 1.7.2, la versión con la que se serializaron (`requirements/forecasting.txt`). Solo las familias secuenciales del contraste de familias (GRU y CNN-1D, fuera de la receta) se entrenaron con PyTorch y admiten GPU.
 - **Tiempos de inferencia.** Medición local del 2026-11-20 en un portátil con Intel Core i7-12650H (10 núcleos, 16 hilos), 64 GB de RAM y Windows 11, con Python 3.11.0 y scikit-learn 1.7.2, en un proceso de Python sin MLflow ni API. No es una medición de la API desplegada, que añadirá la carga desde el registro de MLflow, la red y la serialización de la respuesta.
 

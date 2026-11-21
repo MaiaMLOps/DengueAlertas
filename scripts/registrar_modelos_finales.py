@@ -10,6 +10,12 @@ Flow:
       already exists and with which versions, the version whose md5 tag equals the local file (skipped: idempotent),
       the tags of the registered model and of the version, the run parameters and the alias action.
     dry run (default): prints the plan; nothing is written to the server.
+    --solo-runs: the runs of --ejecutar without any model-registry call, for registration from the MLflow interface
+      (the server refuses registry writes from the team token: registration goes through the interface). A run of
+      the experiment whose md5 tag equals the local file is reused, never duplicated. Prints, per municipality, the run
+      id and the logged model (models:/m-...) to register.
+    --verificar (read-only): DengueAlertas_<Municipio> version 1 exists, points to the run with the md5 of the local
+      file and to its logged model, and loaded from models:/<name>/1 gives the probabilities of the local .joblib.
     --ejecutar: per municipality to register, one run in the dengue_h8_final experiment with parameters, tags and the
       original .joblib as an artifact; the model logged with mlflow.sklearn.log_model (signature and input example);
       the registered model created with its tags only when the name is new; the new version with its tags; the alias
@@ -26,6 +32,8 @@ printed. The client version must equal the server version (README §4; especific
 
 Run from the repository root:
     .venv/Scripts/python.exe -B -X utf8 scripts/registrar_modelos_finales.py                 (dry run)
+    .venv/Scripts/python.exe -B -X utf8 scripts/registrar_modelos_finales.py --solo-runs
+    .venv/Scripts/python.exe -B -X utf8 scripts/registrar_modelos_finales.py --verificar
     .venv/Scripts/python.exe -B -X utf8 scripts/registrar_modelos_finales.py --ejecutar [--alias staging] [--habilitar]
 """
 
@@ -198,6 +206,7 @@ class PlanItem:
     params: dict[str, str]
     alias_action: str                    # "ninguno", "asignar", "ya_asignado"
     notes: list[str] = field(default_factory=list)
+    existing_run: str | None = None      # run of the experiment whose md5 tag equals the local file
 
 
 def _registered_model(client, name: str):
@@ -206,8 +215,30 @@ def _registered_model(client, name: str):
     return matches[0] if matches else None
 
 
+def find_run(client, experiment_id: str | None, md5: str):
+    """The finished run of the experiment whose md5 tag is `md5`, or None; never more than one."""
+    if experiment_id is None:
+        return None
+    runs = list(client.search_runs([experiment_id], filter_string=f"tags.md5 = '{md5}'"))
+    _require(len(runs) <= 1, f"{len(runs)} runs of experiment {experiment_id} carry md5 {md5}; expected at most one.")
+    if not runs:
+        return None
+    run = runs[0]
+    _require(run.info.status == "FINISHED", f"Run {run.info.run_id} with md5 {md5} has status {run.info.status}; "
+                                            f"it is neither reused nor duplicated.")
+    return run
+
+
+def logged_model_of_run(client, experiment_id: str, run_id: str):
+    """The single logged model (MLflow 3) whose source run is `run_id`."""
+    models = [model for model in client.search_logged_models(experiment_ids=[experiment_id])
+              if model.source_run_id == run_id]
+    _require(len(models) == 1, f"Run {run_id} has {len(models)} logged models; expected one.")
+    return models[0]
+
+
 def build_plan(client, manifest: dict, md5s: dict[str, str], recipe: dict, *, commit: str, alias: str | None,
-               enabled: bool) -> list[PlanItem]:
+               enabled: bool, experiment_id: str | None = None) -> list[PlanItem]:
     """The registration plan from read-only registry calls; raises when an alias would have to be moved."""
     plan = []
     for code in MUNICIPALITIES:
@@ -239,12 +270,14 @@ def build_plan(client, manifest: dict, md5s: dict[str, str], recipe: dict, *, co
             else:
                 raise RegistrationError(f"Alias {alias!r} of {name} already points to version {holder}; it is never "
                                         f"moved by this script.")
+        run = find_run(client, experiment_id, md5s[code])
         plan.append(PlanItem(code=code, name=name, md5=md5s[code], exists=model is not None, versions=versions,
                              existing_tags=existing_tags, action="omitir" if duplicate else "registrar",
                              duplicate_version=duplicate, model_tags=model_tags,
                              version_tags=version_tags(code, entry, md5s[code], recipe["hash_sha256"], commit),
                              run_tags=run_tags(code, entry, md5s[code], recipe, commit), params=run_params(entry),
-                             alias_action=alias_action, notes=notes))
+                             alias_action=alias_action, notes=notes,
+                             existing_run=run.info.run_id if run is not None else None))
     return plan
 
 
@@ -256,6 +289,11 @@ def experiment_state(client, name: str) -> str:
         raise RegistrationError(f"Experiment {name} exists with lifecycle_stage={experiment.lifecycle_stage}; "
                                 f"it is not restored by this script.")
     return f"existe (id {experiment.experiment_id})"
+
+
+def experiment_id_of(client, name: str) -> str | None:
+    experiment = client.get_experiment_by_name(name)
+    return None if experiment is None else experiment.experiment_id
 
 
 def format_plan(plan: list[PlanItem], *, experiment: str, experiment_name: str, alias: str | None,
@@ -280,6 +318,7 @@ def format_plan(plan: list[PlanItem], *, experiment: str, experiment_name: str, 
         lines.append(f"  Run: tags {item.run_tags}")
         lines.append(f"       params {item.params}")
         lines.append(f"  Alias: {item.alias_action}")
+        lines.append(f"  Run con el mismo md5: {item.existing_run or 'ninguno (se crea uno)'}")
         lines.extend(f"  Nota: {note}" for note in item.notes)
     return "\n".join(lines)
 
@@ -328,37 +367,77 @@ def check_versions(client_version: str, server: str) -> None:
                                        f"(requirements/forecasting.txt must match the server).")
 
 
-def register(plan: list[PlanItem], *, client, experiment_name: str, alias: str | None, rows, last,
-             features: tuple[str, ...], models_dir: Path = MODELS_DIR) -> dict[str, str]:
-    """Writes the plan; returns {name: version} of every municipality (new or already registered)."""
+def log_run(item: PlanItem, *, rows, last, features: tuple[str, ...], models_dir: Path = MODELS_DIR) -> str:
+    """One run of the active experiment for `item`: parameters, tags, the original .joblib and the logged model.
+    No model-registry call. Returns the run id."""
+    import cloudpickle
     import joblib
     import mlflow
     import mlflow.sklearn
     import numpy
     import pandas
     import sklearn
-    import cloudpickle
 
     requirements = [f"scikit-learn=={sklearn.__version__}", f"numpy=={numpy.__version__}",
                     f"pandas=={pandas.__version__}", f"cloudpickle=={cloudpickle.__version__}"]
+    path = Path(models_dir) / f"{item.code}.joblib"
+    _require(file_md5(path) == item.md5, f"{path} changed after the plan was built.")
+    model = joblib.load(path)
+    signature, example = signature_and_example(model, rows, item.code, last, features)
+    with mlflow.start_run(run_name=f"final_{item.code}", tags=item.run_tags) as run:
+        mlflow.log_params(item.params)
+        mlflow.log_artifact(str(path), artifact_path=ORIGINAL_ARTIFACT_DIR)
+        # cloudpickle, not the skops default of MLflow 3.17: skops is not a dependency of the project or of
+        # the API, and cloudpickle ships with MLflow.
+        mlflow.sklearn.log_model(model, name=ARTIFACT_NAME, signature=signature, input_example=example,
+                                 pip_requirements=requirements,
+                                 serialization_format=mlflow.sklearn.SERIALIZATION_FORMAT_CLOUDPICKLE)
+    return run.info.run_id
+
+
+def _run_of(item: PlanItem, client, experiment_id: str, **logging) -> tuple[str, object, bool]:
+    """(run id, logged model, reused): the run with the md5 of the local file, logged only when there is none."""
+    run = find_run(client, experiment_id, item.md5)
+    if run is not None:
+        _require(dict(run.data.params) == item.params,
+                 f"Run {run.info.run_id} has the md5 of {item.code} but other parameters; it is not reused.")
+        run_id, reused = run.info.run_id, True
+    else:
+        run_id, reused = log_run(item, **logging), False
+    return run_id, logged_model_of_run(client, experiment_id, run_id), reused
+
+
+def log_runs_only(plan: list[PlanItem], *, client, experiment_name: str, rows, last, features: tuple[str, ...],
+                  models_dir: Path = MODELS_DIR) -> dict[str, dict[str, str]]:
+    """--solo-runs: the run of every municipality, reused or logged, without any model-registry call."""
+    import mlflow
+
     mlflow.set_experiment(experiment_name)
+    experiment_id = experiment_id_of(client, experiment_name)
+    out = {}
+    for item in plan:
+        run_id, model, reused = _run_of(item, client, experiment_id, rows=rows, last=last, features=features,
+                                        models_dir=models_dir)
+        out[item.code] = {"nombre": item.name, "run_id": run_id, "modelo": ARTIFACT_NAME,
+                          "model_id": model.model_id, "model_uri": f"models:/{model.model_id}",
+                          "artifact_location": model.artifact_location, "reutilizado": "sí" if reused else "no"}
+    return out
+
+
+def register(plan: list[PlanItem], *, client, experiment_name: str, alias: str | None, rows, last,
+             features: tuple[str, ...], models_dir: Path = MODELS_DIR) -> dict[str, str]:
+    """Writes the plan; returns {name: version} of every municipality (new or already registered)."""
+    import mlflow
+
+    mlflow.set_experiment(experiment_name)
+    experiment_id = experiment_id_of(client, experiment_name)
     registered = {}
     for item in plan:
         if item.action == "omitir":
             registered[item.name] = item.duplicate_version
         else:
-            path = Path(models_dir) / f"{item.code}.joblib"
-            _require(file_md5(path) == item.md5, f"{path} changed after the plan was built.")
-            model = joblib.load(path)
-            signature, example = signature_and_example(model, rows, item.code, last, features)
-            with mlflow.start_run(run_name=f"final_{item.code}", tags=item.run_tags) as run:
-                mlflow.log_params(item.params)
-                mlflow.log_artifact(str(path), artifact_path=ORIGINAL_ARTIFACT_DIR)
-                # cloudpickle, not the skops default of MLflow 3.17: skops is not a dependency of the project or of
-                # the API, and cloudpickle ships with MLflow.
-                info = mlflow.sklearn.log_model(model, name=ARTIFACT_NAME, signature=signature, input_example=example,
-                                                pip_requirements=requirements,
-                                                serialization_format=mlflow.sklearn.SERIALIZATION_FORMAT_CLOUDPICKLE)
+            run_id, model, _ = _run_of(item, client, experiment_id, rows=rows, last=last, features=features,
+                                       models_dir=models_dir)
             if not item.exists:
                 municipality = MUNICIPALITIES[item.code]
                 client.create_registered_model(
@@ -367,12 +446,11 @@ def register(plan: list[PlanItem], *, client, experiment_name: str, alias: str |
                                  f"({item.code}). Regresión logística L2 de la receta congelada "
                                  f"{item.model_tags['receta_hash'][:8]}; probabilidad = predict_proba[:, 1] con las "
                                  f"variables sin_clima de src.forecasting.dataset.build_features."))
-            version = mlflow.register_model(info.model_uri, item.name, tags=item.version_tags)
+            version = mlflow.register_model(f"models:/{model.model_id}", item.name, tags=item.version_tags)
             client.update_model_version(item.name, version.version,
-                                        description=f"Run {run.info.run_id}; archivo modelos/{item.code}.joblib "
-                                                    f"md5 {item.md5}.")
+                                        description=f"Run {run_id}; archivo modelos/{item.code}.joblib md5 {item.md5}.")
             registered[item.name] = str(version.version)
-            print(f"[{item.code}] {item.name}: versión {version.version} registrada (run {run.info.run_id}).")
+            print(f"[{item.code}] {item.name}: versión {version.version} registrada (run {run_id}).")
         if alias and item.alias_action == "asignar":
             client.set_registered_model_alias(item.name, alias, registered[item.name])
             print(f"[{item.code}] {item.name}: alias {alias} -> versión {registered[item.name]}.")
@@ -404,14 +482,58 @@ def verify_registered(registered: dict[str, str], rows, *, features: tuple[str, 
         print(f"[{code}] {uri}: {len(own)} emisiones, probabilidades idénticas al .joblib local.")
 
 
+EXPECTED_VERSION = "1"
+
+
+def check_interface_registration(client, *, experiment_name: str, md5s: dict[str, str]) -> dict[str, str]:
+    """--verificar, read-only: per municipality, DengueAlertas_<Municipio> version 1 exists and comes from the run
+    whose md5 tag is the md5 of the local file and from that run's logged model. Returns {name: "1"}."""
+    experiment_id = experiment_id_of(client, experiment_name)
+    _require(experiment_id is not None, f"Experiment {experiment_name} does not exist.")
+    registered = {}
+    for code in MUNICIPALITIES:
+        name = registered_name(code)
+        model = _registered_model(client, name)
+        _require(model is not None, f"{name} is not registered.")
+        versions = {str(v.version): v for v in client.search_model_versions(filter_string=f"name = '{name}'")}
+        _require(EXPECTED_VERSION in versions, f"{name} has no version {EXPECTED_VERSION} (versions: {sorted(versions)}).")
+        version = versions[EXPECTED_VERSION]
+        run = find_run(client, experiment_id, md5s[code])
+        _require(run is not None, f"No run of {experiment_name} carries the md5 of {code}.joblib ({md5s[code]}).")
+        _require(version.run_id == run.info.run_id,
+                 f"{name} v{EXPECTED_VERSION} comes from run {version.run_id}, not from run {run.info.run_id} "
+                 f"(md5 {md5s[code]}).")
+        logged = logged_model_of_run(client, experiment_id, run.info.run_id)
+        source_ok = getattr(version, "model_id", None) == logged.model_id or logged.model_id in str(version.source)
+        _require(source_ok, f"{name} v{EXPECTED_VERSION} does not point to the logged model {logged.model_id} of run "
+                            f"{run.info.run_id} (source {version.source}).")
+        aliases, tags = dict(model.aliases or {}), dict(model.tags or {})
+        others = sorted(set(versions) - {EXPECTED_VERSION}, key=int)
+        print(f"[{code}] {name} v{EXPECTED_VERSION}: run {run.info.run_id}, md5 {md5s[code]}, modelo {logged.model_id}; "
+              f"alias {aliases or 'ninguno'}; etiquetas {tags or 'ninguna'}"
+              + (f"; otras versiones {others}" if others else ""))
+        if str(tags.get("enabled", "")).strip().lower() in ("true", "1", "yes"):
+            print(f"  Aviso: {name} tiene enabled={tags['enabled']}; src/api.py lo carga.")
+        registered[name] = EXPECTED_VERSION
+    return registered
+
+
 # --------------------------------------------------------------------------- command line
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description="Registra los seis modelos finales en el registro de MLflow.")
-    parser.add_argument("--ejecutar", action="store_true", help="Registra en el servidor; sin esta opción, ensayo.")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--ejecutar", action="store_true", help="Registra en el servidor; sin esta opción, ensayo.")
+    mode.add_argument("--solo-runs", action="store_true",
+                      help="Crea o reutiliza los runs de dengue_h8_final sin tocar el registro de modelos.")
+    mode.add_argument("--verificar", action="store_true",
+                      help="Solo lectura: comprueba el registro hecho desde la interfaz.")
     parser.add_argument("--alias", default=None, help="Alias que se asigna a cada versión (por ejemplo, staging).")
     parser.add_argument("--habilitar", action="store_true",
                         help="Etiqueta enabled=true en los modelos registrados nuevos (src/api.py los carga).")
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if (args.solo_runs or args.verificar) and (args.alias or args.habilitar):
+        parser.error("--alias y --habilitar solo se usan con --ejecutar.")
+    return args
 
 
 def main(argv=None) -> int:
@@ -432,7 +554,7 @@ def main(argv=None) -> int:
     commit = _git("rev-parse", "HEAD")
     _require(bool(commit), "No git commit found.")
     dirty = dirty_paths()
-    if args.ejecutar:
+    if args.ejecutar or args.solo_runs:
         _require(not dirty, f"Uncommitted changes in {CHECKED_PATHS}: {dirty}. The registration records the commit.")
     elif dirty:
         print(f"Aviso: cambios sin commit en {CHECKED_PATHS} ({len(dirty)}); --ejecutar los rechaza.")
@@ -451,7 +573,14 @@ def main(argv=None) -> int:
     client = MlflowClient()
     experiment_name = config.seguimiento.experimentos.final
     state = experiment_state(client, experiment_name)
-    plan = build_plan(client, manifest, md5s, recipe, commit=commit, alias=args.alias, enabled=args.habilitar)
+    if args.verificar:
+        registered = check_interface_registration(client, experiment_name=experiment_name, md5s=md5s)
+        verify_registered(registered, rows, features=features)
+        print("\nVerificación de solo lectura: " + ", ".join(f"{name} v{v}" for name, v in registered.items())
+              + ". No se escribió nada en el servidor.")
+        return 0
+    plan = build_plan(client, manifest, md5s, recipe, commit=commit, alias=args.alias, enabled=args.habilitar,
+                      experiment_id=experiment_id_of(client, experiment_name))
 
     import joblib
     example_model = joblib.load(MODELS_DIR / f"{plan[0].code}.joblib")
@@ -459,6 +588,14 @@ def main(argv=None) -> int:
     print(format_plan(plan, experiment=state, experiment_name=experiment_name, alias=args.alias, signature=signature,
                       example=example))
 
+    if args.solo_runs:
+        runs = log_runs_only(plan, client=client, experiment_name=experiment_name, rows=rows, last=last,
+                             features=features)
+        print("\nRuns para el registro desde la interfaz (no se llamó al registro de modelos):")
+        for code, run in runs.items():
+            print(f"[{code}] {run['nombre']}: run {run['run_id']} (reutilizado: {run['reutilizado']}); modelo "
+                  f"'{run['modelo']}' = {run['model_uri']}; artefactos {run['artifact_location']}")
+        return 0
     if not args.ejecutar:
         print("\nEnsayo: no se escribió nada en el servidor. El registro real requiere --ejecutar.")
         return 0

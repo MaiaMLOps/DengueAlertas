@@ -2,6 +2,7 @@ import os
 import threading
 import time
 import datetime
+from datetime import date
 import json
 import logging
 import traceback
@@ -13,6 +14,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+
+from src.forecasting import api_v2
 
 load_dotenv()
 
@@ -471,6 +474,53 @@ def get_schema(response: Response, municipio: Optional[str] = Query(default=None
         "version": current_version,
         "input_schema": current_schema
     }
+
+
+@app.get("/predict")
+def predict_v2(
+    municipio: str = Query(..., description="Codigo DIVIPOLA de cinco caracteres"),
+    semana_emision: Optional[str] = Query(default=None, description="Lunes YYYY-MM-DD; por defecto, la ultima semana completa")
+):
+    """Vista principal v0.2 (api_salida_d10.md §4). El modulo api_v2 deriva las seis variables del panel."""
+    key = str(municipio).strip().lower()
+    model_name = MUNICIPALITY_MODELS_MAP.get(key) or MUNICIPALITY_MODELS_MAP.get(str(municipio).strip())
+    if not model_name or model_name not in loaded_municipal_models:
+        raise HTTPException(status_code=404, detail={
+            "codigo": "municipio_no_piloto",
+            "mensaje": f"No hay modelo final habilitado para {municipio}."
+        })
+    meta = municipal_models_metadata.get(model_name, {})
+    matched = next(
+        (entry for entry in MUNICIPALITY_GEO_REGISTRY.values()
+         if str(municipio).strip() in entry.get("aliases", [])), None)
+    nombre = meta.get("nombre") or (matched["nombre"] if matched else str(municipio))
+    code = meta.get("codigo") or (matched["codigo"] if matched else str(municipio).strip())
+
+    t = None
+    if semana_emision is not None:
+        try:
+            t = date.fromisoformat(semana_emision)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail={
+                "codigo": "semana_invalida",
+                "mensaje": "semana_emision debe ser una fecha YYYY-MM-DD."
+            })
+
+    try:
+        return api_v2.build_prediction(
+            codigo=code,
+            nombre=nombre,
+            semana_emision=t,
+            model=loaded_municipal_models[model_name],
+            model_name=model_name,
+            model_version=str(meta.get("tag_version", "v1.0")),
+        )
+    except api_v2.V2Error as exc:
+        status_code = 503 if exc.codigo == "panel_no_disponible" else 400
+        raise HTTPException(status_code=status_code, detail={"codigo": exc.codigo, "mensaje": exc.mensaje})
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=503, detail={"codigo": "panel_no_disponible", "mensaje": str(exc)})
+
 
 @app.post("/sync")
 def sync_model():

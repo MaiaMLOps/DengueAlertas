@@ -2,7 +2,7 @@
 .env
 .env.local
 
-# Personal Claude Code settings
+# Local settings of development tools (not versioned)
 .claude/settings.local.json
 
 # Python cache

@@ -1,0 +1,205 @@
+{
+  "tau": 0.05,
+  "k": 2,
+  "W": 12,
+  "periodos": {
+    "desarrollo": {
+      "fuente": "reports/forecasting/evidence/diagnostico_desarrollo_sin_clima_20261112/diag_serie.csv",
+      "filas": 1248,
+      "estratos": {
+        "zona_epidemia": {
+          "filas": 310,
+          "positivas": 231,
+          "prevalencia": 0.7451612903225806,
+          "receta": {
+            "logloss": 0.5595003388770964,
+            "brier": 0.18732855277897864,
+            "p_media": 0.6474308695403292,
+            "confiabilidad": 0.02295615140902571,
+            "resolucion": 0.02485952133194589,
+            "incertidumbre": 0.18989594172736735,
+            "intervalos": 10
+          },
+          "B2": {
+            "logloss": 0.6950451518640408,
+            "brier": 0.25032338704066326,
+            "p_media": 0.5382578173285784,
+            "confiabilidad": 0.09189659779582315,
+            "resolucion": 0.030232362982509413,
+            "incertidumbre": 0.18989594172736735,
+            "intervalos": 7
+          },
+          "bss_vs_b2": 0.251653810722254,
+          "mejora_logloss_vs_b2": 0.1950158383573023,
+          "casillas": {
+            "casillas": 12,
+            "minimo_semanas": 5,
+            "ganadas_brier": 8,
+            "ganadas_logloss": 8
+          }
+        },
+        "zona_no_epidemia": {
+          "filas": 938,
+          "positivas": 88,
+          "prevalencia": 0.09381663113006397,
+          "receta": {
+            "logloss": 0.23353101562477202,
+            "brier": 0.07246065922922824,
+            "p_media": 0.08666383069187956,
+            "confiabilidad": 0.0025841727636052524,
+            "resolucion": 0.015163817267492122,
+            "incertidumbre": 0.08501507085346947,
+            "intervalos": 10
+          },
+          "B2": {
+            "logloss": 0.28311149545065817,
+            "brier": 0.08266133929695683,
+            "p_media": 0.08944441356798741,
+            "confiabilidad": 0.0030131265591985066,
+            "resolucion": 0.006392222707920006,
+            "incertidumbre": 0.08501507085346947,
+            "intervalos": 10
+          },
+          "bss_vs_b2": 0.12340327599923273,
+          "mejora_logloss_vs_b2": 0.17512704578443106,
+          "casillas": {
+            "casillas": 23,
+            "minimo_semanas": 5,
+            "ganadas_brier": 16,
+            "ganadas_logloss": 16
+          }
+        }
+      },
+      "falsas_alarmas_B01": {
+        "falsas_alarmas_B01": 37,
+        "empiezan_tras_episodio": 13,
+        "semanas_tras_episodio": 13,
+        "por_municipio": {
+          "08001": {
+            "falsas_alarmas": 4,
+            "tras_episodio": 1
+          },
+          "08758": {
+            "falsas_alarmas": 8,
+            "tras_episodio": 4
+          },
+          "41001": {
+            "falsas_alarmas": 8,
+            "tras_episodio": 2
+          },
+          "50001": {
+            "falsas_alarmas": 2,
+            "tras_episodio": 1
+          },
+          "54001": {
+            "falsas_alarmas": 6,
+            "tras_episodio": 3
+          },
+          "76001": {
+            "falsas_alarmas": 9,
+            "tras_episodio": 2
+          }
+        }
+      }
+    },
+    "prueba": {
+      "fuente": "reports/forecasting/evidence/prueba_20261112/diag_serie.csv",
+      "filas": 936,
+      "estratos": {
+        "zona_epidemia": {
+          "filas": 340,
+          "positivas": 243,
+          "prevalencia": 0.7147058823529412,
+          "receta": {
+            "logloss": 0.5769372768210945,
+            "brier": 0.1935497397742695,
+            "p_media": 0.7138769875720173,
+            "confiabilidad": 0.012413740257246175,
+            "resolucion": 0.02440311418685121,
+            "incertidumbre": 0.20390138408304498,
+            "intervalos": 10
+          },
+          "B2": {
+            "logloss": 0.6422000415844266,
+            "brier": 0.22404655804552806,
+            "p_media": 0.6493760769437713,
+            "confiabilidad": 0.04687651880630057,
+            "resolucion": 0.026361650683883152,
+            "incertidumbre": 0.20390138408304498,
+            "intervalos": 10
+          },
+          "bss_vs_b2": 0.13611821818329994,
+          "mejora_logloss_vs_b2": 0.1016237317617057,
+          "casillas": {
+            "casillas": 14,
+            "minimo_semanas": 5,
+            "ganadas_brier": 10,
+            "ganadas_logloss": 9
+          }
+        },
+        "zona_no_epidemia": {
+          "filas": 596,
+          "positivas": 79,
+          "prevalencia": 0.1325503355704698,
+          "receta": {
+            "logloss": 0.3632950109603643,
+            "brier": 0.11152524846172746,
+            "p_media": 0.10281876712138184,
+            "confiabilidad": 0.006281465661512947,
+            "resolucion": 0.013144585918535252,
+            "incertidumbre": 0.11498074411062564,
+            "intervalos": 10
+          },
+          "B2": {
+            "logloss": 0.372997480341281,
+            "brier": 0.11356382734829625,
+            "p_media": 0.12944708921184983,
+            "confiabilidad": 0.010027137732600166,
+            "resolucion": 0.011657654065221618,
+            "incertidumbre": 0.11498074411062564,
+            "intervalos": 10
+          },
+          "bss_vs_b2": 0.01795095264195823,
+          "mejora_logloss_vs_b2": 0.02601215796964429,
+          "casillas": {
+            "casillas": 17,
+            "minimo_semanas": 5,
+            "ganadas_brier": 8,
+            "ganadas_logloss": 9
+          }
+        }
+      },
+      "falsas_alarmas_B01": {
+        "falsas_alarmas_B01": 26,
+        "empiezan_tras_episodio": 11,
+        "semanas_tras_episodio": 13,
+        "por_municipio": {
+          "08001": {
+            "falsas_alarmas": 5,
+            "tras_episodio": 2
+          },
+          "08758": {
+            "falsas_alarmas": 5,
+            "tras_episodio": 2
+          },
+          "41001": {
+            "falsas_alarmas": 6,
+            "tras_episodio": 1
+          },
+          "50001": {
+            "falsas_alarmas": 5,
+            "tras_episodio": 3
+          },
+          "54001": {
+            "falsas_alarmas": 4,
+            "tras_episodio": 2
+          },
+          "76001": {
+            "falsas_alarmas": 1,
+            "tras_episodio": 1
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,4 +1,5 @@
-"""Model pipelines of the two searched families (contrato §4.2, §5.5 and §10.9; especificación §4).
+"""Model pipelines of the two searched families (contrato §4.2, §5.5 and §10.9; especificación §4) and of the
+families of the development contrast (análisis complementario; configs/contraste_familias.yaml).
 
 Flow (rows come from `build_examples`; train and evaluate are the rows of one `splits.yearly_trials` trial):
     _check_rows: the fifteen FEATURES, numeric ones finite, zona_t in ZONES; in train, y in {0, 1} with both classes
@@ -7,6 +8,16 @@ Flow (rows come from `build_examples`; train and evaluate are the rows of one `s
                       -> LogisticRegression(L2, class_weight=None, **params)
            lightgbm:  FunctionTransformer(zona_t -> pd.Categorical with fixed categories ZONES)
                       -> LGBMClassifier(binary, class_weight=None, verbose=-1, n_jobs=1, deterministic, **params)
+           contrast families (CONTRAST_FAMILIES; never part of the selection, the recipe or the test evaluation):
+           svm:       the logistica ColumnTransformer -> SVC(rbf, probability=True, class_weight=None, **params)
+           mlp:       the logistica ColumnTransformer -> MLPClassifier(relu, adam, no early stopping, hidden layers
+                      from hidden_units and n_layers, **other params)
+           catboost:  FunctionTransformer(zona_t -> pd.Categorical with fixed categories ZONES)
+                      -> CatBoostClassifier(Logloss, auto_class_weights=None, verbose=False, thread_count=1,
+                                            cat_features=[zona_t], **params)
+           xgboost:   FunctionTransformer(zona_t -> pd.Categorical with fixed categories ZONES)
+                      -> XGBClassifier(binary:logistic, eval_metric=logloss, scale_pos_weight=1, categorical,
+                                       n_jobs=1, **params)
       -> fit_model(family, params, train, features=FEATURES): every fitted quantity (scaler, coefficients, trees)
          sees only train
       -> predict_positive(model, rows): predict_proba[:, 1] in the order of rows
@@ -23,6 +34,14 @@ with the other set. Without it the pipeline is exactly
 the one of F5a: logistic regression scales the requested numeric columns; LightGBM gets a leading column selection
 step only when a subset is requested. The input rows still carry the fifteen columns (`_check_rows`).
 
+The contrast families follow the same rules (no class weights, no early stopping, every hyperparameter from the
+candidate, one thread where the library sets it). catboost and xgboost are optional dependencies
+(requirements/contraste.txt): they are imported inside make_model, only when one of those families is built, so
+the main pipeline and the API never need them. A ConvergenceWarning stays an error for the two contract families
+(the logistic max_iter is pre-registered to converge); for the contrast families it is silenced: an MLP stops at
+its sampled max_iter, which is a searched budget, not a convergence requirement. With the rbf kernel, the sampled
+degree and coef0 of svm have no effect on the model (scikit-learn uses them only for the poly and sigmoid kernels).
+
 Fitting and predicting is not scoring: the test-period barrier (guard.py) is applied by the metrics.
 """
 
@@ -35,16 +54,20 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
+from sklearn.svm import SVC
 
 from src.epidemiology.channel_epico import ZONES
 from src.epidemiology.config import EpidemiologyValidationError
 from src.epidemiology.validation import require
 
+from .config import CONTRAST_FAMILIES
 from .dataset import FEATURES
 
-FAMILIES = ("logistica", "lightgbm")
+FAMILIES = ("logistica", "lightgbm")   # families of the contract: selection, recipe and test evaluation
+MODEL_FAMILIES = FAMILIES + CONTRAST_FAMILIES   # every family make_model can build
 NUMERIC_FEATURES = tuple(name for name in FEATURES if name != "zona_t")
 _REFERENCE_ZONE = ZONES[0]   # seguridad: reference category of the two indicators (contrato §5.5)
 
@@ -53,6 +76,13 @@ HYPERPARAMETERS = {
     "logistica": ("C", "max_iter"),
     "lightgbm": ("num_leaves", "max_depth", "learning_rate", "n_estimators", "min_child_samples",
                  "reg_lambda", "subsample", "subsample_freq", "colsample_bytree", "random_state"),
+    # Contrast families (values come from configs/contraste_familias.yaml).
+    "catboost": ("depth", "learning_rate", "iterations", "l2_leaf_reg", "subsample", "random_strength", "rsm",
+                 "min_data_in_leaf", "random_state"),
+    "xgboost": ("max_depth", "learning_rate", "n_estimators", "min_child_weight", "reg_lambda", "reg_alpha", "gamma",
+                "subsample", "colsample_bytree", "random_state"),
+    "svm": ("C", "gamma", "tol", "coef0", "degree", "random_state"),
+    "mlp": ("hidden_units", "n_layers", "alpha", "learning_rate_init", "max_iter", "batch_size", "random_state"),
 }
 # Settings that a candidate may not change: class weights (contrato §4.2), early stopping (§6.3: the number
 # of trees is searched without early stopping) and the fixed settings of each estimator.
@@ -84,7 +114,7 @@ def _check_features(features) -> tuple[str, ...]:
 
 
 def _check_params(family: str, params) -> dict:
-    require(family in FAMILIES, f"Unknown model family {family!r}; expected one of {FAMILIES}.")
+    require(family in MODEL_FAMILIES, f"Unknown model family {family!r}; expected one of {MODEL_FAMILIES}.")
     require(isinstance(params, Mapping), f"params must be a mapping; got {type(params).__name__}.")
     forbidden = sorted(set(params) & set(_FORBIDDEN))
     require(not forbidden, f"Hyperparameters {forbidden} are fixed by the contract or the module and cannot be "
@@ -97,22 +127,53 @@ def _check_params(family: str, params) -> dict:
     return dict(params)
 
 
+def _standardized_zone(numeric: list[str]) -> ColumnTransformer:
+    """StandardScaler on the numeric columns and two zone indicators (reference: seguridad, contrato §5.5)."""
+    return ColumnTransformer(
+        [("estandarizar", StandardScaler(), numeric),
+         ("zona", OneHotEncoder(categories=[list(ZONES)], drop=[_REFERENCE_ZONE], sparse_output=False,
+                                handle_unknown="error"), ["zona_t"])],
+        remainder="drop")
+
+
+def _mlp(params: dict) -> MLPClassifier:
+    """MLP of the contrast: n_layers = 1 -> (hidden_units,); 2 -> (hidden_units, max(4, hidden_units // 2))."""
+    params = dict(params)
+    units, layers = int(params.pop("hidden_units")), int(params.pop("n_layers"))
+    require(layers in (1, 2), f"mlp n_layers must be 1 or 2; got {layers}.")
+    hidden = (units,) if layers == 1 else (units, max(4, units // 2))
+    return MLPClassifier(hidden_layer_sizes=hidden, activation="relu", solver="adam", early_stopping=False, **params)
+
+
+def _tree_estimator(family: str, params: dict):
+    """Estimator of a tree family; the optional libraries are imported only here (requirements/contraste.txt)."""
+    if family == "lightgbm":
+        return lgb.LGBMClassifier(objective="binary", class_weight=None, verbose=-1, n_jobs=1, deterministic=True,
+                                  **params)
+    if family == "catboost":
+        from catboost import CatBoostClassifier
+        return CatBoostClassifier(loss_function="Logloss", auto_class_weights=None, verbose=False, thread_count=1,
+                                  cat_features=["zona_t"], **params)
+    from xgboost import XGBClassifier
+    return XGBClassifier(objective="binary:logistic", eval_metric="logloss", scale_pos_weight=1,
+                         enable_categorical=True, n_jobs=1, **params)
+
+
 def make_model(family: str, params: Mapping, *, features: Sequence[str] = FEATURES) -> Pipeline:
     """Unfitted pipeline of a family with the candidate's hyperparameters, on `features` (all by default)."""
     params = _check_params(family, params)
     ordered = _check_features(features)
     numeric = [name for name in ordered if name != "zona_t"]
     if family == "logistica":
-        prepare = ColumnTransformer(
-            [("estandarizar", StandardScaler(), numeric),
-             ("zona", OneHotEncoder(categories=[list(ZONES)], drop=[_REFERENCE_ZONE], sparse_output=False,
-                                    handle_unknown="error"), ["zona_t"])],
-            remainder="drop")
-        return Pipeline([("preparar", prepare),
+        return Pipeline([("preparar", _standardized_zone(numeric)),
                          ("modelo", LogisticRegression(penalty="l2", class_weight=None, **params))])
-    estimator = lgb.LGBMClassifier(objective="binary", class_weight=None, verbose=-1, n_jobs=1, deterministic=True,
-                                   **params)
-    steps = [("preparar", FunctionTransformer(_zone_as_category, validate=False)), ("modelo", estimator)]
+    if family == "svm":
+        return Pipeline([("preparar", _standardized_zone(numeric)),
+                         ("modelo", SVC(kernel="rbf", probability=True, class_weight=None, **params))])
+    if family == "mlp":
+        return Pipeline([("preparar", _standardized_zone(numeric)), ("modelo", _mlp(params))])
+    steps = [("preparar", FunctionTransformer(_zone_as_category, validate=False)),
+             ("modelo", _tree_estimator(family, params))]
     if ordered != tuple(FEATURES):
         steps.insert(0, ("seleccionar", FunctionTransformer(_select_columns, kw_args={"columns": list(ordered)},
                                                             validate=False)))
@@ -149,7 +210,8 @@ def fit_model(family: str, params: Mapping, train: pd.DataFrame, *, features: Se
     features = _check_rows(train, "train", target=True)
     y = train["y"].to_numpy(dtype=int)
     with warnings.catch_warnings():
-        warnings.simplefilter("error", ConvergenceWarning)
+        # An error for the contract families (pre-registered max_iter); silenced for the contrast families.
+        warnings.simplefilter("ignore" if family in CONTRAST_FAMILIES else "error", ConvergenceWarning)
         try:
             model.fit(features, y)
         except ConvergenceWarning as exc:

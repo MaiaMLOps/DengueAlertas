@@ -57,11 +57,11 @@ from src.epidemiology.validation import require
 
 from .baselines import b1_predict, b2_predict
 from .build_channel import code_state
-from .config import DEFAULT_CONFIG_PATH, ROOT, ForecastConfig, SearchSection, load_config
+from .config import CONTRAST_FAMILIES, DEFAULT_CONFIG_PATH, ROOT, ForecastConfig, SearchSection, load_config
 from .dataset import FEATURE_SETS, FEATURES, build_examples, load_channel_product
 from .guard import RecipeAccess
 from .metrics import brier, improvement, log_loss
-from .models import FAMILIES, fit_model, make_model, predict_positive
+from .models import MODEL_FAMILIES, fit_model, make_model, predict_positive
 from .splits import yearly_trials
 from .tracking import allow_file_store, configure_tracking
 
@@ -104,12 +104,33 @@ def _sample(space, rng: np.random.Generator, upper_cap: float | None):
     return float(math.exp(rng.uniform(math.log(low), math.log(high))))
 
 
+def _random_candidates(family: str, section) -> list[Candidate]:
+    """n_candidatos draws from numpy default_rng(semilla_muestreo): each parameter in alphabetical order (max_depth
+    before num_leaves, so the cap 2^max_depth can apply), then the fixed values and random_state = semilla_modelo."""
+    rng = np.random.default_rng(section.semilla_muestreo)
+    drawn = []
+    for i in range(section.n_candidatos):
+        params: dict[str, Any] = {}
+        for name in sorted(section.espacio):
+            space = section.espacio[name]
+            cap = None
+            if space.tope_por_profundidad:
+                cap = 2 ** int(params.get("max_depth", section.fijos.get("max_depth")))
+            params[name] = _sample(space, rng, cap)
+        params.update(section.fijos)
+        params["random_state"] = section.semilla_modelo
+        drawn.append(Candidate(f"{family}_{i:02d}", params))
+    return drawn
+
+
 def candidates_from_config(busqueda: SearchSection) -> dict[str, list[Candidate]]:
     """Expand the pre-registered section into the candidate lists, identical for every municipality.
 
     Logistic regression: one candidate per C, in the given order. LightGBM: n_candidatos draws from
     numpy default_rng(semilla_muestreo), each parameter drawn in alphabetical order (max_depth before
     num_leaves, so the cap 2^max_depth can apply), then the fixed values and random_state = semilla_modelo.
+    A contrast section (config.ContrastSearchSection, family contrast) adds its families after these two, each
+    with the same random scheme and its own seeds; the pre-registered section never has them.
     """
     require(isinstance(busqueda, SearchSection), "busqueda must be the validated search section.")
     candidates: dict[str, list[Candidate]] = {}
@@ -118,21 +139,11 @@ def candidates_from_config(busqueda: SearchSection) -> dict[str, list[Candidate]
         candidates["logistica"] = [Candidate(f"logistica_{i:02d}", {"C": float(c), "max_iter": section.max_iter})
                                    for i, c in enumerate(section.C)]
     if busqueda.lightgbm is not None:
-        section = busqueda.lightgbm
-        rng = np.random.default_rng(section.semilla_muestreo)
-        drawn = []
-        for i in range(section.n_candidatos):
-            params: dict[str, Any] = {}
-            for name in sorted(section.espacio):
-                space = section.espacio[name]
-                cap = None
-                if space.tope_por_profundidad:
-                    cap = 2 ** int(params.get("max_depth", section.fijos.get("max_depth")))
-                params[name] = _sample(space, rng, cap)
-            params.update(section.fijos)
-            params["random_state"] = section.semilla_modelo
-            drawn.append(Candidate(f"lightgbm_{i:02d}", params))
-        candidates["lightgbm"] = drawn
+        candidates["lightgbm"] = _random_candidates("lightgbm", busqueda.lightgbm)
+    for family in CONTRAST_FAMILIES:
+        section = getattr(busqueda, family, None)
+        if section is not None:
+            candidates[family] = _random_candidates(family, section)
     return candidates
 
 
@@ -150,7 +161,7 @@ def _check_candidates(candidates) -> list[tuple[str, int, Candidate, str]]:
             "candidates must be a non-empty mapping family -> list of Candidate.")
     checked = []
     for family, family_candidates in candidates.items():
-        require(family in FAMILIES, f"Unknown model family {family!r}; expected one of {FAMILIES}.")
+        require(family in MODEL_FAMILIES, f"Unknown model family {family!r}; expected one of {MODEL_FAMILIES}.")
         family_candidates = list(family_candidates)
         require(family_candidates, f"Family {family} has no candidates.")
         names = [candidate.name if isinstance(candidate, Candidate) else None for candidate in family_candidates]
@@ -170,7 +181,7 @@ def _development_years(config: ForecastConfig) -> list[int]:
     years = list(range(first, last + 1))
     overlap = [year for year in years if test_first <= year <= test_last]
     require(not overlap, f"Development years {years} include test years {overlap}; the search never scores the "
-                         f"test period (contrato §6.1, CLAUDE.md rule 1).")
+                         f"test period (contrato §6.1, barrera del periodo de prueba).")
     return years
 
 

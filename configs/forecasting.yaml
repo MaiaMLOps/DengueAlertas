@@ -43,6 +43,10 @@ decision:                          # contrato D8, §7.4 y §7.5
   W: 12
   tau_grid: [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50,
              0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95]
+  regla_emision: umbral             # regla preregistrada de la selección y la evaluación (p >= tau, contrato §7.4); fija
+
+producto:                          # enmienda D10.1 (DV-07): regla de alerta que ve el usuario; solo la lee la API
+  regla_alerta: umbral_fuera_de_epidemia   # B01: p >= tau y zona_t distinta de epidemia; tau y k de la receta congelada
 
 seguimiento:                       # especificación §9
   modo: servidor                   # servidor | local; sin respaldo automático. Servidor desde el commit del pre-registro (especificación §7), antes de F5b

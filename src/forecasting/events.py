@@ -4,7 +4,11 @@ especificación §4 and §6.F4).
 Flow, per municipality:
     emissions (weeks t, positive or not, observed zone at t)
       -> model_positive(p, tau) for a model (p >= tau) or channel_positive(zones) for the channel
-         (zone "alerta"): both feed the same `alerts`, so model and channel follow the same rule
+         (zone "alerta"): both feed the same `alerts`, so model and channel follow the same rule.
+         model_positive_outside_epidemic(p, zones, tau) is rule B01 of the complementary analysis (also negative
+         when zona_t is "epidemia"); emission_positive(rule, ...) dispatches on the rule name.
+         product_alert_states(weeks, p, zones, tau, k, rule): the four states shown to the user (D10.1, api 0.2),
+         with rule = producto.regla_alerta; the evaluation above never uses it
       -> alerts(weeks, positive, zones, k): one Alert per maximal run of >= k positive emissions, dated at
          its confirmation week t_c (the k-th week of the run, when it is known); a continuity alert if the
          observed zone at t_c is "epidemia"
@@ -128,6 +132,57 @@ def _check_zones(zones, length: int | None = None) -> list[str]:
     unknown = sorted({str(zone) for zone in checked if zone not in ZONES})
     require(not unknown, f"Unknown zones {unknown}; expected {list(ZONES)}.")
     return checked
+
+
+def model_positive_outside_epidemic(p, zones, *, tau: float) -> np.ndarray:
+    """Rule B01 (análisis complementario): p >= tau and the observed zone at t is not "epidemia".
+
+    Same probabilities and tau as model_positive; the emission of a week already in the epidemic zone is negative,
+    so a run of positive emissions is split when the zone enters epidemia. Not the rule of the contract.
+    """
+    positive = model_positive(p, tau=tau)
+    checked = _check_zones(zones, len(positive))
+    return positive & np.asarray([zone != _EPIDEMIC_ZONE for zone in checked], dtype=bool)
+
+
+EMISSION_RULES = {"umbral": "p >= tau (contrato §7.4)",
+                  "umbral_fuera_de_epidemia": "p >= tau and zona_t != epidemia (B01, análisis complementario)"}
+
+
+def emission_positive(rule: str, p, zones, *, tau: float) -> np.ndarray:
+    """Positive model emissions under `rule` (an EMISSION_RULES name); "umbral" is model_positive unchanged."""
+    require(rule in EMISSION_RULES, f"Unknown emission rule {rule!r}; expected one of {list(EMISSION_RULES)}.")
+    if rule == "umbral":
+        return model_positive(p, tau=tau)
+    return model_positive_outside_epidemic(p, zones, tau=tau)
+
+
+SIN_ALERTA, SENAL, ALERTA_INICIO, CONTINUIDAD = ("sin_alerta", "senal_en_observacion", "alerta_inicio_confirmada",
+                                                "continuidad_epidemica")
+
+
+def product_alert_states(weeks, p, zones, *, tau: float, k: int, rule: str) -> list[str]:
+    """State of every emission of one municipality for the user (D10.1; api_salida_d10.md 0.2, §2).
+
+    continuidad_epidemica when the observed zone at t is "epidemia"; otherwise, with the run of positive emissions of
+    `rule` that ends at t: sin_alerta (no positive emission at t), senal_en_observacion (run shorter than k) or
+    alerta_inicio_confirmada (run of k or more). Not part of the evaluation: evaluate_period never uses it.
+    """
+    _check_k(k)
+    checked_weeks = _check_weeks(weeks)
+    checked_zones = _check_zones(zones, len(checked_weeks))
+    positive = emission_positive(rule, p, checked_zones, tau=tau)
+    require(len(positive) == len(checked_weeks), "p must have one value per week.")
+    states, run = [], 0
+    for zone, flag in zip(checked_zones, positive):
+        run = run + 1 if flag else 0
+        if zone == _EPIDEMIC_ZONE:
+            states.append(CONTINUIDAD)
+        elif run == 0:
+            states.append(SIN_ALERTA)
+        else:
+            states.append(SENAL if run < k else ALERTA_INICIO)
+    return states
 
 
 def channel_positive(zones) -> np.ndarray:

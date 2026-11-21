@@ -1,0 +1,182 @@
+{
+  "receta_hash": "de74d4abd33537433ffc9d1572c6cdd8620a2608fcc2b67ee4a1752aa865fda5",
+  "tau": 0.05,
+  "k": 2,
+  "W": 12,
+  "periodos": {
+    "prueba": {
+      "fuente": "reports/forecasting/evidence/prueba_20261112/diag_serie.csv",
+      "filas": 936,
+      "global": {
+        "regla_actual": {
+          "inicios_avisados": 4,
+          "inicios_evaluables": 10,
+          "entradas_avisadas": 13,
+          "entradas_evaluables": 41,
+          "alertas": 26,
+          "alertas_continuidad": 4,
+          "falsas_alarmas": 18,
+          "semanas_bajo_alerta": 565,
+          "semanas": 936,
+          "fraccion_bajo_alerta": 0.6036324786,
+          "anticipacion_mediana_contrato": 4.5,
+          "anticipacion_media_contrato": 4.5,
+          "anticipacion_mediana_primera": 7.5,
+          "anticipacion_media_primera": 6.25
+        },
+        "B01": {
+          "inicios_avisados": 9,
+          "inicios_evaluables": 10,
+          "entradas_avisadas": 24,
+          "entradas_evaluables": 41,
+          "alertas": 38,
+          "alertas_continuidad": 0,
+          "falsas_alarmas": 26,
+          "semanas_bajo_alerta": 192,
+          "semanas": 936,
+          "fraccion_bajo_alerta": 0.2051282051,
+          "anticipacion_mediana_contrato": 1.0,
+          "anticipacion_media_contrato": 1.8888888889,
+          "anticipacion_mediana_primera": 3.0,
+          "anticipacion_media_primera": 4.4444444444
+        },
+        "canal": {
+          "inicios_avisados": 8,
+          "inicios_evaluables": 10,
+          "entradas_avisadas": 19,
+          "entradas_evaluables": 41,
+          "alertas": 39,
+          "alertas_continuidad": 0,
+          "falsas_alarmas": 30,
+          "semanas_bajo_alerta": 393,
+          "semanas": 936,
+          "fraccion_bajo_alerta": 0.4198717949,
+          "anticipacion_mediana_contrato": 1.5,
+          "anticipacion_media_contrato": 2.0,
+          "anticipacion_mediana_primera": 2.0,
+          "anticipacion_media_primera": 3.375
+        }
+      },
+      "comparaciones": {
+        "B01_vs_regla_actual": {
+          "discrepantes": 5,
+          "a_favor": 5,
+          "en_contra": 0,
+          "nivel": "mejora consistente"
+        },
+        "B01_vs_canal": {
+          "discrepantes": 1,
+          "a_favor": 1,
+          "en_contra": 0,
+          "nivel": "tendencia favorable"
+        },
+        "regla_actual_vs_canal": {
+          "discrepantes": 6,
+          "a_favor": 1,
+          "en_contra": 5,
+          "nivel": "sin mejora"
+        }
+      },
+      "composicion": {
+        "emisiones_B01": 272,
+        "emisiones_B01_por_zona": {
+          "alerta": 268,
+          "epidemia": 0,
+          "seguridad": 4
+        },
+        "semanas_zona_alerta": 464,
+        "semanas_zona_alerta_descartadas_por_p": 196,
+        "fraccion_descartada": 0.4224137931034483,
+        "semanas_zona_epidemia": 340,
+        "emisiones_regla_actual_en_epidemia": 339
+      }
+    },
+    "desarrollo": {
+      "fuente": "reports/forecasting/evidence/diagnostico_desarrollo_sin_clima_20261112/diag_serie.csv",
+      "filas": 1248,
+      "global": {
+        "regla_actual": {
+          "inicios_avisados": 8,
+          "inicios_evaluables": 10,
+          "entradas_avisadas": 21,
+          "entradas_evaluables": 44,
+          "alertas": 43,
+          "alertas_continuidad": 5,
+          "falsas_alarmas": 24,
+          "semanas_bajo_alerta": 586,
+          "semanas": 1248,
+          "fraccion_bajo_alerta": 0.4695512821,
+          "anticipacion_mediana_contrato": 7.5,
+          "anticipacion_media_contrato": 5.75,
+          "anticipacion_mediana_primera": 8.0,
+          "anticipacion_media_primera": 8.375
+        },
+        "B01": {
+          "inicios_avisados": 10,
+          "inicios_evaluables": 10,
+          "entradas_avisadas": 38,
+          "entradas_evaluables": 44,
+          "alertas": 59,
+          "alertas_continuidad": 0,
+          "falsas_alarmas": 37,
+          "semanas_bajo_alerta": 244,
+          "semanas": 1248,
+          "fraccion_bajo_alerta": 0.1955128205,
+          "anticipacion_mediana_contrato": 2.0,
+          "anticipacion_media_contrato": 3.1,
+          "anticipacion_mediana_primera": 8.0,
+          "anticipacion_media_primera": 8.0
+        },
+        "canal": {
+          "inicios_avisados": 10,
+          "inicios_evaluables": 10,
+          "entradas_avisadas": 36,
+          "entradas_evaluables": 44,
+          "alertas": 65,
+          "alertas_continuidad": 0,
+          "falsas_alarmas": 48,
+          "semanas_bajo_alerta": 406,
+          "semanas": 1248,
+          "fraccion_bajo_alerta": 0.3253205128,
+          "anticipacion_mediana_contrato": 3.0,
+          "anticipacion_media_contrato": 3.0,
+          "anticipacion_mediana_primera": 5.5,
+          "anticipacion_media_primera": 5.3
+        }
+      },
+      "comparaciones": {
+        "B01_vs_regla_actual": {
+          "discrepantes": 2,
+          "a_favor": 2,
+          "en_contra": 0,
+          "nivel": "tendencia favorable"
+        },
+        "B01_vs_canal": {
+          "discrepantes": 0,
+          "a_favor": 0,
+          "en_contra": 0,
+          "nivel": "sin mejora"
+        },
+        "regla_actual_vs_canal": {
+          "discrepantes": 2,
+          "a_favor": 0,
+          "en_contra": 2,
+          "nivel": "sin mejora"
+        }
+      },
+      "composicion": {
+        "emisiones_B01": 355,
+        "emisiones_B01_por_zona": {
+          "alerta": 294,
+          "epidemia": 0,
+          "seguridad": 61
+        },
+        "semanas_zona_alerta": 511,
+        "semanas_zona_alerta_descartadas_por_p": 217,
+        "fraccion_descartada": 0.4246575342465753,
+        "semanas_zona_epidemia": 310,
+        "emisiones_regla_actual_en_epidemia": 308
+      }
+    }
+  }
+}

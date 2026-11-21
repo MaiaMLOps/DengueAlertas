@@ -1,0 +1,74 @@
+{
+  "rejilla_C": [
+    0.001,
+    0.005,
+    0.01,
+    0.05,
+    0.1,
+    0.25,
+    0.5,
+    1.0,
+    1.5,
+    2.0,
+    3.0,
+    4.0,
+    5.0,
+    7.5,
+    10.0,
+    15.0,
+    25.0,
+    50.0,
+    100.0
+  ],
+  "C_comun_cuatro_anios": 2.0,
+  "C_fuera_de_anio_por_anio": {
+    "2019": 1.5,
+    "2020": 15.0,
+    "2021": 1.0,
+    "2022": 1.0
+  },
+  "ampliada_fuera_de_anio": {
+    "casillas": 24,
+    "mejora_b2_media": 0.20490287799516413,
+    "logloss_medio": 0.31636674696246764,
+    "brier_medio": 0.10134784836938197,
+    "logloss_b2_medio": 0.3854347594635978,
+    "brier_b2_medio": 0.124308162053807,
+    "victorias_b2": 16
+  },
+  "r0_fuera_de_anio": {
+    "casillas": 24,
+    "mejora_b2_media": 0.21090958293979548,
+    "logloss_medio": 0.3145009597018718,
+    "brier_medio": 0.10099354945392584,
+    "logloss_b2_medio": 0.3854347594635978,
+    "brier_b2_medio": 0.124308162053807,
+    "victorias_b2": 16
+  },
+  "ampliada_frente_a_r0": {
+    "ganadas": 6,
+    "perdidas": 6,
+    "empates": 12
+  },
+  "C2_fijo": {
+    "casillas": 24,
+    "mejora_b2_media": 0.2244545193297988,
+    "logloss_medio": 0.3109817846947819,
+    "brier_medio": 0.09982797752707719,
+    "logloss_b2_medio": 0.3854347594635978,
+    "brier_b2_medio": 0.124308162053807,
+    "victorias_b2": 16
+  },
+  "C2_fijo_frente_a_r0": {
+    "ganadas": 19,
+    "perdidas": 5,
+    "empates": 0
+  },
+  "C2_mejora_media_dentro_de_muestra": 0.2244545193297988,
+  "regla": {
+    "C_comun_distinto_de_3": true,
+    "mejora_supera_r0": false,
+    "gana_al_menos_17_de_24_a_r0": false
+  },
+  "reemplaza_receta": false
+}

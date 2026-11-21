@@ -449,7 +449,8 @@ def write_recipe_draft(recipe: Mapping, path: str | Path) -> Path:
     path = Path(path)
     require(isinstance(recipe, Mapping), "recipe must be a mapping.")
     require("aprobacion" not in recipe and HASH_FIELD not in recipe,
-            "A draft has no aprobacion or hash_sha256: they are added when Jesús approves the recipe.")
+            "A draft has no aprobacion or hash_sha256: they are added when the person responsible for the "
+            "implementation approves the recipe.")
     require(path.resolve() != (ROOT / FROZEN_RECIPE_PATH).resolve(),
             f"A draft is never written at {FROZEN_RECIPE_PATH}; that file is written only when the recipe is frozen.")
     require(not path.exists(), f"{path} exists; a recipe draft is never overwritten.")

@@ -77,5 +77,62 @@ Solo CPU; no requieren GPU. Dependencias: las de `requirements/forecasting.txt` 
 ## Relación con DVC y MLflow
 
 - **DVC (fuente de verdad).** Los modelos son una salida del pipeline y se versionan con DVC junto a la prueba única de la que dependen (especificación §4): `data/processed/forecasting/prueba/modelos_finales/`, con su descriptor `.dvc` en git. Si esta copia y la salida DVC difieren, vale la salida DVC. La prueba `tests/forecasting/test_modelos_entrega.py` compara las dos copias byte a byte cuando la salida DVC está disponible localmente y se omite en caso contrario; también comprueba, siempre, que el manifiesto corresponde a la receta congelada.
-- **Registro de modelos de MLflow.** La API no lee esta carpeta: cargará cada modelo desde el registro de modelos de MLflow, con el nombre `DengueAlertas_<Municipio>` (por ejemplo, `DengueAlertas_Neiva`; especificación §9). El registro de estos seis modelos es parte de F8 y todavía no se ha hecho.
+- **Registro de modelos de MLflow.** La API no lee esta carpeta: cargará cada modelo desde el registro de modelos de MLflow (sección siguiente).
 - **Regeneración.** Los archivos no se reescriben a mano ni se reentrenan aquí. Para reproducirlos se ejecuta `src.forecasting.artifacts` sobre una copia de las salidas de la prueba en una carpeta nueva y se comparan los md5 (README raíz, §6).
+
+## Registro en MLflow
+
+Los seis modelos están registrados en el servidor del equipo desde el 2026-11-20, cada uno en versión 1:
+
+| Código | Modelo registrado | Versión | Run en `dengue_h8_final` | Modelo guardado del run |
+|---|---|---|---|---|
+| 08001 | `DengueAlertas_Barranquilla` | 1 | `3f7704358d7b48e192074876fca5158d` | `m-8de1cdfebabf46a68906b24b5762b216` |
+| 08758 | `DengueAlertas_Soledad` | 1 | `9fd51150bbbb46979ddc51b752891c77` | `m-dbb6b128eca8409e82c747ea0673f8a9` |
+| 41001 | `DengueAlertas_Neiva` | 1 | `00160760df3b450ead918199b9f9b27e` | `m-6c0f07408b1245158d473aec8a0bc3ad` |
+| 50001 | `DengueAlertas_Villavicencio` | 1 | `923678add194465b9f39c4faf3b72fe8` | `m-c0222e6a8e9440c9ba85c5603f2c8721` |
+| 54001 | `DengueAlertas_Cucuta` | 1 | `f22036f1a0d147c694f3f60b34b4bd4d` | `m-4b0aa2fd53ff47fe9294d27d95cf3e5d` |
+| 76001 | `DengueAlertas_Cali` | 1 | `4dbbc1b4b4724c11b7352b9ddc4e13ce` | `m-cb9a1cbe6bae474a81f94b5763a458b7` |
+
+Los nombres usan el nombre del municipio en ASCII, sin tildes (`DengueAlertas_<Municipio>`, especificación §9).
+
+**Ruta de registro.** El servidor no admite escrituras en el registro de modelos con el token del equipo (`PERMISSION_DENIED`): el registro oficial se hace desde la interfaz de MLflow, a partir del modelo guardado en cada run. Por eso el registro tiene tres pasos (DV-08 en `docs/forecasting/desviaciones.md`):
+
+1. **Runs por script.** `scripts/registrar_modelos_finales.py --solo-runs` crea un run por municipio en el experimento `dengue_h8_final`. El script primero verifica los md5 de esta carpeta y la coherencia del manifiesto con la receta, y no llama al registro de modelos. Cada run lleva:
+   - parámetros: familia, candidato, conjunto de variables, C, `max_iter`, filas y fechas de entrenamiento;
+   - etiquetas: las de la especificación §9, más el código DANE y el md5 del archivo;
+   - el `.joblib` original, en `joblib_original/`;
+   - el modelo guardado con `mlflow.sklearn.log_model` (serialización cloudpickle), con firma de entrada de las seis variables `sin_clima` y como ejemplo de entrada la emisión del 2025-12-22.
+
+   El script es idempotente: reutiliza el run cuya etiqueta `md5` coincide con el archivo. El run de 08001 se creó en un intento anterior de registro directo y registra el commit `cae96bf`; los otros cinco, `d42cc0e`. El contenido del modelo es el mismo.
+2. **Registro desde la interfaz.** Cada modelo guardado se registró manualmente con su nombre, sin etiquetas ni alias.
+3. **Verificación.** `scripts/registrar_modelos_finales.py --verificar` es de solo lectura. Comprobó, para cada modelo:
+   - que existe la versión 1;
+   - que proviene del run con el md5 del archivo local y de su modelo guardado;
+   - que, cargada desde `models:/<nombre>/1`, da probabilidades idénticas bit a bit a las del `.joblib` en las ocho emisiones del 2025-11-03 al 2025-12-22. Lo comprobó por la ruta de `mlflow.sklearn` y por la ruta `pyfunc` que usa `src/api.py`.
+
+**Estado: registrados, sin habilitar.** Sin la etiqueta `enabled` y sin alias, los seis modelos son invisibles para la API actual: `src/api.py` solo descubre los modelos `DengueAlertas_*` con `enabled = true`. Se dejan así porque la API todavía no está adaptada a estas variables, así que podría cargarlos y fallar antes de F8. La habilitación y los alias forman parte del despliegue de F8.
+
+### Habilitación en F8
+
+El responsable del despliegue pone estas etiquetas en cada **modelo registrado** (no en la versión). `src/api.py` lee `enabled`, `municipality_code`, `department` y `depto_id`; `depto_id` es «CO» más el código ISO 3166-2 del departamento, como en el mapa del frontend.
+
+| Modelo registrado | `enabled` | `municipality_code` | `department` | `depto_id` |
+|---|---|---|---|---|
+| `DengueAlertas_Barranquilla` | `true` | `08001` | `Atlántico` | `COATL` |
+| `DengueAlertas_Soledad` | `true` | `08758` | `Atlántico` | `COATL` |
+| `DengueAlertas_Neiva` | `true` | `41001` | `Huila` | `COHUI` |
+| `DengueAlertas_Villavicencio` | `true` | `50001` | `Meta` | `COMET` |
+| `DengueAlertas_Cucuta` | `true` | `54001` | `Norte de Santander` | `CONSA` |
+| `DengueAlertas_Cali` | `true` | `76001` | `Valle del Cauca` | `COVAC` |
+
+La especificación §9 propone además `receta_hash` (`de74d4abd33537433ffc9d1572c6cdd8620a2608fcc2b67ee4a1752aa865fda5`) y `familia` (`logistica`); la API no los lee.
+
+Orden:
+
+1. **Alias `staging`** en la versión 1. Según `src/webhook_api.py`, crear el alias pasa la versión a la etapa Staging (y archiva la versión que estuviera en esa etapa en el mismo modelo) y sincroniza la API del ambiente de pruebas.
+2. **Prueba** de las vistas en el ambiente de pruebas.
+3. **Alias `production`**, que la pasa a la etapa Production y sincroniza la API de producción.
+
+**Precaución.** `src/api.py` carga cada modelo habilitado por el alias igual a `STAGE`. Si ese alias no existe, recurre a la etapa clásica y después a la **última versión**. Por eso, con `enabled = true`, la API de producción cargaría la versión 1 aunque todavía no tenga el alias `production`. Antes de habilitar, F8 decide si elimina ese último recurso o acepta que ambos ambientes carguen los modelos al habilitarlos.
+
+**Dependencias de la API (F8).** `requirements/serve.txt` debe fijar `scikit-learn==1.7.2`, la versión con la que se serializaron los modelos, y `mlflow==3.17.0`, la versión del servidor. Hoy fija `scikit-learn>=1.3.0` y `mlflow>=2.0.0`. El cambio lo hace el responsable del despliegue, junto con el `Dockerfile`.

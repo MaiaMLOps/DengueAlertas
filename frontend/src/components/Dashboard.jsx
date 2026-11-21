@@ -21,9 +21,9 @@ const API_BASE_URL = (import.meta.env.VITE_API_URL || 'https://api.arkoiot.com')
 // control de la interfaz, no restricciones impuestas por el modelo.
 const FIELD_META = {
     zona_t: {
-        label: 'Zona del canal en t', unit: '', type: 'select',
+        label: 'Zona del canal en t (observada)', unit: '', type: 'select',
         options: ['seguridad', 'alerta', 'epidemia'], default: 'seguridad', icon: Activity,
-        help: 'Zona observada en la semana de emisión.'
+        help: 'Dato observado en la semana de emisión t; no se predice.'
     },
     posicion_4s: {
         label: 'Posición media de 4 semanas', unit: '', min: -3, max: 2, step: 0.01, default: 0, icon: Activity,
@@ -372,7 +372,7 @@ export default function Dashboard() {
                         Sistema de Alerta Temprana de Dengue
                     </h2>
                     <p className="text-xs sm:text-sm text-neutral-400 max-w-2xl">
-                        Evaluación de riesgo en municipios prioritarios de Colombia a partir de las seis variables del modelo.
+                        Pronóstico por municipio a partir de seis variables observadas en la semana de emisión t; el resultado es la probabilidad devuelta por la API.
                     </p>
                 </div>
                 
@@ -453,7 +453,7 @@ export default function Dashboard() {
                             <div className="flex items-center gap-2">
                                 <Sliders className="w-4 h-4 text-emerald-500" />
                                 <h3 className="font-bold text-base text-neutral-900 dark:text-white">
-                                    Evaluación de Riesgo
+                                    Variables observadas en t
                                 </h3>
                             </div>
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 font-medium">
@@ -461,7 +461,7 @@ export default function Dashboard() {
                             </span>
                         </div>
                         <p className="text-[11px] text-neutral-500 mb-3">
-                            Ingresa las seis variables del modelo y consulta la API. El número mostrado es siempre la respuesta de la API.
+                            Ingresa las seis variables <strong>observadas en la semana de emisión t</strong> —incluida la zona del canal, que no se predice— y consulta la API. El resultado es la probabilidad devuelta por la API para la semana objetivo.
                         </p>
                     </div>
 
@@ -499,7 +499,7 @@ export default function Dashboard() {
                         className="w-full py-2.5 px-4 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2 shadow-sm bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white cursor-pointer"
                     >
                         <Zap className={`w-4 h-4 ${isPredicting ? 'animate-spin' : ''}`} />
-                        {isPredicting ? 'Calculando Riesgo...' : '🔍 Evaluar Nivel de Riesgo'}
+                        {isPredicting ? 'Consultando la API...' : '🔍 Consultar predicción de la API'}
                     </button>
 
                     {/* Caja de Resultado: solo se muestra si la API respondió */}
@@ -511,28 +511,31 @@ export default function Dashboard() {
                         }`}>
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-300">
-                                    Diagnóstico de Riesgo
+                                    Predicción de la API · semana objetivo t+8
                                 </span>
                                 <span className="text-[10px] text-neutral-400">
                                     {selectedMunicipio.nombre} • {prediccion.source}
                                 </span>
                             </div>
+                            <p className="text-[10px] text-neutral-500 mb-2">
+                                Probabilidad de que la semana objetivo esté en zona epidémica (C &gt; U1e). La API actual no informa la fecha de esa semana.
+                            </p>
                             
                             <div className="flex items-baseline justify-between mb-2.5">
                                 <div>
                                     <span className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
                                         {(prediccion.probabilidad * 100).toFixed(1)}%
                                     </span>
-                                    <span className="text-xs text-neutral-500 ml-1">probabilidad</span>
+                                    <span className="text-xs text-neutral-500 ml-1">de zona epidémica en t+8</span>
                                 </div>
                                 <div>
                                     {prediccion.alertaActiva ? (
                                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-600 text-white shadow-sm">
-                                            <AlertTriangle className="w-3.5 h-3.5" /> ALERTA TEMPRANA
+                                            <AlertTriangle className="w-3.5 h-3.5" /> SEÑAL ≥ UMBRAL (API)
                                         </span>
                                     ) : (
                                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-sm">
-                                            <CheckCircle2 className="w-3.5 h-3.5" /> RIESGO CONTROLADO
+                                            <CheckCircle2 className="w-3.5 h-3.5" /> SEÑAL &lt; UMBRAL (API)
                                         </span>
                                     )}
                                 </div>
@@ -547,19 +550,17 @@ export default function Dashboard() {
                                     />
                                 </div>
                                 <div className="flex justify-between text-[10px] text-neutral-500">
-                                    <span>Bajo (&lt;{(threshold * 100).toFixed(1)}%)</span>
+                                    <span>Por debajo del umbral</span>
                                     <span className="font-semibold text-neutral-700 dark:text-neutral-300">
-                                        Umbral de Alerta: {(threshold * 100).toFixed(1)}%
+                                        Umbral de la API: {(threshold * 100).toFixed(1)}%
                                     </span>
-                                    <span>Alto</span>
+                                    <span>Por encima</span>
                                 </div>
                             </div>
 
-                            {/* Recomendación Práctica en lenguaje claro */}
-                            <p className="text-xs text-neutral-700 dark:text-neutral-300 mt-3 pt-2.5 border-t border-neutral-200/80 dark:border-neutral-800/80 leading-relaxed">
-                                {prediccion.alertaActiva
-                                    ? '⚠️ Recomendación: Intensificar búsqueda activa comunitaria, control biológico de larvas y jornadas de recolección de inservibles.'
-                                    : '✅ Recomendación: Mantener vigilancia pasiva y control rutinario de criaderos.'}
+                            {/* Alcance real de la señal: la API actual no aplica la regla D10.1 */}
+                            <p className="text-[10px] text-neutral-600 dark:text-neutral-400 mt-3 pt-2.5 border-t border-neutral-200/80 dark:border-neutral-800/80 leading-relaxed">
+                                La API actual decide esta señal solo con <code>probability ≥ umbral</code>: no aplica la regla del producto (zona observada distinta de epidemia y dos emisiones consecutivas) ni devuelve referencias B1/B2. Este número depende de los valores introducidos; no es una emisión validada del producto.
                             </p>
 
                             {/* Badge del Modelo MLflow Ejecutado */}
@@ -585,9 +586,9 @@ export default function Dashboard() {
                         </div>
                     ) : (
                         <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
-                            <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">Diagnóstico de Riesgo</p>
+                            <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">Predicción de la API</p>
                             <p className="mt-2 text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed">
-                                Sin evaluación. Ingresa las seis variables y pulsa «Evaluar Nivel de Riesgo» para consultar la API.
+                                Sin evaluación. Ingresa las seis variables observadas en t y pulsa «Consultar predicción de la API».
                             </p>
                         </div>
                     )}

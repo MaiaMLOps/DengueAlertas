@@ -45,6 +45,7 @@ CITED_OTHER = {
     "composicion_prueba": "268/272", "descarte_prueba": "196/464 (42,2 %)",
     "fa_tras_episodio_prueba": "11/26", "fa_tras_episodio_desarrollo": "13/37",
     "bss_continuidad_desarrollo": "0,252", "bss_continuidad_prueba": "0,136",
+    "casillas_continuidad_prueba": "10/14",
 }
 
 
@@ -106,6 +107,10 @@ def main() -> int:
               f"{fa['empiezan_tras_episodio']}/{fa['falsas_alarmas_B01']}")
         check(f"BSS de continuidad frente a B2, {period}", CITED_OTHER[f"bss_continuidad_{period}"],
               _es(continuity["periodos"][period]["estratos"]["zona_epidemia"]["bss_vs_b2"], 3))
+
+    cells = continuity["periodos"]["prueba"]["estratos"]["zona_epidemia"]["casillas"]
+    check("casillas de continuidad ganadas a B2 por Brier, prueba", CITED_OTHER["casillas_continuidad_prueba"],
+          f"{cells['ganadas_brier']}/{cells['casillas']}")
 
     width = max(len(name) for name, *_ in rows)
     for name, cited, obtained, ok in rows:

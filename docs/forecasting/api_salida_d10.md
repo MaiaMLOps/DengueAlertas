@@ -211,7 +211,7 @@ Solo admite semanas de la ventana vigente: posteriores al 2025-10-27 y hasta el 
  
 **Parámetro:** `municipio` (opcional; sin él devuelve la ficha global).
  
-**Contenido** (prueba 2023–2025, salvo la cifra de continuidad en desarrollo rotulada como tal; `contrato_predictivo.md` §9.4, vista 4, con D10.1):
+**Contenido** (prueba 2023–2025; `contrato_predictivo.md` §9.4, vista 4, con D10.1):
 - `estimacion`: `bss_vs_b2`, `bss_vs_b1`, `mejora_logloss_vs_b2`, `mejora_logloss_vs_b1` y, para cada comparación (`vs_b2`, `vs_b1`, `ablacion_clima`), un objeto `conclusion` con `nivel_conclusion`, `casillas_ganadas` y `casillas_total`. No depende de la regla de alerta.
 - `eventos_regla_producto` (B01; se muestra con la etiqueta «Evaluación posterior no confirmatoria»):
   - `regla_alerta`: `umbral_fuera_de_epidemia`; `etiqueta`: `evaluacion_posterior_no_confirmatoria`;
@@ -226,7 +226,7 @@ Solo admite semanas de la ventana vigente: posteriores al 2025-10-27 y hasta el 
   - `mcnemar`: `discrepantes`, `a_favor_modelo`, `nivel_conclusion`;
   - `falsas_alarmas_por_municipio_anio`: `modelo`, `canal`;
   - `anticipacion_mediana_semanas`: `modelo`, `canal`.
-- `continuidad` (descriptivo, junto a los anteriores): `bss_vs_b2_zona_epidemia_prueba` y `bss_vs_b2_zona_epidemia_desarrollo` (esta última rotulada «desarrollo»), con `filas` de cada estrato.
+- `continuidad` (descriptivo, junto a los anteriores; semanas de prueba con la zona observada en t en epidemia): `bss_vs_b2_zona_epidemia_prueba`, `filas`, `casillas_ganadas_brier` y `casillas` (municipio-años con al menos 5 semanas en el estrato).
 
 **Valores globales de la ficha 0.2** (de `reports/forecasting/evidence/complementario_20261120/`, `prueba_20261112/` y `continuidad_20261120/`; verificados con `docs/forecasting/verificacion/verificar_cifras_b01.py`):
 
@@ -241,7 +241,7 @@ Solo admite semanas de la ventana vigente: posteriores al 2025-10-27 y hasta el 
 | Regla preregistrada (p̂ ≥ τ), resultado de §8.4 | Inicios avisados (modelo / canal) | 4 / 8 de 10; McNemar «sin mejora» (1 de 6 discrepantes a favor del modelo) |
 | | Falsas alarmas por municipio-año (modelo / canal) | 1,00 / 1,67 |
 | | Anticipación mediana (modelo / canal) | 4,5 / 1,5 semanas |
-| Continuidad (zona epidémica) | BSS frente a B2 | 0,136 en prueba; 0,252 en desarrollo |
+| Continuidad (zona epidémica), prueba | BSS frente a B2; casillas ganadas por Brier | 0,136; 10 de 14 |
 - `calibracion`: lista de intervalos con `probabilidad_media`, `frecuencia_observada` y `n`.
 - `curva_amoc`: lista con `tau`, `deteccion`, `falsas_alarmas_por_municipio_anio` y `anticipacion_mediana_semanas`, con la regla preregistrada (no se recalcula para B01, cuyo τ no se eligió con ella).
 - `casillas`: lista con `municipio`, `anio`, `brier_modelo`, `brier_b2`, `brier_b1`, `logloss_modelo`, `logloss_b2` y `gana_vs_b2`.

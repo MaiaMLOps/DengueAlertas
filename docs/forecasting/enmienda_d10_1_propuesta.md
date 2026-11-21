@@ -51,7 +51,7 @@ Los bloques siguientes indican dónde va cada texto. Los marcados «Añadir» no
 ### 1.6 §9.4, vista 4 — Añadir al final de la lista
 
 > - las cifras de prueba de la regla del producto (D10.1): inicios avisados, entradas avisadas, falsas alarmas, fracción de semanas bajo alerta y anticipación mediana (desde la alerta más reciente y desde la primera), rotuladas «evaluación posterior no confirmatoria»;
-> - el resultado de continuidad: BSS frente a B2 en las semanas en zona epidémica, en prueba y, rotulado como tal, en desarrollo. Es la única cifra de desarrollo de la ficha, porque describe el estado de continuidad y no se usó para elegir nada.
+> - el resultado de continuidad: BSS frente a B2 en las semanas en zona epidémica, en prueba.
 
 ### 1.7 §9.6, «Campos de `/predict`» — Añadir
 
@@ -69,7 +69,7 @@ Los bloques siguientes indican dónde va cada texto. Los marcados «Añadir» no
 >
 > **Justificación** (cifras en `analisis_complementario.md`; evidencia en `reports/forecasting/evidence/complementario_20261120/` y `continuidad_20261120/`):
 > - *Mecanismo sin parámetros ajustados.* Una alerta que sigue encendida después de un episodio no puede contar como aviso del inicio siguiente. B01 aplica a la emisión el principio de D8 de contar aparte las alertas de continuidad.
-> - *Criterio del contrato.* En desarrollo y en prueba, B01 cumple la restricción de §7.5 (falsas alarmas por municipio-año no mayores que las del canal: 1,54 frente a 2,00 y 1,44 frente a 1,67) con la mayor capacidad de detección de los tres sistemas (10 de 10 y 9 de 10).
+> - *Criterio del contrato.* En desarrollo y en prueba, B01 cumple la restricción de §7.5 (falsas alarmas por municipio-año no mayores que las del canal: 1,54 frente a 2,00 y 1,44 frente a 1,67) con una detección igual a la del canal en desarrollo (10 de 10) y la mayor de los tres sistemas en prueba (9 de 10).
 > - *Consistencia entre periodos.* B01 avisa más inicios que la regla p̂_t ≥ τ en los dos periodos; en prueba hay 5 inicios discrepantes, todos a favor de B01 (McNemar exacto de una cola, p = 0,03125).
 > - *Costo explícito.* Más alertas y falsas alarmas que la regla p̂_t ≥ τ (en prueba, 38 y 26 frente a 26 y 18), pero menos semanas bajo alerta (20,5 % frente a 60,4 %); anticipación corta (mediana de 1,0 semanas desde la alerta más reciente).
 >

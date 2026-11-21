@@ -60,7 +60,7 @@ export default function Dashboard() {
 
     // Municipio Estratégico Seleccionado en el Mapa (por defecto Cali)
     const [selectedMunicipio, setSelectedMunicipio] = useState(MUNICIPIOS_ESTRATEGICOS[0]);
-    const [activeCodes, setActiveCodes] = useState(['76001', '68001', '13001', '73001', '50001']);
+    const [activeCodes, setActiveCodes] = useState(['08001', '08758', '41001', '50001', '54001', '76001']);
     const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
     const [showTechDetails, setShowTechDetails] = useState(false);
 

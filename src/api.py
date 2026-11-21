@@ -153,38 +153,31 @@ loaded_municipal_models: Dict[str, Any] = {}
 municipal_models_metadata: Dict[str, Dict[str, Any]] = {}
 
 # Mapeo maestro de municipios conocidos a metadatos DANE
+# Seis municipios piloto (docs/pilot_selection.md, modelos/README.md y especificación §9)
 MUNICIPALITY_GEO_REGISTRY = {
-    "cali": {
-        "codigo": "76001",
-        "deptoId": "COVAC",
-        "nombre": "Cali",
-        "departamento": "Valle del Cauca",
-        "aliases": ["76001", "cali", "valle del cauca", "covac"],
-        "densidad": 3910.0
+    "barranquilla": {
+        "codigo": "08001",
+        "deptoId": "COATL",
+        "nombre": "Barranquilla",
+        "departamento": "Atlántico",
+        "aliases": ["08001", "barranquilla", "atlantico", "coatl"],
+        "densidad": 7320.0
     },
-    "bucaramanga": {
-        "codigo": "68001",
-        "deptoId": "COSAN",
-        "nombre": "Bucaramanga",
-        "departamento": "Santander",
-        "aliases": ["68001", "bucaramanga", "santander", "cosan"],
-        "densidad": 3655.0
+    "soledad": {
+        "codigo": "08758",
+        "deptoId": "COATL",
+        "nombre": "Soledad",
+        "departamento": "Atlántico",
+        "aliases": ["08758", "soledad", "atlantico", "coatl"],
+        "densidad": 9850.0
     },
-    "cartagena": {
-        "codigo": "13001",
-        "deptoId": "COBOL",
-        "nombre": "Cartagena",
-        "departamento": "Bolívar",
-        "aliases": ["13001", "cartagena", "bolivar", "cobol"],
-        "densidad": 1581.0
-    },
-    "ibague": {
-        "codigo": "73001",
-        "deptoId": "COTOL",
-        "nombre": "Ibagué",
-        "departamento": "Tolima",
-        "aliases": ["73001", "ibague", "tolima", "cotol"],
-        "densidad": 377.0
+    "neiva": {
+        "codigo": "41001",
+        "deptoId": "COHUI",
+        "nombre": "Neiva",
+        "departamento": "Huila",
+        "aliases": ["41001", "neiva", "huila", "cohui"],
+        "densidad": 215.0
     },
     "villavicencio": {
         "codigo": "50001",
@@ -193,15 +186,32 @@ MUNICIPALITY_GEO_REGISTRY = {
         "departamento": "Meta",
         "aliases": ["50001", "villavicencio", "meta", "comet"],
         "densidad": 395.0
+    },
+    "cucuta": {
+        "codigo": "54001",
+        "deptoId": "CONSA",
+        "nombre": "San José de Cúcuta",
+        "departamento": "Norte de Santander",
+        "aliases": ["54001", "cucuta", "san jose de cucuta", "norte de santander", "consa"],
+        "densidad": 625.0
+    },
+    "cali": {
+        "codigo": "76001",
+        "deptoId": "COVAC",
+        "nombre": "Cali",
+        "departamento": "Valle del Cauca",
+        "aliases": ["76001", "cali", "valle del cauca", "covac"],
+        "densidad": 3910.0
     }
 }
 
 MUNICIPALITY_MODELS_MAP: Dict[str, str] = {
-    "76001": "DengueAlertas_Cali", "cali": "DengueAlertas_Cali", "covac": "DengueAlertas_Cali",
-    "68001": "DengueAlertas_Bucaramanga", "bucaramanga": "DengueAlertas_Bucaramanga", "cosan": "DengueAlertas_Bucaramanga",
-    "13001": "DengueAlertas_Cartagena", "cartagena": "DengueAlertas_Cartagena", "cobol": "DengueAlertas_Cartagena",
-    "73001": "DengueAlertas_Ibague", "ibague": "DengueAlertas_Ibague", "cotol": "DengueAlertas_Ibague",
-    "50001": "DengueAlertas_Villavicencio", "villavicencio": "DengueAlertas_Villavicencio", "comet": "DengueAlertas_Villavicencio"
+    "08001": "DengueAlertas_Barranquilla", "barranquilla": "DengueAlertas_Barranquilla",
+    "08758": "DengueAlertas_Soledad", "soledad": "DengueAlertas_Soledad",
+    "41001": "DengueAlertas_Neiva", "neiva": "DengueAlertas_Neiva",
+    "50001": "DengueAlertas_Villavicencio", "villavicencio": "DengueAlertas_Villavicencio",
+    "54001": "DengueAlertas_Cucuta", "cucuta": "DengueAlertas_Cucuta",
+    "76001": "DengueAlertas_Cali", "cali": "DengueAlertas_Cali"
 }
 
 def load_single_model(client: MlflowClient, model_name: str):
@@ -301,7 +311,7 @@ def fetch_and_load_model():
             for rm in registered:
                 name = rm.name
                 tags = rm.tags or {}
-                if name.startswith("DengueAlertas_") and name != MODEL_NAME:
+                if name.startswith("DengueAlertas_"):
                     enabled_val = str(tags.get("enabled", "")).strip().lower()
                     if enabled_val in ("true", "1", "yes"):
                         discovered_models.append((name, tags))
@@ -310,11 +320,12 @@ def fetch_and_load_model():
         except Exception as e:
             print(f"[WARN] Error buscando modelos registrados en MLflow: {e}")
             discovered_models = [
+                ("DengueAlertas_Barranquilla", {"enabled": "true"}),
+                ("DengueAlertas_Soledad", {"enabled": "true"}),
+                ("DengueAlertas_Neiva", {"enabled": "true"}),
+                ("DengueAlertas_Villavicencio", {"enabled": "true"}),
+                ("DengueAlertas_Cucuta", {"enabled": "true"}),
                 ("DengueAlertas_Cali", {"enabled": "true"}),
-                ("DengueAlertas_Bucaramanga", {"enabled": "true"}),
-                ("DengueAlertas_Cartagena", {"enabled": "true"}),
-                ("DengueAlertas_Ibague", {"enabled": "true"}),
-                ("DengueAlertas_Villavicencio", {"enabled": "true"})
             ]
 
         new_loaded_muns = {}
@@ -511,11 +522,16 @@ def record_ui_event(
 # Capa de Retrocompatibilidad y Adaptacion Dinamica de Features
 # ---------------------------------------------------------------------------
 DANE_DENSITY_MAP = {
+    "08001": 7320.0, "barranquilla": 7320.0,
+    "08758": 9850.0, "soledad": 9850.0,
+    "41001": 215.0,  "neiva": 215.0,
+    "50001": 395.0,  "villavicencio": 395.0,
+    "54001": 625.0,  "cucuta": 625.0,
     "76001": 3910.0, "cali": 3910.0,
+    # Legado
     "68001": 3655.0, "bucaramanga": 3655.0,
     "13001": 1581.0, "cartagena": 1581.0,
-    "73001": 377.0,  "ibague": 377.0,
-    "50001": 395.0,  "villavicencio": 395.0
+    "73001": 377.0,  "ibague": 377.0
 }
 
 def adapt_features_for_model(df: pd.DataFrame, expected_schema: list) -> pd.DataFrame:

@@ -311,7 +311,7 @@ def fetch_and_load_model():
             for rm in registered:
                 name = rm.name
                 tags = rm.tags or {}
-                if name.startswith("DengueAlertas_") and name != MODEL_NAME:
+                if name.startswith("DengueAlertas_"):
                     enabled_val = str(tags.get("enabled", "")).strip().lower()
                     if enabled_val in ("true", "1", "yes"):
                         discovered_models.append((name, tags))

@@ -47,6 +47,20 @@ const FIELD_META = {
     }
 };
 
+// Modo v0.2: se activa solo con ?new=true en la URL del frontend.
+const NEW_MODE = typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).get('new') === 'true';
+
+// Ventana vigente de api_salida_d10.md §4. La API valida la misma ventana contra el panel.
+const V2_WEEK_OPTIONS = (() => {
+    const options = [];
+    const end = Date.parse('2025-12-22T00:00:00Z');
+    for (let ms = Date.parse('2025-10-27T00:00:00Z'); ms <= end; ms += 7 * 24 * 60 * 60 * 1000) {
+        options.push(new Date(ms).toISOString().slice(0, 10));
+    }
+    return options;
+})();
+
 const FEATURE_NAMES = Object.keys(FIELD_META);
 const MODEL_INPUT_SCHEMA = FEATURE_NAMES.map(name => ({
     name,
@@ -101,6 +115,12 @@ export default function Dashboard() {
     // No hay predicción inicial: solo se muestra la que devuelve la API.
     const [prediccion, setPrediccion] = useState(null);
     const [isPredicting, setIsPredicting] = useState(false);
+
+    // Modo v0.2: municipio + semana de emisión; la API calcula el resto.
+    const [v2Week, setV2Week] = useState(V2_WEEK_OPTIONS[V2_WEEK_OPTIONS.length - 1]);
+    const [v2Data, setV2Data] = useState(null);
+    const [v2Error, setV2Error] = useState(null);
+    const [isPredictingV2, setIsPredictingV2] = useState(false);
 
     // Consultar el esquema del modelo del municipio seleccionado.
     const fetchSchema = async (codigo) => {
@@ -209,6 +229,8 @@ export default function Dashboard() {
             municipality_code: mun.codigo
         }));
         setPrediccion(null);
+        setV2Data(null);
+        setV2Error(null);
         setApiError(null);
         setSchemaWarning(null);
         trackUiEvent('select_municipio', mun.nombre, 'colombia_map', {
@@ -354,6 +376,52 @@ export default function Dashboard() {
         }
     };
 
+    // Modo v0.2: la API deriva las seis variables y devuelve el esquema 0.2 completo.
+    const handlePredictV2 = async () => {
+        setIsPredictingV2(true);
+        setV2Error(null);
+        setV2Data(null);
+
+        if (!apiConnected) {
+            setV2Error('La API no está disponible. No se muestra ningún valor sustituto; revise VITE_API_URL, CORS/Cloudflare Access y el estado del servicio.');
+            setIsPredictingV2(false);
+            return;
+        }
+
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            const query = new URLSearchParams({
+                municipio: formValues.municipio,
+                semana_emision: v2Week
+            });
+            const res = await fetch(`${API_BASE_URL}/predict?${query.toString()}`, {
+                credentials: 'include',
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            if (!res.ok) {
+                setV2Error(await apiErrorMessage(res, 'La API rechazó la consulta v0.2.'));
+                return;
+            }
+
+            const data = await res.json();
+            if (data.version_esquema !== '0.2' || typeof data.probabilidad !== 'number'
+                || !Number.isFinite(data.probabilidad)) {
+                setV2Error('La API no devolvió una respuesta v0.2 válida; no se muestra ningún valor sustituto.');
+                return;
+            }
+            setV2Data(data);
+        } catch (e) {
+            setV2Error(e.name === 'AbortError'
+                ? 'Tiempo de espera agotado al consultar /predict; no se muestra ningún valor sustituto.'
+                : `No se pudo conectar con ${API_BASE_URL}/predict (${e.message}).`);
+        } finally {
+            setIsPredictingV2(false);
+        }
+    };
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header / Hero */}
@@ -448,6 +516,119 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Formulario / Simulador (Left - 5 Cols) */}
                 <div className="lg:col-span-5 p-5 sm:p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/40 shadow-sm space-y-5">
+                  {NEW_MODE ? (
+                    <div className="space-y-5">
+                      <div className="border-b border-neutral-100 dark:border-neutral-800 pb-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Layers className="w-4 h-4 text-emerald-500" />
+                          <h3 className="font-bold text-base text-neutral-900 dark:text-white">
+                            Modo v0.2 · captura automática
+                          </h3>
+                        </div>
+                        <p className="text-[11px] text-neutral-500">
+                          La API calcula las seis variables desde el panel consolidado. Solo elige el municipio en el mapa y la semana de emisión.
+                        </p>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label htmlFor="semana-emision" className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                          Semana de emisión
+                        </label>
+                        <select
+                          id="semana-emision"
+                          aria-label="Semana de emisión"
+                          value={v2Week}
+                          onChange={(e) => {
+                            setV2Week(e.target.value);
+                            setV2Data(null);
+                            setV2Error(null);
+                          }}
+                          className="w-full px-2 py-1.5 rounded-lg text-xs bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white"
+                        >
+                          {V2_WEEK_OPTIONS.map((week) => <option key={week} value={week}>{week}</option>)}
+                        </select>
+                        <p className="text-[10px] text-neutral-500">Lunes W-SUN, dentro de la ventana vigente de la API.</p>
+                      </div>
+
+                      {v2Error && (
+                        <div role="alert" className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60">
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+                            <p className="font-mono text-[11px] text-rose-700 dark:text-rose-300 break-words">{v2Error}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={handlePredictV2}
+                        disabled={isPredictingV2}
+                        className="w-full py-2.5 px-4 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2 shadow-sm bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white cursor-pointer"
+                      >
+                        <Zap className={`w-4 h-4 ${isPredictingV2 ? 'animate-spin' : ''}`} />
+                        {isPredictingV2 ? 'Consultando la API...' : '🔍 Consultar predicción v0.2'}
+                      </button>
+
+                      {v2Data ? (
+                        <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/80 dark:bg-emerald-950/30 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-300">
+                              Predicción v0.2 · semana objetivo {v2Data.semana_objetivo}
+                            </span>
+                            <span className="text-[10px] text-neutral-400">esquema {v2Data.version_esquema}</span>
+                          </div>
+
+                          <div>
+                            <span className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
+                              {(v2Data.probabilidad * 100).toFixed(1)}%
+                            </span>
+                            <p className="text-xs text-neutral-600 dark:text-neutral-300">
+                              {v2Data.etiqueta_probabilidad === 'seguir_en_zona_epidemica'
+                                ? 'Probabilidad de seguir en zona epidémica'
+                                : 'Probabilidad de entrar en zona epidémica'}
+                            </p>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-[11px]">
+                            <div className="p-2 rounded-lg bg-white dark:bg-neutral-900/60">
+                              <span className="block text-neutral-500">Referencia B2</span>
+                              <span className="font-mono font-bold">{(v2Data.referencias.b2_estado_canal * 100).toFixed(1)}%</span>
+                            </div>
+                            <div className="p-2 rounded-lg bg-white dark:bg-neutral-900/60">
+                              <span className="block text-neutral-500">Referencia B1</span>
+                              <span className="font-mono font-bold">{(v2Data.referencias.b1_climatologia_estacional * 100).toFixed(1)}%</span>
+                            </div>
+                          </div>
+
+                          <div className="text-[11px] text-neutral-700 dark:text-neutral-300 space-y-1 pt-2 border-t border-neutral-200/80 dark:border-neutral-800/80">
+                            <p><strong>Estado:</strong> {String(v2Data.decision.estado_alerta).replaceAll('_', ' ')}</p>
+                            <p><strong>Zona observada en t:</strong> {v2Data.canal_actual.zona} · casos {v2Data.canal_actual.casos} · central {v2Data.canal_actual.central} · U1e {v2Data.canal_actual.u1e}</p>
+                            <p><strong>Regla:</strong> τ = {v2Data.decision.tau}, k = {v2Data.decision.k}, racha = {v2Data.decision.emisiones_positivas_consecutivas}</p>
+                            <p><strong>Modelo:</strong> <span className="font-mono">{v2Data.versiones.modelo}</span></p>
+                          </div>
+
+                          <details className="text-[10px] text-neutral-600 dark:text-neutral-400">
+                            <summary className="cursor-pointer">Serie del canal y trayectoria de emisiones</summary>
+                            <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-white dark:bg-neutral-900/60 p-2 font-mono">
+                              {JSON.stringify({ serie_canal: v2Data.serie_canal, trayectoria: v2Data.trayectoria, continuidad: v2Data.continuidad }, null, 2)}
+                            </pre>
+                          </details>
+
+                          <ul className="text-[10px] text-neutral-500 list-disc list-inside space-y-0.5">
+                            {v2Data.advertencias.map((item) => <li key={item.codigo}>{item.texto}</li>)}
+                          </ul>
+                        </div>
+                      ) : (
+                        <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
+                          <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">Predicción de la API</p>
+                          <p className="mt-2 text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                            Sin evaluación. Elige la semana de emisión y pulsa «Consultar predicción v0.2».
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <>
                     <div className="border-b border-neutral-100 dark:border-neutral-800 pb-3">
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
@@ -592,6 +773,8 @@ export default function Dashboard() {
                             </p>
                         </div>
                     )}
+                    </>
+                  )}
                 </div>
 
                 {/* Mapa Epidemiológico de Colombia (Right - 7 Cols) */}

@@ -1,6 +1,6 @@
 # Contrato predictivo
  
-**Creado:** 2026-11-09. **Última actualización:** 2026-11-12 (enmienda D7.2: el conjunto de variables pasa a ser un paso de selección, §6.6; y enmienda D9.1: análisis diagnóstico integrado, §8.8 y §10.22; solo reporte). Versiones anteriores: 2026-11-11 (enmienda D7.1: el entrenamiento de cada ensayo se cierra en su primera emisión, §6.1) y 2026-11-10 (D1.1 y D3–D10 cerrados: contrato completo).
+**Creado:** 2026-11-09. **Última actualización:** 2026-11-20 (enmienda D10.1: regla de alerta del producto, §7.4 y §9.3; la evaluación preregistrada no cambia). Versiones anteriores: 2026-11-12 (enmienda D7.2: el conjunto de variables pasa a ser un paso de selección, §6.6; y enmienda D9.1: análisis diagnóstico integrado, §8.8 y §10.22; solo reporte), 2026-11-11 (enmienda D7.1: el entrenamiento de cada ensayo se cierra en su primera emisión, §6.1) y 2026-11-10 (D1.1 y D3–D10 cerrados: contrato completo).
 **Propósito:** especificación vinculante de qué se predice, con qué información, contra qué referencias y cómo se evalúa. Es la fuente de verdad para la implementación en la rama `feature/forecasting-mvp`. Las alternativas descartadas y su justificación detallada están en `registro_decisiones.md`.
  
 Convención: **[H]** hecho verificado; **[C]** cálculo reproducible con el script indicado; **[D]** decisión; **[I]** inferencia; **[R]** recomendación; **[P]** pendiente.
@@ -25,6 +25,7 @@ Convención: **[H]** hecho verificado; **[C]** cálculo reproducible con el scri
 | D9 | Incertidumbre y reglas de comparación | [D] Conteo de victorias pareadas con prueba binomial exacta de una cola (5 %). Desarrollo, con puntajes fuera de año: excepción por municipio si gana 4 de 4 años; familia más compleja si gana ≥ 17 de 24 casillas. Prueba: tres niveles de conclusión (≥ 13 de 18 casillas) y McNemar exacto para los inicios | §8 |
 | D9.1 | Análisis diagnóstico integrado | [D] Solo reporte: régimen de cada casilla (epidémica, post-epidémica, tranquila), seis insumos para desarrollo y prueba, hipótesis secundarias H-R y H-E contrastadas solo en prueba, limitaciones de las métricas | §8.8 |
 | D10 | Salida para el usuario final | [D] Vista principal con probabilidad, referencias B1 y B2, estado de alerta (§7.4), canal hasta t + 8 y ficha de prueba; cuatro vistas (pronóstico vigente, historial fuera de muestra, carga de datos, desempeño); API FastAPI ampliada | §9 |
+| D10.1 | Regla de alerta del producto | [D] El producto alerta con B01 (p̂_t ≥ τ y zona observada en t distinta de epidemia), con los mismos τ, k y W; cuatro estados; la evaluación preregistrada (§7.4, §8.4) no cambia. Formulada después de la prueba: su evaluación en 2023–2025 no es confirmatoria | §7.4 y §9.3 |
  
 ## 1. Canal endémico de referencia (D1.1)
  
@@ -485,7 +486,20 @@ Los objetos censurados se reportan.
 | Alertas de continuidad | Número por municipio-año | Reporte |
 | Curva tipo AMOC | Capacidad de detección y anticipación mediana frente a falsas alarmas por municipio-año, sobre la rejilla de τ, con el canal como un punto | Reporte. En prueba es descriptiva y no cambia τ |
 | Desempeño compuesto | 0,5 · detección + 0,5 · razón de alertas (Umaña et al.) | Reporte, solo por comparabilidad con el artículo |
- 
+
+**Regla de alerta del producto (D10.1, 2026-11-20) [D].** La evaluación de esta sección, la elección de τ (§7.5) y las conclusiones de §8.4 usan la emisión positiva del modelo p̂_t ≥ τ. El producto (§9) usa la regla B01:
+
+| Componente | Regla del producto (B01) |
+|---|---|
+| Emisión positiva | p̂_t ≥ τ **y** zona observada en t distinta de epidemia |
+| Alerta, fecha, ventana, anticipación y falsa alarma | Las de la tabla de definiciones de esta sección, sin cambios (k = 2, t_c, W = 12) |
+| Alertas de continuidad | No existen: una emisión en zona epidémica es negativa, de modo que la zona observada en t_c nunca es epidemia |
+
+- **Mismos parámetros.** τ, k y W son los de la receta congelada; B01 no ajusta ningún parámetro.
+- **Mecanismo.** Una racha de emisiones positivas que continúa durante un episodio y después de él no puede avisar el inicio siguiente, porque no confirma una alerta nueva dentro de la ventana. B01 corta la racha al entrar en zona epidémica: aplica a la emisión el principio de esta sección de contar aparte las alertas de continuidad.
+- **Estado de la evidencia.** B01 se formuló después de la evaluación preregistrada de prueba, a partir de un diagnóstico en desarrollo, y se evaluó una vez en 2023–2025 sin cambiar τ, k ni W (`analisis_complementario.md`; evidencia en `reports/forecasting/evidence/complementario_20261120/`). Esa evaluación no es confirmatoria; queda pendiente una validación prospectiva con datos posteriores a 2025.
+- **Lo que no cambia.** Las cifras preregistradas de eventos de §8.4 se siguen reportando con la regla p̂_t ≥ τ.
+
 ### 7.5 Criterio para elegir τ [D]
  
 - **Rejilla:** τ ∈ {0,05; 0,10; …; 0,95}.
@@ -676,7 +690,7 @@ Se calcula con Brier y con log-loss y se adopta el menor, como en §8.4. Se repo
 - **Qué fija:** qué dice el sistema, a quién, con qué datos y con qué lenguaje, y el contrato de la API que lo entrega.
 - **Qué no fija:** el diseño visual. Lo define el equipo de frontend sobre la infraestructura existente (API FastAPI y frontend React en Cloudflare Pages).
 - **Primera versión.** El equipo puede añadir elementos que aporten valor, sean ilustrativos o muestren el trabajo realizado, siempre que usen las fuentes de datos de §9.4 y las reglas de §9.5.
-- **Principio:** el usuario ve exactamente lo que se evaluó: la misma probabilidad, las mismas referencias, la misma regla de alerta (§7.4) y el desempeño medido en prueba.
+- **Principio (enmendado por D10.1, 2026-11-20):** el usuario ve la misma probabilidad y las mismas referencias que se evaluaron, y el desempeño medido en prueba. La regla de alerta es la del producto (§7.4, D10.1); la ficha muestra sus cifras de prueba como evaluación posterior no confirmatoria, junto al resultado preregistrado de la regla p̂_t ≥ τ. La versión del 2026-11-10 decía: «el usuario ve exactamente lo que se evaluó: la misma probabilidad, las mismas referencias, la misma regla de alerta (§7.4) y el desempeño medido en prueba».
 ### 9.2 Usuario y pregunta [D]
  
 - **Usuario de referencia:** un epidemiólogo de una secretaría de salud. En la evaluación del despliegue, también el jurado (usabilidad, 35 puntos).
@@ -685,13 +699,15 @@ Se calcula con Brier y con log-loss y se adopta el menor, como en §8.4. Se repo
  
 | Elemento | Contenido | Origen |
 |---|---|---|
-| Probabilidad | p̂ de zona epidémica en t + 8, en porcentaje entero, con la semana de emisión y la semana objetivo explícitas | §2.1 |
+| Probabilidad | p̂ de zona epidémica en t + 8, en porcentaje entero, con la semana de emisión y la semana objetivo explícitas. Se etiqueta según el estado: «probabilidad de entrar en zona epidémica» fuera de continuidad epidémica y «probabilidad de seguir en zona epidémica» en continuidad epidémica, siempre con la fecha objetivo | §2.1; D10.1 |
 | Referencias | B2 (solo con la zona actual del canal) y B1 (estacionalidad de la semana objetivo), en la misma escala | §4.1 |
-| Estado de alerta | Sin alerta; señal en observación (una emisión ≥ τ); alerta confirmada (dos emisiones consecutivas ≥ τ); continuidad epidémica (alerta con la zona observada en t en epidemia). Con τ y k congelados | §7.4 |
+| Estado de alerta | Cuatro estados de la regla del producto, con τ y k congelados: **sin alerta**; **señal en observación** (una emisión ≥ τ fuera de zona epidémica); **alerta de inicio confirmada** (dos emisiones consecutivas ≥ τ fuera de zona epidémica); **continuidad epidémica** (la zona observada en t es epidemia y no hay alerta del modelo) | §7.4 (D10.1) |
 | Canal | Casos observados hasta t, con la central y U1e de epiCo y sus zonas, y las bandas ya conocidas hasta t + 8, con la semana objetivo marcada | §1, §3.2 |
-| Trayectoria | Probabilidades de las últimas 12 emisiones, con la línea de τ | §7.4 |
-| Ficha de desempeño | Resultados de prueba (2023–2025) del municipio y globales (§9.4, vista 4) | §7, §8 |
+| Trayectoria | Probabilidades de las últimas 12 emisiones, con la línea de τ. En continuidad epidémica, además, la trayectoria de la probabilidad de seguir durante el episodio en curso y la referencia B2 de ese estado | §7.4; D10.1 |
+| Ficha de desempeño | Resultados de prueba (2023–2025) del municipio y globales (§9.4, vista 4): las cifras de la regla del producto, rotuladas «evaluación posterior no confirmatoria», junto al resultado preregistrado de la regla p̂_t ≥ τ y al resultado de continuidad | §7, §8; D10.1 |
 | Advertencias | Texto fijo de §9.5 | §3.4 |
+
+Enmienda D10.1 (2026-11-20). Las filas Probabilidad, Estado de alerta, Trayectoria y Ficha de desempeño se enmendaron por D10.1 (§7.4). En la versión del 2026-11-10, el estado de alerta usaba la emisión p̂_t ≥ τ, y la continuidad epidémica era una alerta con la zona observada en t en epidemia. No hay bandas de riesgo ni aviso de salida de la zona epidémica: no se evaluaron.
  
 ### 9.4 Vistas y origen de los datos [D]
  
@@ -702,7 +718,9 @@ Se calcula con Brier y con log-loss y se adopta el menor, como en §8.4. Se repo
    - BSS y mejora de log-loss frente a B2 y B1, con el nivel de conclusión de §8.4;
    - la tabla de casillas municipio-año (§8.2);
    - inicios avisados (k de 10) frente al canal, con el nivel de McNemar (§8.4); falsas alarmas por municipio-año; anticipación mediana;
-   - el diagrama de confiabilidad y la curva tipo AMOC con el canal como punto (§7.4).
+   - el diagrama de confiabilidad y la curva tipo AMOC con el canal como punto (§7.4);
+   - las cifras de prueba de la regla del producto (D10.1): inicios avisados, entradas avisadas, falsas alarmas, fracción de semanas bajo alerta y anticipación mediana (desde la alerta más reciente y desde la primera), rotuladas «evaluación posterior no confirmatoria»;
+   - el resultado de continuidad: BSS frente a B2 en las semanas en zona epidémica, en prueba.
    Se reporta aunque el resultado no favorezca al modelo. En Cali se indica que no hubo inicios en prueba. Los resultados de desarrollo no se muestran como desempeño, porque se usaron para elegir.
 ### 9.5 Reglas de comunicación [D]
  
@@ -726,7 +744,7 @@ Se conserva la API FastAPI existente (`/municipios`, `/schema`, `/health`) y se 
 | `/historial` | Por municipio, 2019–2025: semana de emisión y objetivo, p̂, B1, B2, estado observado, zona, estado de alerta y eventos | Tabla precalculada |
 | `/desempeno` | La ficha de §9.4, vista 4 | Tabla precalculada |
  
-**Campos de `/predict`:** municipio (código y nombre), semana de emisión, semana objetivo, horizonte, probabilidad, referencia B2, referencia B1, τ, estado de alerta, zona actual, central y U1e de la semana objetivo, serie del canal para el gráfico (hasta t + 8), trayectoria de las últimas 12 emisiones, versión de la receta, versión de los datos y advertencias.
+**Campos de `/predict`:** municipio (código y nombre), semana de emisión, semana objetivo, horizonte, probabilidad, referencia B2, referencia B1, τ, estado de alerta, zona actual, central y U1e de la semana objetivo, serie del canal para el gráfico (hasta t + 8), trayectoria de las últimas 12 emisiones, versión de la receta, versión de los datos y advertencias. Además: regla de alerta (`umbral_fuera_de_epidemia`), etiqueta de la probabilidad según el estado y, en continuidad epidémica, la probabilidad de seguir, la referencia B2 de ese estado y la trayectoria durante el episodio. Detalle en `api_salida_d10.md` (versión de esquema 0.2).
  
 **Parametrización** (variables de entorno documentadas en el README): horizonte (por defecto 8; solo valores con modelo entrenado), τ y k (por defecto, los congelados en la receta), URI o etapa del modelo en MLflow, versión de los datos y URL de la API en el frontend. Si τ o k difieren de los congelados, la API lo indica y la ficha de desempeño deja de aplicar.
  

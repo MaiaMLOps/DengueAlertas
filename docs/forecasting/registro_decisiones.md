@@ -438,7 +438,30 @@ La ventana es de 12 semanas y todos los resúmenes usan w = 4, fijado a priori. 
 - El pronóstico vigente no tiene verdad para comparar.
 - Los datos subidos solo se validan en formato y completitud.
 **Evidencia:** criterios de evaluación del despliegue (rúbrica del curso, no versionada: usabilidad, 35 puntos; parametrización, 15; README, 15); propuesta del grupo, sección de transparencia.
- 
+
+## D10.1 — Regla de alerta del producto (2026-11-20; enmienda a D10)
+
+**Decisión:** el producto alerta con la regla B01: una emisión es positiva si p̂_t ≥ τ y la zona observada del canal en t no es epidemia. Se conservan τ = 0,05, k = 2, W = 12, la receta congelada, la probabilidad y las referencias. La vista principal tiene cuatro estados (sin alerta, señal en observación, alerta de inicio confirmada, continuidad epidémica) y etiqueta la probabilidad según el estado. La evaluación preregistrada (§7.4 con p̂_t ≥ τ, §7.5 y §8.4) no cambia. Texto vinculante en `contrato_predictivo.md` §7.4 y §9.3, con ajustes en §0, §9.1, §9.4 y §9.6.
+
+**Origen.** En el diagnóstico de desarrollo, dos inicios no se avisaron porque la alerta de la receta ya estaba encendida antes de la ventana y no se confirmó ninguna alerta nueva dentro de ella. La regla se formuló después de conocer la evaluación preregistrada de prueba y se evaluó una vez en 2023–2025 sin cambiar τ, k ni W.
+
+**Justificación** (cifras en `analisis_complementario.md`; evidencia en `reports/forecasting/evidence/complementario_20261120/` y `continuidad_20261120/`):
+- *Mecanismo sin parámetros ajustados.* Una alerta que sigue encendida después de un episodio no puede contar como aviso del inicio siguiente. B01 aplica a la emisión el principio de D8 de contar aparte las alertas de continuidad.
+- *Criterio del contrato.* En desarrollo y en prueba, B01 cumple la restricción de §7.5 (falsas alarmas por municipio-año no mayores que las del canal: 1,54 frente a 2,00 y 1,44 frente a 1,67) con una detección igual a la del canal en desarrollo (10 de 10) y la mayor de los tres sistemas en prueba (9 de 10).
+- *Consistencia entre periodos.* B01 avisa más inicios que la regla p̂_t ≥ τ en los dos periodos; en prueba hay 5 inicios discrepantes, todos a favor de B01 (McNemar exacto de una cola, p = 0,03125).
+- *Costo explícito.* Más alertas y falsas alarmas que la regla p̂_t ≥ τ (en prueba, 38 y 26 frente a 26 y 18), pero menos semanas bajo alerta (20,5 % frente a 60,4 %); anticipación corta (mediana de 1,0 semanas desde la alerta más reciente).
+
+**Alternativas consideradas:**
+- **Mantener la regla p̂_t ≥ τ en el producto.** Conserva la equivalencia exacta con la evaluación preregistrada, pero en prueba avisa 4 de 10 inicios, menos que el canal (8 de 10).
+- **Cambiar τ, k o W.** Se descarta: se ajustarían con un periodo de prueba ya consultado.
+- **Mostrar la zona del canal como alerta.** Es la práctica actual (8 de 10 inicios en prueba, 30 falsas alarmas); no usa la probabilidad del modelo.
+
+**Lectura.** La adopción es una decisión de producto con evidencia posterior y no confirmatoria. El desempeño preregistrado de la receta sigue siendo el de §8.4.
+
+**Limitaciones declaradas:** pocos eventos (10 inicios por periodo); la evaluación de 2023–2025 no es independiente de la formulación de la regla; queda pendiente una validación prospectiva con datos posteriores a 2025.
+
+**Declarar en el artículo:** la regla de alerta del producto se formuló después de la evaluación preregistrada de prueba, a partir de un diagnóstico en desarrollo, sin ajustar parámetros; su evaluación en 2023–2025 no es confirmatoria.
+
 ## Erratas (2026-11-13)
 
 Correcciones de redacción o de estado registradas tras la auditoría de coherencia del 2026-11-13. No cambian ninguna decisión, regla ni cifra del pre-registro, ni la procedencia de la receta congelada (`commit_contrato` 847b3ba). El texto anterior se conserva sin cambios; donde una errata y el texto difieren, se lee la errata.

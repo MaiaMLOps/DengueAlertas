@@ -48,7 +48,8 @@ Cada fase tiene pruebas de aceptación que se escribieron y congelaron antes de 
 | F6b | Conjunto de variables como paso 0 de la selección | D7.2 (DV-02) |
 | F7 | Prueba única, ablación, ficha, historial, modelos finales y diagnóstico | D7 (§6.1), D8, D9 (§8.4), D9.1, D10 (§9.4) |
 | U7.5 | Reportes derivables y figuras | D8 (§7.2–§7.4), D9 (§8.4) |
-| F8 | Registro de modelos, API, frontend | D10 (pendiente) |
+| Posterior | Análisis complementario y regla de alerta del producto | DV-04 a DV-06; D10.1 (DV-07) |
+| F8 | Registro de modelos (hecho, sin habilitar; DV-08), API, frontend | D10 y D10.1 (pendiente) |
 
 **F0, preparación.** Antes de escribir código metodológico había que fijar lo que lo condiciona: versión de Python y de las bibliotecas, la versión del cliente de MLflow igual a la del servidor (el mecanismo de autenticación usa una API privada de MLflow) y una configuración que se valida al cargarse, para que ningún parámetro del contrato quede escrito en el código.
 
@@ -73,6 +74,21 @@ Cada fase tiene pruebas de aceptación que se escribieron y congelaron antes de 
 **F7, prueba única y productos (D7, D8, D9, D9.1, D10).** Con la receta aprobada, se evaluó la prueba una sola vez y se registró en la bitácora. Del mismo cálculo salen la ablación (la familia final con el otro conjunto de variables), la ficha de desempeño, el historial fuera de muestra para la API, los modelos finales entrenados con todas las filas y los insumos del análisis diagnóstico por régimen (D9.1). Las pruebas `test_f7b_*` sustituyen a las de F7 que citaban la receta anterior (DV-02).
 
 **U7.5, reportes derivables.** El orden de recorte de la especificación (§5) permitía dejar para después todo lo que se calcula con predicciones ya guardadas. Estos reportes (confiabilidad, Murphy, clasificación en τ, eventos, curva tipo AMOC y figuras) no reentrenan, no repiten la prueba y no cambian ninguna decisión. Sus fórmulas y cifras se congelaron en `test_f7c_*`.
+
+**Posterior a la prueba: análisis complementario (DV-04 a DV-06).** Una vez cerrada la evaluación preregistrada, se hicieron análisis que no la modifican. Cada uno tiene su protocolo fijado antes del cálculo, cuando corresponde, y sus cifras de prueba son descriptivas: no confirman ni sustituyen las conclusiones de §8.4.
+- **Contraste de familias en desarrollo** (`reports/tesis_contraste_modelos/`).
+- **Rejilla ampliada de C**, evaluada con el procedimiento preregistrado; no reemplaza la receta (DV-04).
+- **Regla de emisión alternativa B01** (DV-05).
+- **Continuidad en zona epidémica y referencia M0**, el modelo mínimo con la posición frente al canal (DV-06).
+
+Todo está en [`analisis_complementario.md`](analisis_complementario.md).
+
+**Posterior a la prueba: regla de alerta del producto (D10.1, DV-07).** El producto alerta con B01: una emisión es positiva si p̂ ≥ τ y la zona observada en t no es epidemia. Usa los mismos τ, k y W y tiene cuatro estados (glosario, §7). La evaluación preregistrada, la elección de τ y las conclusiones de §8.4 siguen con la regla p̂ ≥ τ. La regla se formuló después de consultar la prueba, así que su evaluación en 2023–2025 no es confirmatoria. Fuentes:
+- la enmienda, en [`contrato_predictivo.md`](contrato_predictivo.md) §7.4 y §9.3 y en [`registro_decisiones.md`](registro_decisiones.md) («D10.1»);
+- el texto propuesto, en [`enmienda_d10_1_propuesta.md`](enmienda_d10_1_propuesta.md);
+- la justificación, en [`analisis_complementario.md`](analisis_complementario.md), «Justificación de la regla B01 en el producto».
+
+En `configs/forecasting.yaml`, `decision.regla_emision` (fija en `umbral`) es la regla preregistrada y `producto.regla_alerta` (`umbral_fuera_de_epidemia`) es la del producto, que solo lee la API.
 
 ## 3. Módulos y flujo de datos
 
@@ -185,8 +201,8 @@ La dependencia va de `src/forecasting/` a `src/epidemiology/`, nunca al revés. 
 | Identificador | Significado |
 |---|---|
 | D0–D10 | Decisiones del contrato: D0 alcance territorial; D1 conteo, calendario y canal; D2 umbral de exceso (U1e); D3 variable objetivo; D4 emisión, información disponible y horizonte; D5 líneas base y modelos; D6 variables; D7 validación y selección; D8 métricas y regla de decisión; D9 incertidumbre y reglas de comparación; D10 salida para el usuario |
-| D*x.y* | Enmienda de una decisión: D1.1 parametrización única del canal; D7.1 entrenamiento cerrado en la primera emisión de cada ensayo; D7.2 conjunto de variables como paso de selección; D9.1 análisis diagnóstico integrado |
-| DV-NN | Desviación registrada durante la implementación: DV-01 (corte de entrenamiento, origen de D7.1), DV-02 (receta sustituida por D7.2 antes de la prueba), DV-03 (edición editorial de los documentos) |
+| D*x.y* | Enmienda de una decisión: D1.1 parametrización única del canal; D7.1 entrenamiento cerrado en la primera emisión de cada ensayo; D7.2 conjunto de variables como paso de selección; D9.1 análisis diagnóstico integrado; D10.1 regla de alerta del producto |
+| DV-NN | Desviación registrada durante la implementación: DV-01 (corte de entrenamiento, origen de D7.1), DV-02 (receta sustituida por D7.2 antes de la prueba), DV-03 (edición editorial de los documentos), DV-04 (rejilla ampliada de C), DV-05 (regla de emisión alternativa B01), DV-06 (continuidad y referencia M0), DV-07 (B01 como regla de alerta del producto, origen de D10.1), DV-08 (registro de los modelos finales desde la interfaz de MLflow, con etiquetas diferidas al despliegue) |
 | F0–F8 | Fases de la implementación (§2). Sufijos: F5a/F5b (arnés y búsqueda), F6b (D7.2), F7b (pruebas que reemplazan a las de F7 sustituidas por DV-02), F7c (pruebas de U7.5) |
 | U*x.y* | Unidad de trabajo *y* de la fase *x*: uno o dos requisitos del contrato y un commit |
 | contrato §10.*n* | Requisito *n* de la lista acumulada del contrato |
@@ -226,7 +242,16 @@ No se encontró en el repositorio ninguna U7.1-D1 ni U7.1-D5 con sentido propio.
 - **Mejora de log-loss:** 1 − LL/LL_B2, la métrica que decide hiperparámetros y familia. **BSS:** 1 − Brier/Brier_B2, la principal de reporte. **Murphy:** descomposición del Brier en confiabilidad, resolución e incertidumbre.
 - **Fuera de año:** la configuración que se puntúa en un año se eligió sin ese año. **Configuración común:** la misma en los seis municipios. **Excepción:** un municipio se aparta de la común solo si gana en los 4 años de desarrollo.
 - **Paso 0 (D7.2):** elección del conjunto de variables por familia. **Completo:** 15 variables. **Sin clima:** las 6 que no son anomalías climáticas. **Ablación:** la familia final con el otro conjunto; mide el aporte del clima y no compite con la receta.
-- **Emisión positiva:** p̂ ≥ τ (modelo) o zona de alerta (canal). **Alerta:** racha de ≥ k = 2 emisiones positivas, fechada en su confirmación **t_c**. **Alerta de continuidad:** la zona observada en t_c ya es epidemia; se cuenta aparte. **Alerta juzgable:** la que tiene semanas suficientes dentro del periodo para saber si fue falsa. **Falsa alarma:** alerta sin inicio en las W = 12 semanas siguientes.
+- **Emisión positiva (regla preregistrada):** p̂ ≥ τ para el modelo (contrato §7.4; `decision.regla_emision: umbral`), o zona de alerta para el canal. Es la regla de la selección, de la prueba única y de las conclusiones de §8.4, y la que usan las definiciones de evaluación de este apartado.
+- **Emisión positiva (regla del producto, B01; D10.1):** p̂ ≥ τ **y** la zona observada en t distinta de epidemia (`producto.regla_alerta: umbral_fuera_de_epidemia`). Mismos τ, k y W; solo la usa el producto (API y frontend). Su evaluación en 2023–2025 es posterior y no confirmatoria (`analisis_complementario.md`).
+- **Estados del producto (D10.1):** el estado de cada emisión que ve el usuario, calculado con la regla del producto (`events.product_alert_states`).
+  - **sin alerta** (`sin_alerta`): fuera de zona epidémica y p̂ < τ;
+  - **señal en observación** (`senal_en_observacion`): fuera de zona epidémica, p̂ ≥ τ y una racha de emisiones positivas más corta que k;
+  - **alerta de inicio confirmada** (`alerta_inicio_confirmada`): k = 2 emisiones positivas consecutivas fuera de zona epidémica;
+  - **continuidad epidémica** (`continuidad_epidemica`): la zona observada en t ya es epidemia, y no hay alerta del modelo.
+
+  La probabilidad es siempre p̂ de zona epidémica en t + 8. Se lee como probabilidad de *seguir* en continuidad epidémica y de *entrar* en los otros tres estados.
+- **Alerta:** racha de ≥ k = 2 emisiones positivas, fechada en su confirmación **t_c**. **Alerta de continuidad:** la zona observada en t_c ya es epidemia; se cuenta aparte. **Alerta juzgable:** la que tiene semanas suficientes dentro del periodo para saber si fue falsa. **Falsa alarma:** alerta sin inicio en las W = 12 semanas siguientes.
 - **Capacidad de detección:** inicios avisados / inicios evaluables. **Razón de alertas:** inicios avisados por alertas juzgables / alertas juzgables. **Anticipación:** s − t_c. **Δw:** anticipación del modelo menos la del canal en un inicio avisado por ambos. **Censura:** se excluye todo objeto que necesite semanas fuera del periodo.
 - **Curva tipo AMOC:** detección y anticipación frente a falsas alarmas sobre la rejilla de τ.
 - **Niveles de conclusión (contrato §8.4):** «mejora consistente», «tendencia favorable» o «sin mejora», según la métrica global y el número de casillas (o de inicios discrepantes) ganados. No alcanzar «mejora consistente» no prueba que no haya mejora. **Nivel descriptivo por municipio (§8.8):** favorable, mixto o desfavorable. **H-R, H-E:** hipótesis secundarias de régimen y de eventos, contrastadas solo en prueba de forma descriptiva.
@@ -250,13 +275,24 @@ No se encontró en el repositorio ninguna U7.1-D1 ni U7.1-D5 con sentido propio.
 
 ## 8. Pendientes (F8)
 
-- Registro de los seis modelos finales en el registro de modelos de MLflow como `DengueAlertas_<Municipio>` (nombre del municipio; propuesta de la especificación §9), con las etiquetas de la especificación §9, de forma compatible con el descubrimiento de modelos de `src/api.py`.
+- **Modelos finales en MLflow: registrados, sin habilitar (DV-08).** Los seis están en el registro de modelos en versión 1 desde el 2026-11-20:
+  - `DengueAlertas_Barranquilla`, `DengueAlertas_Soledad`, `DengueAlertas_Neiva`, `DengueAlertas_Villavicencio`, `DengueAlertas_Cucuta` y `DengueAlertas_Cali`;
+  - sus runs están en el experimento `dengue_h8_final`;
+  - el registro se hizo desde la interfaz, por la política del servidor, y lo verificó `scripts/registrar_modelos_finales.py --verificar`.
+
+  No tienen etiquetas ni alias, así que la API actual no los descubre. **La habilitación y los alias están a cargo del despliegue de F8**, en este orden:
+  1. las etiquetas `enabled = true`, `municipality_code`, `department` y `depto_id` en cada modelo registrado, con los valores de [`modelos/README.md`](../../modelos/README.md), «Habilitación en F8»;
+  2. el alias `staging`;
+  3. una prueba en el ambiente de pruebas;
+  4. el alias `production`.
+
+  Antes de habilitar, F8 decide cómo tratar el último recurso de `src/api.py`, que carga la última versión cuando no existe el alias del ambiente. Además, `requirements/serve.txt` debe fijar `scikit-learn==1.7.2` y `mlflow==3.17.0`.
 - API: `/predict`, `/predict/upload`, `/historial` y `/desempeno` según [`api_salida_d10.md`](api_salida_d10.md), incluido el conflicto del parámetro `threshold` de `/predict` con contrato §9.7 (especificación §10) y la validación del contrato de entrada de datos subidos (contrato §3.3).
 - Frontend con las cuatro vistas de contrato §9.4 y la URL de la API como variable.
 - Secciones de despliegue del README raíz: enlace a la aplicación, uso de la API, ejemplos de entrada y salida (plantilla CSV y respuesta JSON) y credenciales de ejemplo (contrato §10, punto 21).
 - Pruebas de aceptación de F8 (contrato §10, puntos 19 y 20), escritas y congeladas antes de implementar.
 - Revisión de la API actual (`src/api.py`, anterior al MVP), según la auditoría de coherencia del 2026-11-13:
-  - sirve los modelos `ModeloPrueba` y `DengueAlertas_*` de otra etapa (Cali, Bucaramanga, Cartagena, Ibagué y Villavicencio), con `MODEL_THRESHOLD` = 0,205, sin los seis pilotos ni la receta congelada;
+  - sirve los modelos `ModeloPrueba` y `DengueAlertas_*` de otra etapa (Cali, Bucaramanga, Cartagena, Ibagué y Villavicencio), con `MODEL_THRESHOLD` = 0,205, sin los seis pilotos ni la receta congelada. Al 2026-11-20, esos `DengueAlertas_*` de otra etapa ya no están en el registro, pero `src/api.py` conserva su lista de respaldo y su mapa de municipios;
   - **`/predict` rellena con 0,0 las variables que faltan, ignora los errores de conversión de tipos y, si el modelo no da probabilidad, usa una probabilidad sustituta de 0,85 o 0,15 según la clase**: esa `probability` no es una probabilidad del modelo;
   - carga los modelos de forma secuencial (no «en paralelo», como dice su comentario), y cuántos carga depende de lo que encuentra en MLflow;
   - el mapa de municipios usa códigos de departamento tipo ISO 3166-2, no DANE, y no cita la fuente de la densidad;

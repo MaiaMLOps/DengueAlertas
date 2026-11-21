@@ -1,5 +1,11 @@
 # Análisis integrado de resultados del pronóstico
 
+> **Nota (2026-11-21).** Las cifras de eventos de este documento (inicios y entradas avisados, alertas, falsas alarmas, anticipación y alertas de continuidad) corresponden a la **regla preregistrada**: una emisión del modelo es positiva si p̂ ≥ τ (contrato §7.4). Dos análisis posteriores a la prueba están en [`analisis_complementario.md`](analisis_complementario.md):
+> - la **regla de alerta del producto** (B01, enmienda D10.1), que no emite alertas del modelo en zona epidémica;
+> - el **análisis de continuidad** en zona epidémica.
+>
+> Esta nota no cambia ninguna cifra ni conclusión del documento.
+
 **Alcance.** Este es el análisis diagnóstico integrado que exige el contrato §8.8 (D9.1) sobre la receta vigente: regresión logística sin clima, un modelo por municipio, horizonte de 8 semanas y τ = 0,05 (receta `de74d4ab…fda5`). Describe dónde aporta el modelo frente a B2 (estado del canal), B1 (estacionalidad) y la alerta del canal, dónde no aporta, qué patrones observables acompañan cada caso y cómo influyen las propiedades de las métricas en la lectura. El análisis da el mismo peso a las dos capas del sistema (§2.4, §7.1): la **estimación**, es decir, la calidad de la probabilidad semanal de estar en zona epidémica a 8 semanas, que es lo que el modelo predice, y la **decisión**, es decir, las alertas y su capacidad de avisar inicios de brote.
 
 **No modifica ninguna conclusión de §8.4**, no recalcula los resultados de la prueba ni reentrena modelos. La prueba 2023–2025 se ejecutó una sola vez (`reports/forecasting/bitacora_prueba.jsonl`, ejecución 1, código `abf08c2`) y los reportes derivables son los de U7.5 (`reportes_20261112/manifiesto_reportes.json`, código `300cb08`).

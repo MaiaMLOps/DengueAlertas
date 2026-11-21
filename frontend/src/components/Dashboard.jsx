@@ -11,6 +11,8 @@ import {
     Users
 } from 'lucide-react';
 import ColombiaMap, { MUNICIPIOS_ESTRATEGICOS } from './ColombiaMap';
+import ChannelSeriesChart from './ChannelSeriesChart';
+import EmissionTrajectoryTable from './EmissionTrajectoryTable';
 
 // La URL se define por entorno al compilar (VITE_API_URL). El valor por defecto
 // preserva el comportamiento actual; Staging debe compilar con su propia URL.
@@ -601,18 +603,41 @@ export default function Dashboard() {
                           </div>
 
                           <div className="text-[11px] text-neutral-700 dark:text-neutral-300 space-y-1 pt-2 border-t border-neutral-200/80 dark:border-neutral-800/80">
-                            <p><strong>Estado:</strong> {String(v2Data.decision.estado_alerta).replaceAll('_', ' ')}</p>
+                            <p className="flex items-center gap-2">
+                              <strong>Estado:</strong>
+                              <span className={`rounded-full px-2 py-0.5 font-bold ${
+                                v2Data.decision.estado_alerta === 'continuidad_epidemica'
+                                  ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300'
+                                  : v2Data.decision.estado_alerta === 'sin_alerta'
+                                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                    : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                              }`}>
+                                {String(v2Data.decision.estado_alerta).replaceAll('_', ' ')}
+                              </span>
+                            </p>
                             <p><strong>Zona observada en t:</strong> {v2Data.canal_actual.zona} · casos {v2Data.canal_actual.casos} · central {v2Data.canal_actual.central} · U1e {v2Data.canal_actual.u1e}</p>
                             <p><strong>Regla:</strong> τ = {v2Data.decision.tau}, k = {v2Data.decision.k}, racha = {v2Data.decision.emisiones_positivas_consecutivas}</p>
                             <p><strong>Modelo:</strong> <span className="font-mono">{v2Data.versiones.modelo}</span></p>
                           </div>
 
-                          <details className="text-[10px] text-neutral-600 dark:text-neutral-400">
-                            <summary className="cursor-pointer">Serie del canal y trayectoria de emisiones</summary>
-                            <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-white dark:bg-neutral-900/60 p-2 font-mono">
-                              {JSON.stringify({ serie_canal: v2Data.serie_canal, trayectoria: v2Data.trayectoria, continuidad: v2Data.continuidad }, null, 2)}
-                            </pre>
-                          </details>
+                          <div className="pt-2 border-t border-neutral-200/80 dark:border-neutral-800/80 space-y-4">
+                            <ChannelSeriesChart
+                              serie={v2Data.serie_canal}
+                              semanaEmision={v2Data.semana_emision}
+                              semanaObjetivo={v2Data.semana_objetivo}
+                            />
+                            <EmissionTrajectoryTable
+                              trayectoria={v2Data.trayectoria}
+                              continuidad={v2Data.continuidad}
+                              decision={v2Data.decision}
+                            />
+                            <details className="text-[10px] text-neutral-600 dark:text-neutral-400">
+                              <summary className="cursor-pointer">Ver datos completos (JSON)</summary>
+                              <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-white dark:bg-neutral-900/60 p-2 font-mono">
+                                {JSON.stringify({ serie_canal: v2Data.serie_canal, trayectoria: v2Data.trayectoria, continuidad: v2Data.continuidad }, null, 2)}
+                              </pre>
+                            </details>
+                          </div>
 
                           <ul className="text-[10px] text-neutral-500 list-disc list-inside space-y-0.5">
                             {v2Data.advertencias.map((item) => <li key={item.codigo}>{item.texto}</li>)}

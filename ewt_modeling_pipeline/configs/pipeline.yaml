@@ -1,0 +1,44 @@
+project: DengueAlertas
+methodology_version: ewt-final-v1
+random_state: 42
+pilots:
+  "54001": "Cúcuta"
+  "08001": "Barranquilla"
+  "41001": "Neiva"
+  "50001": "Villavicencio"
+  "76001": "Cali"
+  "08758": "Soledad"
+
+label:
+  horizon: 8
+  primary_task: zone_future
+  secondary_tasks: [pre_onset]
+  min_episode_weeks: 3
+  merge_gap_weeks: 2
+  refractory_weeks: 8
+  ewt_window_years: 5
+  ewt_offset: 0.001
+
+evaluation:
+  selection_years: [2019, 2020, 2021, 2022]
+  test_years: [2023, 2024, 2025]
+  purge_weeks: auto
+  false_negative_cost: 5.0
+  false_positive_cost: 1.0
+  max_false_alert_runs_per_year: 6.0
+
+modeling:
+  algorithms: [logistic, lightgbm, xgboost]
+  feature_sets: [epi, epi_clima, epi_clima_demo]
+  calibrate: platt_oof
+  logistic_c: 0.3
+  tree_estimators: 180
+
+mlflow:
+  enabled: true
+  tracking_uri: "https://platform.arkoiot.com"
+  experiment: "dengue-ews-ewt-h8-final"
+  register_winners: false
+  registered_model_prefix: "DengueAlertas_EWT"
+  transition_stage: null
+  set_alias: null

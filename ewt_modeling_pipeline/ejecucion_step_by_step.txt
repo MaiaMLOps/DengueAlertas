@@ -1,0 +1,2 @@
+python run_pipeline.py --input data/processed/pilot_municipalities_weekly.parquet --config configs/pipeline.yaml --output outputs/final_run --no-mlflow
+python analyze_ewt_results.py --run-dir outputs/final_run --output outputs/final_run/analysis --formats all --top-features 15 --dpi 180 --overwrite

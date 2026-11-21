@@ -2,185 +2,147 @@ import React, { useState, useEffect } from 'react';
 import {
     Activity,
     AlertTriangle,
-    Droplets,
-    Thermometer,
     Layers,
     Zap,
     MapPin,
     CheckCircle2,
     Sliders,
-    ArrowUpRight,
-    Wifi,
-    WifiOff,
     ChevronDown,
-    Sparkles,
     Users
 } from 'lucide-react';
 import ColombiaMap, { MUNICIPIOS_ESTRATEGICOS } from './ColombiaMap';
 
-// Metadatos amigables para variables de MLflow
-const FIELD_META = {
-    // Variables generales / Fallback
-    temperatura: { label: "Temperatura Promedio", unit: "°C", min: 20, max: 38, step: 0.5, default: 28.5, icon: Thermometer },
-    precipitacion: { label: "Precipitación Acumulada", unit: "mm", min: 10, max: 350, step: 5, default: 140, icon: Droplets },
-    humedad: { label: "Humedad Relativa", unit: "%", min: 40, max: 98, step: 1, default: 82, icon: Activity },
-    indice_aedico: { label: "Índice Aédico / Larvario", unit: "%", min: 1, max: 30, step: 0.5, default: 14.5, icon: Sliders },
-    casos_previos: { label: "Casos Últimas 4 Semanas", unit: "casos", min: 0, max: 300, step: 1, default: 110, icon: AlertTriangle },
-    densidad_poblacional: { label: "Densidad Poblacional", unit: "hab/km²", min: 100, max: 10000, step: 10, default: 3910, icon: MapPin },
+// La URL se define por entorno al compilar (VITE_API_URL). El valor por defecto
+// preserva el comportamiento actual; Staging debe compilar con su propia URL.
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'https://api.arkoiot.com').replace(/\/+$/, '');
 
-    // Variables MLOps 15 Features
-    casos_lag_1: { label: "Casos Semana Anterior (t-1)", unit: "casos", min: 0, max: 500, step: 1, default: 95, icon: AlertTriangle },
-    casos_lag_2: { label: "Casos Hace 2 Semanas (t-2)", unit: "casos", min: 0, max: 500, step: 1, default: 85, icon: AlertTriangle },
-    casos_lag_3: { label: "Casos Hace 3 Semanas (t-3)", unit: "casos", min: 0, max: 500, step: 1, default: 80, icon: AlertTriangle },
-    casos_lag_4: { label: "Casos Hace 4 Semanas (t-4)", unit: "casos", min: 0, max: 500, step: 1, default: 70, icon: AlertTriangle },
-    casos_rolling_mean_4w: { label: "Promedio Casos 4 Semanas", unit: "casos", min: 0, max: 500, step: 1, default: 82.5, icon: AlertTriangle },
-    temperature_c: { label: "Temperatura Promedio", unit: "°C", min: 15, max: 40, step: 0.5, default: 26.5, icon: Thermometer },
-    temperatura_lag_2: { label: "Temperatura Hace 2 Semanas", unit: "°C", min: 15, max: 40, step: 0.5, default: 26.0, icon: Thermometer },
-    precipitation_mm: { label: "Precipitación Acumulada", unit: "mm", min: 0, max: 350, step: 5, default: 120, icon: Droplets },
-    precipitacion_lag_2: { label: "Precipitación Hace 2 Semanas", unit: "mm", min: 0, max: 350, step: 5, default: 130, icon: Droplets },
-    precipitacion_lag_4: { label: "Precipitación Hace 4 Semanas", unit: "mm", min: 0, max: 350, step: 5, default: 140, icon: Droplets },
-    relative_humidity_pct: { label: "Humedad Relativa", unit: "%", min: 30, max: 100, step: 1, default: 84, icon: Activity },
-    humedad_lag_2: { label: "Humedad Hace 2 Semanas", unit: "%", min: 30, max: 100, step: 1, default: 85, icon: Activity },
-    population_density_km2: { label: "Densidad Poblacional", unit: "hab/km²", min: 100, max: 10000, step: 10, default: 3910, icon: MapPin },
-    sin_week: { label: "Semana del Año (Seno)", unit: "", min: -1, max: 1, step: 0.05, default: 0.5, icon: Sliders },
-    cos_week: { label: "Semana del Año (Coseno)", unit: "", min: -1, max: 1, step: 0.05, default: 0.8, icon: Sliders },
+// Seis variables del conjunto "sin_clima" del modelo final
+// (docs/forecasting/contrato_predictivo.md §5.2 y §6.6). Los rangos son del
+// control de la interfaz, no restricciones impuestas por el modelo.
+const FIELD_META = {
+    zona_t: {
+        label: 'Zona del canal en t', unit: '', type: 'select',
+        options: ['seguridad', 'alerta', 'epidemia'], default: 'seguridad', icon: Activity,
+        help: 'Zona observada en la semana de emisión.'
+    },
+    posicion_4s: {
+        label: 'Posición media de 4 semanas', unit: '', min: -3, max: 2, step: 0.01, default: 0, icon: Activity,
+        help: 'Media de log(C_s + 1) − log(U1e_s + 1) para s = t−3 … t.'
+    },
+    crecimiento_4s: {
+        label: 'Crecimiento de 4 semanas', unit: '', min: -5, max: 5, step: 0.01, default: 0, icon: Activity,
+        help: 'log(C_t + 1) − log(C_{t−4} + 1).'
+    },
+    cambio_umbral: {
+        label: 'Cambio del umbral', unit: '', min: -2, max: 2, step: 0.01, default: 0, icon: Activity,
+        help: 'log(U1e_{t+8} + 1) − log(U1e_t + 1).'
+    },
+    sem_sin: {
+        label: 'Seno de la semana objetivo', unit: '', min: -1, max: 1, step: 0.01, default: 0, icon: Activity,
+        help: 'seno de 2π·(w_{t+8} − 1)/52,18; debe ser coherente con sem_cos.'
+    },
+    sem_cos: {
+        label: 'Coseno de la semana objetivo', unit: '', min: -1, max: 1, step: 0.01, default: 1, icon: Activity,
+        help: 'coseno de 2π·(w_{t+8} − 1)/52,18; debe ser coherente con sem_sin.'
+    }
 };
 
-const DEFAULT_FALLBACK_SCHEMA = [
-    { name: 'casos_previos', type: 'integer', required: true },
-    { name: 'temperatura', type: 'double', required: true },
-    { name: 'precipitacion', type: 'double', required: true },
-    { name: 'humedad', type: 'double', required: true },
-    { name: 'densidad_poblacional', type: 'double', required: true },
-    { name: 'indice_aedico', type: 'double', required: false },
-];
+const FEATURE_NAMES = Object.keys(FIELD_META);
+const MODEL_INPUT_SCHEMA = FEATURE_NAMES.map(name => ({
+    name,
+    type: name === 'zona_t' ? 'string' : 'double',
+    required: true
+}));
+
+// Extrae un mensaje legible del cuerpo de error de la API sin ocultar el código HTTP.
+const apiErrorMessage = async (res, fallback) => {
+    let detail = fallback;
+    try {
+        const body = await res.json();
+        detail = body?.error?.mensaje || body?.detail?.mensaje || body?.detail || body?.error || detail;
+    } catch {
+        // El cuerpo no es JSON; se conserva el mensaje genérico.
+    }
+    if (typeof detail !== 'string') detail = JSON.stringify(detail);
+    if (detail.length > 300) detail = `${detail.slice(0, 300)}…`;
+    return `HTTP ${res.status} · ${detail}`;
+};
 
 export default function Dashboard() {
-    const API_BASE_URL = "https://api.arkoiot.com";
-
     // Municipio Estratégico Seleccionado en el Mapa (por defecto Cali)
     const [selectedMunicipio, setSelectedMunicipio] = useState(MUNICIPIOS_ESTRATEGICOS[0]);
     const [activeCodes, setActiveCodes] = useState(['08001', '08758', '41001', '50001', '54001', '76001']);
-    const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
     const [showTechDetails, setShowTechDetails] = useState(false);
 
-    // Estado del Schema y estado de la API
-    const [schemaFields, setSchemaFields] = useState(DEFAULT_FALLBACK_SCHEMA);
+    // Estado del esquema y de la API
+    const [schemaFields, setSchemaFields] = useState(MODEL_INPUT_SCHEMA);
+    const [schemaWarning, setSchemaWarning] = useState(null);
     const [apiConnected, setApiConnected] = useState(false);
+    const [apiError, setApiError] = useState(null);
+    const [threshold, setThreshold] = useState(0.205);
     const [modelInfo, setModelInfo] = useState({
         stage: 'Production',
         version: '1.1.0',
         model_name: 'ModeloPrueba'
     });
 
-    const THRESHOLD = 0.205;
-
-    // Estimación epidemiológica local de respaldo para respuesta inmediata y modo offline
-    const computeLocalRisk = (values, mun) => {
-        const temp = values.temperatura ?? values.temperature_c ?? mun.temp_sugerida ?? 26.5;
-        const precip = values.precipitacion ?? values.precipitation_mm ?? mun.precip_sugerida ?? 120;
-        const hum = values.humedad ?? values.relative_humidity_pct ?? mun.humedad_sugerida ?? 82;
-        const casos = values.casos_previos ?? values.casos_lag_1 ?? 85;
-
-        let score = mun.probabilidad_base;
-        // Factor temperatura (óptimo biológico del vector 26°C - 32°C)
-        if (temp >= 26 && temp <= 32) score += 0.06;
-        else if (temp < 22) score -= 0.12;
-
-        // Factor precipitación (estancamiento y criaderos)
-        if (precip > 140) score += 0.08;
-        else if (precip < 45) score -= 0.07;
-
-        // Factor humedad y casos recientes
-        if (hum > 80) score += 0.04;
-        if (casos > 100) score += 0.06;
-
-        const prob = Math.min(Math.max(score, 0.05), 0.95);
-        return {
-            probabilidad: prob,
-            alertaActiva: prob >= THRESHOLD,
-            source: 'Simulación Epidemiológica',
-            timestamp: new Date().toLocaleTimeString()
-        };
-    };
-
-    // Valores dinámicos del formulario (inicializados con los del municipio inicial)
+    // Valores introducidos por el usuario para las seis variables del modelo.
     const [formValues, setFormValues] = useState(() => {
         const initial = {
             municipio: MUNICIPIOS_ESTRATEGICOS[0].codigo,
-            municipality_code: MUNICIPIOS_ESTRATEGICOS[0].codigo,
-            densidad_poblacional: MUNICIPIOS_ESTRATEGICOS[0].densidad_poblacional,
-            population_density_km2: MUNICIPIOS_ESTRATEGICOS[0].densidad_poblacional,
-            temperatura: MUNICIPIOS_ESTRATEGICOS[0].temp_sugerida,
-            temperature_c: MUNICIPIOS_ESTRATEGICOS[0].temp_sugerida,
-            precipitacion: MUNICIPIOS_ESTRATEGICOS[0].precip_sugerida,
-            precipitation_mm: MUNICIPIOS_ESTRATEGICOS[0].precip_sugerida,
-            humedad: MUNICIPIOS_ESTRATEGICOS[0].humedad_sugerida,
-            relative_humidity_pct: MUNICIPIOS_ESTRATEGICOS[0].humedad_sugerida,
-            casos_previos: 90
+            municipality_code: MUNICIPIOS_ESTRATEGICOS[0].codigo
         };
-        DEFAULT_FALLBACK_SCHEMA.forEach(f => {
-            if (initial[f.name] === undefined) {
-                initial[f.name] = FIELD_META[f.name]?.default ?? 10;
-            }
+        MODEL_INPUT_SCHEMA.forEach(f => {
+            initial[f.name] = FIELD_META[f.name].default;
         });
         return initial;
     });
 
-    // Estado de la predicción con evaluación inicial activa
-    const [prediccion, setPrediccion] = useState(() => {
-        const baseRisk = computeLocalRisk({
-            temperatura: MUNICIPIOS_ESTRATEGICOS[0].temp_sugerida,
-            precipitacion: MUNICIPIOS_ESTRATEGICOS[0].precip_sugerida,
-            humedad: MUNICIPIOS_ESTRATEGICOS[0].humedad_sugerida,
-            casos_previos: 90
-        }, MUNICIPIOS_ESTRATEGICOS[0]);
-        return {
-            ...baseRisk,
-            modelName: MUNICIPIOS_ESTRATEGICOS[0].modelo_activo,
-            modelVersion: 'v1.0'
-        };
-    });
+    // No hay predicción inicial: solo se muestra la que devuelve la API.
+    const [prediccion, setPrediccion] = useState(null);
     const [isPredicting, setIsPredicting] = useState(false);
 
-    // Consultar el esquema a https://api.arkoiot.com/schema
-    const fetchSchema = async () => {
+    // Consultar el esquema del modelo del municipio seleccionado.
+    const fetchSchema = async (codigo) => {
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-            const res = await fetch(`${API_BASE_URL}/schema`, { 
+            const res = await fetch(`${API_BASE_URL}/schema?municipio=${encodeURIComponent(codigo)}`, {
                 credentials: 'include',
-                signal: controller.signal 
+                signal: controller.signal
             });
             clearTimeout(timeoutId);
 
-            if (res.ok) {
-                const data = await res.json();
-                if (data.input_schema && Array.isArray(data.input_schema) && data.input_schema.length > 0) {
-                    setSchemaFields(data.input_schema);
-                    setModelInfo({
-                        stage: data.stage || 'Production',
-                        version: data.version || '1.1.0',
-                        model_name: data.model_name || 'ModeloPrueba'
-                    });
-
-                    setFormValues(prev => {
-                        const updated = { ...prev };
-                        data.input_schema.forEach(f => {
-                            if (updated[f.name] === undefined) {
-                                updated[f.name] = FIELD_META[f.name]?.default ?? 10;
-                            }
-                        });
-                        return updated;
-                    });
-                }
-                setApiConnected(true);
-            } else {
+            if (!res.ok) {
                 setApiConnected(false);
+                setApiError(await apiErrorMessage(res, 'No se pudo consultar /schema.'));
+                return;
             }
+
+            const data = await res.json();
+            const names = (data.input_schema || []).map(f => f.name);
+            const sirveSeisVariables = FEATURE_NAMES.every(name => names.includes(name));
+
+            if (sirveSeisVariables) {
+                setSchemaFields(data.input_schema.filter(f => FEATURE_NAMES.includes(f.name)));
+                setSchemaWarning(null);
+            } else {
+                setSchemaFields(MODEL_INPUT_SCHEMA);
+                setSchemaWarning('El /schema de la API no coincide con las seis variables del modelo final. Se usa el esquema del contrato y se enviarán solo esas seis variables.');
+            }
+            setModelInfo({
+                stage: data.stage || 'Production',
+                version: data.version || '1.1.0',
+                model_name: data.model_name || 'ModeloPrueba'
+            });
+            setApiConnected(true);
+            setApiError(null);
         } catch (err) {
             setApiConnected(false);
+            setApiError(err.name === 'AbortError'
+                ? 'Tiempo de espera agotado al consultar /schema.'
+                : `No se pudo conectar con ${API_BASE_URL}/schema (${err.message}).`);
         }
     };
 
@@ -200,7 +162,7 @@ export default function Dashboard() {
                     setActiveCodes(data.active_codes);
                 }
             }
-        } catch (e) {
+        } catch {
             // Mantener configuracion inicial
         }
     };
@@ -214,7 +176,7 @@ export default function Dashboard() {
                 credentials: 'include',
                 body: JSON.stringify({ action, target, section, metadata })
             }).catch(() => {});
-        } catch (e) {}
+        } catch {}
     };
 
     // Escuchador global de clics en la UI
@@ -230,31 +192,25 @@ export default function Dashboard() {
     }, []);
 
     useEffect(() => {
-        fetchSchema();
+        fetchSchema(selectedMunicipio.codigo);
         fetchActiveMunicipios();
         const interval = setInterval(() => {
-            fetchSchema();
+            fetchSchema(selectedMunicipio.codigo);
             fetchActiveMunicipios();
         }, 60000);
         return () => clearInterval(interval);
-    }, []);
+    }, [selectedMunicipio.codigo]);
 
     const handleSelectMunicipio = (mun) => {
         setSelectedMunicipio(mun);
-        const updatedValues = {
-            ...formValues,
-            densidad_poblacional: mun.densidad_poblacional,
-            population_density_km2: mun.densidad_poblacional,
-            municipality_code: mun.codigo,
-            temperatura: mun.temp_sugerida ?? formValues.temperatura,
-            temperature_c: mun.temp_sugerida ?? formValues.temperature_c,
-            precipitacion: mun.precip_sugerida ?? formValues.precipitacion,
-            precipitation_mm: mun.precip_sugerida ?? formValues.precipitation_mm,
-            humedad: mun.humedad_sugerida ?? formValues.humedad,
-            relative_humidity_pct: mun.humedad_sugerida ?? formValues.relative_humidity_pct,
-        };
-        setFormValues(updatedValues);
-        setPrediccion(computeLocalRisk(updatedValues, mun));
+        setFormValues(prev => ({
+            ...prev,
+            municipio: mun.codigo,
+            municipality_code: mun.codigo
+        }));
+        setPrediccion(null);
+        setApiError(null);
+        setSchemaWarning(null);
         trackUiEvent('select_municipio', mun.nombre, 'colombia_map', {
             codigo: mun.codigo,
             departamento: mun.departamento,
@@ -263,169 +219,136 @@ export default function Dashboard() {
     };
 
     const handleFieldChange = (name, value) => {
-        setFormValues(prev => {
-            const updated = {
-                ...prev,
-                [name]: value
-            };
-            return updated;
-        });
+        setFormValues(prev => ({ ...prev, [name]: value }));
+        setPrediccion(null);
     };
-
-    // Aplicar escenarios rápidos preconfigurados
-    const applyPreset = (type) => {
-        setFormValues(prev => {
-            const updated = { ...prev };
-            if (type === 'habitual') {
-                updated.temperatura = selectedMunicipio.temp_sugerida;
-                updated.temperature_c = selectedMunicipio.temp_sugerida;
-                updated.precipitacion = selectedMunicipio.precip_sugerida;
-                updated.precipitation_mm = selectedMunicipio.precip_sugerida;
-                updated.humedad = selectedMunicipio.humedad_sugerida;
-                updated.relative_humidity_pct = selectedMunicipio.humedad_sugerida;
-                updated.casos_previos = 75;
-            } else if (type === 'lluvias') {
-                updated.precipitacion = Math.min((selectedMunicipio.precip_sugerida || 120) + 70, 320);
-                updated.precipitation_mm = updated.precipitacion;
-                updated.humedad = 88;
-                updated.relative_humidity_pct = 88;
-                updated.casos_previos = 130;
-            } else if (type === 'calor') {
-                updated.temperatura = 32.5;
-                updated.temperature_c = 32.5;
-                updated.precipitacion = 40;
-                updated.precipitation_mm = 40;
-                updated.humedad = 65;
-                updated.relative_humidity_pct = 65;
-            }
-            setPrediccion(computeLocalRisk(updated, selectedMunicipio));
-            return updated;
-        });
-    };
-
-    // Clasificación de campos requeridos vs opcionales
-    const isOptionalField = (field) => {
-        if (field.required === false) return true;
-        if (field.required === true) return false;
-        const optionalNames = [
-            'indice_aedico',
-            'temperatura_lag_2',
-            'precipitacion_lag_2',
-            'precipitacion_lag_4',
-            'humedad_lag_2',
-            'sin_week',
-            'cos_week'
-        ];
-        return optionalNames.includes(field.name);
-    };
-
-    const requiredFields = schemaFields.filter(f => !isOptionalField(f));
-    const optionalFields = schemaFields.filter(f => isOptionalField(f));
 
     const renderFieldInput = (field) => {
-        // Si el campo es densidad poblacional, presentarlo como dato territorial auto-asignado del DANE
-        if (field.name === 'densidad_poblacional' || field.name === 'population_density_km2') {
+        const meta = FIELD_META[field.name];
+        if (!meta) return null;
+        const currentValue = formValues[field.name] ?? meta.default;
+        const displayed = typeof currentValue === 'number' && !Number.isInteger(currentValue)
+            ? currentValue.toFixed(2)
+            : currentValue;
+
+        if (meta.type === 'select') {
             return (
-                <div key={field.name} className="p-3 rounded-xl bg-emerald-500/10 dark:bg-emerald-950/30 border border-emerald-500/20 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                        <div>
-                            <span className="font-semibold text-neutral-800 dark:text-neutral-200 block">Densidad Poblacional (DANE)</span>
-                            <span className="text-[10px] text-neutral-500">Autoasignada: {selectedMunicipio.nombre}</span>
-                        </div>
+                <div key={field.name} className="space-y-1.5 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800/40 transition">
+                    <div className="flex justify-between items-center text-xs font-medium">
+                        <span className="flex items-center gap-1.5 text-neutral-700 dark:text-neutral-300">
+                            <meta.icon className="w-3.5 h-3.5 text-emerald-500" />
+                            {meta.label}
+                        </span>
+                        <span className="font-mono font-bold text-neutral-900 dark:text-white bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded text-[11px]">
+                            {displayed}
+                        </span>
                     </div>
-                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                        {selectedMunicipio.densidad_poblacional.toLocaleString()} hab/km²
-                    </span>
+                    <select
+                        aria-label={meta.label}
+                        value={currentValue}
+                        onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                        className="w-full px-2 py-1.5 rounded-lg text-xs bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white"
+                    >
+                        {meta.options.map(option => <option key={option} value={option}>{option}</option>)}
+                    </select>
+                    <p className="text-[10px] text-neutral-500">{meta.help}</p>
                 </div>
             );
         }
-
-        const meta = FIELD_META[field.name] || {
-            label: field.name.replace(/_/g, ' ').toUpperCase(),
-            unit: '',
-            min: 0,
-            max: 100,
-            step: 1,
-            default: 10
-        };
-        const currentValue = formValues[field.name] ?? meta.default;
-        const isInteger = field.type?.toLowerCase().includes('integer') || field.type?.toLowerCase().includes('int');
 
         return (
             <div key={field.name} className="space-y-1.5 p-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800/40 transition">
                 <div className="flex justify-between items-center text-xs font-medium">
                     <span className="flex items-center gap-1.5 text-neutral-700 dark:text-neutral-300">
-                        {meta.icon ? <meta.icon className="w-3.5 h-3.5 text-emerald-500" /> : <Activity className="w-3.5 h-3.5 text-neutral-400" />}
-                        <span className="capitalize">{meta.label}</span>
+                        <meta.icon className="w-3.5 h-3.5 text-emerald-500" />
+                        {meta.label}
                     </span>
                     <span className="font-mono font-bold text-neutral-900 dark:text-white bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded text-[11px]">
-                        {typeof currentValue === 'number' && !Number.isInteger(currentValue) ? currentValue.toFixed(1) : currentValue} {meta.unit}
+                        {displayed} {meta.unit}
                     </span>
                 </div>
                 <input
                     type="range"
+                    aria-label={meta.label}
                     min={meta.min}
                     max={meta.max}
                     step={meta.step}
                     value={currentValue}
-                    onChange={(e) => {
-                        const val = isInteger ? parseInt(e.target.value) : parseFloat(e.target.value);
-                        handleFieldChange(field.name, val);
-                    }}
+                    onChange={(e) => handleFieldChange(field.name, parseFloat(e.target.value))}
                     className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                 />
                 <div className="flex justify-between text-[10px] text-neutral-400">
-                    <span>{meta.min} {meta.unit}</span>
-                    <span>{meta.max} {meta.unit}</span>
+                    <span>{meta.min}</span>
+                    <span>{meta.help}</span>
+                    <span>{meta.max}</span>
                 </div>
             </div>
         );
     };
 
-    // Ejecutar evaluación de riesgo
+    // Ejecutar evaluación: el número mostrado siempre viene de la API.
     const handlePredecir = async () => {
         setIsPredicting(true);
+        setApiError(null);
 
         if (!apiConnected) {
-            setTimeout(() => {
-                setPrediccion(computeLocalRisk(formValues, selectedMunicipio));
-                setIsPredicting(false);
-            }, 300);
+            setPrediccion(null);
+            setApiError('La API no está disponible. No se muestra ningún valor sustituto; revise VITE_API_URL, CORS/Cloudflare Access y el estado del servicio.');
+            setIsPredicting(false);
             return;
         }
 
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 4000);
+            const payload = {
+                municipio: formValues.municipio,
+                municipality_code: formValues.municipality_code,
+                ...Object.fromEntries(FEATURE_NAMES.map(name => [name, formValues[name]]))
+            };
 
             const res = await fetch(`${API_BASE_URL}/predict`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify(formValues),
+                body: JSON.stringify(payload),
                 signal: controller.signal
             });
             clearTimeout(timeoutId);
 
-            if (res.ok) {
-                const data = await res.json();
-                const resData = data.results || data;
-                setPrediccion({
-                    probabilidad: resData.probability,
-                    alertaActiva: resData.alerta_activa,
-                    source: `API (${data.stage || 'Staging'} v${data.model_version || '1.0'})`,
-                    modelName: data.model_name || selectedMunicipio.modelo_activo || 'ModeloPrueba',
-                    modelVersion: data.model_version || 'v1.0',
-                    municipioEvaluado: data.municipio_evaluado || selectedMunicipio.nombre,
-                    timestamp: new Date().toLocaleTimeString()
-                });
-                setApiConnected(true);
-            } else {
-                setPrediccion(computeLocalRisk(formValues, selectedMunicipio));
+            if (!res.ok) {
+                setPrediccion(null);
+                setApiError(await apiErrorMessage(res, 'La API rechazó la evaluación.'));
+                return;
             }
+
+            const data = await res.json();
+            const resData = data.results || data;
+            const probability = resData.probability ?? resData.probabilidad;
+            if (typeof probability !== 'number' || !Number.isFinite(probability)) {
+                setPrediccion(null);
+                setApiError('La API respondió sin una probabilidad válida; no se muestra ningún valor sustituto.');
+                return;
+            }
+
+            const apiThreshold = data.threshold_used ?? resData.threshold_used;
+            if (typeof apiThreshold === 'number' && Number.isFinite(apiThreshold)) {
+                setThreshold(apiThreshold);
+            }
+            setPrediccion({
+                probabilidad: probability,
+                alertaActiva: resData.alerta_activa ?? probability >= (apiThreshold ?? threshold),
+                source: `API (${data.stage || 'Staging'} v${data.model_version || '1.0'})`,
+                modelName: data.model_name || selectedMunicipio.modelo_activo || 'ModeloPrueba',
+                modelVersion: data.model_version || 'v1.0',
+                municipioEvaluado: data.municipio_evaluado || selectedMunicipio.nombre,
+                timestamp: new Date().toLocaleTimeString()
+            });
         } catch (e) {
-            setPrediccion(computeLocalRisk(formValues, selectedMunicipio));
+            setPrediccion(null);
+            setApiError(e.name === 'AbortError'
+                ? 'Tiempo de espera agotado al consultar /predict; no se muestra ningún valor sustituto.'
+                : `No se pudo conectar con ${API_BASE_URL}/predict (${e.message}).`);
         } finally {
             setIsPredicting(false);
         }
@@ -449,14 +372,14 @@ export default function Dashboard() {
                         Sistema de Alerta Temprana de Dengue
                     </h2>
                     <p className="text-xs sm:text-sm text-neutral-400 max-w-2xl">
-                        Monitoreo preventivo y simulación de brotes en municipios prioritarios de Colombia.
+                        Evaluación de riesgo en municipios prioritarios de Colombia a partir de las seis variables del modelo.
                     </p>
                 </div>
                 
                 <div className="flex items-center gap-2 shrink-0">
                     <div className="px-3 py-1.5 rounded-xl bg-neutral-800/90 border border-neutral-700 text-xs text-neutral-300 flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${apiConnected ? 'bg-emerald-400' : 'bg-emerald-500'}`} />
-                        <span className="font-medium">{apiConnected ? 'API En Línea' : 'Simulación Activa'}</span>
+                        <span className={`w-2 h-2 rounded-full ${apiConnected ? 'bg-emerald-400' : 'bg-rose-500'}`} />
+                        <span className="font-medium">{apiConnected ? 'API En Línea' : 'API No Disponible'}</span>
                     </div>
                 </div>
             </div>
@@ -530,7 +453,7 @@ export default function Dashboard() {
                             <div className="flex items-center gap-2">
                                 <Sliders className="w-4 h-4 text-emerald-500" />
                                 <h3 className="font-bold text-base text-neutral-900 dark:text-white">
-                                    Simulador de Riesgo
+                                    Evaluación de Riesgo
                                 </h3>
                             </div>
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 font-medium">
@@ -538,73 +461,35 @@ export default function Dashboard() {
                             </span>
                         </div>
                         <p className="text-[11px] text-neutral-500 mb-3">
-                            Ajusta los factores ambientales o prueba un escenario rápido:
+                            Ingresa las seis variables del modelo y consulta la API. El número mostrado es siempre la respuesta de la API.
                         </p>
-
-                        {/* Botones de Escenarios Rápidos */}
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[10px] text-neutral-400 font-semibold uppercase">Escenarios:</span>
-                            <button
-                                type="button"
-                                onClick={() => applyPreset('habitual')}
-                                className="px-2 py-1 rounded-lg text-xs font-medium bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 transition cursor-pointer"
-                            >
-                                🌤️ Típico
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => applyPreset('lluvias')}
-                                className="px-2 py-1 rounded-lg text-xs font-medium bg-sky-50 dark:bg-sky-950/50 hover:bg-sky-100 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/60 transition cursor-pointer"
-                            >
-                                🌧️ Lluvias
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => applyPreset('calor')}
-                                className="px-2 py-1 rounded-lg text-xs font-medium bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 transition cursor-pointer"
-                            >
-                                ☀️ Ola de Calor
-                            </button>
-                        </div>
                     </div>
 
                     {/* Inputs del Formulario */}
                     <div className="space-y-2.5">
-                        {/* Variables Principales / Requeridas */}
-                        <div className="space-y-2.5">
-                            {requiredFields.map((field) => renderFieldInput(field))}
-                        </div>
-
-                        {/* Variables Opcionales en Dropdown de Configuración Avanzada */}
-                        {optionalFields.length > 0 && (
-                            <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowAdvancedConfig(!showAdvancedConfig)}
-                                    className="w-full flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 hover:bg-neutral-100 dark:hover:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-800 text-xs font-medium text-neutral-600 dark:text-neutral-400 transition cursor-pointer"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Sliders className="w-3.5 h-3.5 text-neutral-400" />
-                                        <span>Configuración Avanzada</span>
-                                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400">
-                                            {optionalFields.length} variables
-                                        </span>
-                                    </div>
-                                    <ChevronDown className={`w-3.5 h-3.5 text-neutral-400 transition-transform duration-200 ${showAdvancedConfig ? 'rotate-180' : ''}`} />
-                                </button>
-
-                                {showAdvancedConfig && (
-                                    <div className="mt-2.5 p-3 rounded-xl bg-neutral-50/70 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800/80 space-y-2.5 animate-in fade-in duration-200">
-                                        <div className="flex items-center gap-1.5 text-[11px] text-neutral-500 dark:text-neutral-400 pb-1 border-b border-neutral-200/60 dark:border-neutral-800">
-                                            <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-                                            <span>Variables complementarias históricas.</span>
-                                        </div>
-                                        {optionalFields.map((field) => renderFieldInput(field))}
-                                    </div>
-                                )}
-                            </div>
+                        {schemaFields.map((field) => renderFieldInput(field))}
+                        {schemaWarning && (
+                            <p className="p-2 rounded-lg text-[10px] bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60">
+                                {schemaWarning}
+                            </p>
                         )}
                     </div>
+
+                    {/* Error visible: nunca se sustituye por un valor local */}
+                    {apiError && (
+                        <div role="alert" className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60">
+                            <div className="flex items-start gap-2">
+                                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+                                <div className="min-w-0 space-y-1">
+                                    <p className="text-xs font-bold text-rose-800 dark:text-rose-300">No se pudo obtener la predicción de la API</p>
+                                    <p className="font-mono text-[11px] text-rose-700 dark:text-rose-300 break-words">{apiError}</p>
+                                    <p className="text-[10px] text-rose-600/80 dark:text-rose-400/80">
+                                        No se muestra ningún valor sustituto. Revise VITE_API_URL, CORS/Cloudflare Access y el esquema del modelo.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Botón de Evaluación */}
                     <button
@@ -617,8 +502,8 @@ export default function Dashboard() {
                         {isPredicting ? 'Calculando Riesgo...' : '🔍 Evaluar Nivel de Riesgo'}
                     </button>
 
-                    {/* Caja de Resultado Intuitiva */}
-                    {prediccion && (
+                    {/* Caja de Resultado: solo se muestra si la API respondió */}
+                    {prediccion ? (
                         <div className={`p-4 rounded-xl border transition-all ${
                             prediccion.alertaActiva 
                                 ? 'bg-rose-50/80 border-rose-200 dark:bg-rose-950/30 dark:border-rose-900/50' 
@@ -629,7 +514,7 @@ export default function Dashboard() {
                                     Diagnóstico de Riesgo
                                 </span>
                                 <span className="text-[10px] text-neutral-400">
-                                    {selectedMunicipio.nombre} • SIVIGILA
+                                    {selectedMunicipio.nombre} • {prediccion.source}
                                 </span>
                             </div>
                             
@@ -662,9 +547,9 @@ export default function Dashboard() {
                                     />
                                 </div>
                                 <div className="flex justify-between text-[10px] text-neutral-500">
-                                    <span>Bajo (&lt;20%)</span>
+                                    <span>Bajo (&lt;{(threshold * 100).toFixed(1)}%)</span>
                                     <span className="font-semibold text-neutral-700 dark:text-neutral-300">
-                                        Umbral de Alerta: 20.5%
+                                        Umbral de Alerta: {(threshold * 100).toFixed(1)}%
                                     </span>
                                     <span>Alto</span>
                                 </div>
@@ -697,6 +582,13 @@ export default function Dashboard() {
                                     {prediccion.modelName?.startsWith('DengueAlertas_') ? '🎯 Especializado Municipal' : '🌐 Modelo Base'}
                                 </span>
                             </div>
+                        </div>
+                    ) : (
+                        <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
+                            <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">Diagnóstico de Riesgo</p>
+                            <p className="mt-2 text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                                Sin evaluación. Ingresa las seis variables y pulsa «Evaluar Nivel de Riesgo» para consultar la API.
+                            </p>
                         </div>
                     )}
                 </div>
@@ -733,7 +625,7 @@ export default function Dashboard() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs mt-3">
                             <div className="p-3 bg-white dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700/60">
                                 <span className="text-neutral-400 block mb-1">API Backend</span>
-                                <span className="font-mono font-semibold text-neutral-900 dark:text-emerald-400">api.arkoiot.com</span>
+                                <span className="font-mono font-semibold text-neutral-900 dark:text-emerald-400 break-all">{API_BASE_URL}</span>
                             </div>
                             <div className="p-3 bg-white dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700/60">
                                 <span className="text-neutral-400 block mb-1">Servidor MLflow</span>

@@ -1,0 +1,14 @@
+# Dependencias de los cuadernos de notebooks/ (lectura y ejecución). El pipeline, la API y las pruebas no las
+# requieren. Los cuadernos usan además las dependencias del modelado (forecasting.txt), incluidas pandas y matplotlib.
+#
+# Instalación, en el .venv del repositorio y después de forecasting.txt:
+#   .venv/Scripts/python.exe -m pip install -r requirements/notebooks.txt
+#
+# Versiones instaladas en el .venv el 2026-11-20 y con las que se ejecutaron los cuadernos versionados; añaden
+# ipython, jupyter_client, jupyter_core, pyzmq, tornado, traitlets y jsonschema como dependencias.
+# La ejecución con salidas guardadas se describe en notebooks/README.md.
+-r forecasting.txt
+
+nbformat==5.11.1
+nbclient==0.11.0      # incluye la orden jupyter execute
+ipykernel==7.4.0

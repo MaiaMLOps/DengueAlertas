@@ -234,33 +234,119 @@ Las variables nuevas de la API (`ALERT_K`, `DATA_VERSION` y la URL de la API en 
 
 ## 9. Despliegue
 
-### Estrategia de despliegue
+Estado al 2026-11-23: F8 está desplegado de forma parcial. La API corre en una VM, el frontend se publica en Cloudflare Pages y el panel se materializa en el servidor. El contrato predictivo (§9.6) y [`docs/forecasting/api_salida_d10.md`](docs/forecasting/api_salida_d10.md) siguen siendo la referencia de la salida; las secciones a continuación distinguen lo que ya existe de lo que queda pendiente.
 
-Definida en el contrato predictivo (§9.6) y en el esquema de salida de la API, versión 0.2 ([`docs/forecasting/api_salida_d10.md`](docs/forecasting/api_salida_d10.md)):
+Estrategia contractual (no todo implementado): modelos pequeños cargados al arrancar; inferencia en CPU con τ y k congelados de la receta; `/predict` para el pronóstico vigente; y vistas precalculadas `/historial` y `/desempeno`. Hoy están operativos la carga de modelos y `/predict` v0.2; `/predict/upload`, `/historial` y `/desempeno` siguen pendientes (§9.8).
 
-- **Modelos pequeños cargados al iniciar.** La API carga los seis modelos por municipio (unos 28 KB en total) una sola vez, al arrancar, desde el registro de modelos de MLflow (`DengueAlertas_<Municipio>`).
-- **Inferencia solo en el pronóstico vigente.** `/predict` y `/predict/upload` construyen las variables de la emisión y calculan p̂ con el modelo final, y luego el estado de alerta con la regla del producto (`producto.regla_alerta`).
-- **Historial y ficha precalculados.** `/historial` (predicciones fuera de muestra 2019–2025 y eventos) y `/desempeno` (ficha de desempeño en prueba) sirven tablas generadas por `src.forecasting.artifacts`; esas vistas no hacen inferencia.
-- **Inferencia en CPU.** La receta no requiere GPU (§7).
-- **Parámetros congelados.** τ y k se toman de la receta; si se cambian, la API lo indica y la ficha de desempeño deja de aplicar.
+### 9.1 Ambientes y arranque de la API
 
-Los apartados 9.1 a 9.4 se completan con la implementación de F8.
+Servidor: `ubuntu-mlops-01` (`116.203.114.120`). Código de la API en `/opt/dengue-api`, entorno Python en `/opt/mlflow-env`. **Docker no se usa**: el comando `docker` no está instalado en la VM; el `Dockerfile` del repositorio no es la vía de despliegue actual.
 
-### 9.1 Aplicación
+| Ambiente | Unidad systemd | Puerto local | Proceso |
+|---|---|---|---|
+| Producción | `dengue-api-prod.service` | `127.0.0.1:8000` | `uvicorn src.api:app --host 127.0.0.1 --port 8000` |
+| Staging | `dengue-api-staging.service` | `127.0.0.1:8001` | `uvicorn src.api:app --host 127.0.0.1 --port 8001` |
 
-Pendiente de F8.
+Ambas unidades tienen `User=admin`, `WorkingDirectory=/opt/dengue-api`, `EnvironmentFile=/opt/dengue-api/.env` y `Restart=always`. Se arrancan o reinician con `sudo systemctl restart dengue-api-prod` / `dengue-api-staging`; el estado se revisa con `systemctl status <unidad>` y `journalctl -u <unidad>`.
 
-### 9.2 Uso de la API
+NGINX (`/etc/nginx/sites-enabled/dengue-api`) escucha en `127.0.0.1:8080`, con `server_name api.arkoiot.com`, y enruta según la cabecera `Origin`: orígenes de Producción (`https://demo.arkoiot.com`, `https://denguealertas.pages.dev`, localhost) van al puerto 8000; `https://staging.denguealertas.pages.dev` y los preview `*.denguealertas.pages.dev` van al 8001; cualquier otro origen recibe 403. El mismo servidor publica `/webhook/` (puerto 8005), `/dvc/` (WebDAV) y, en otro virtual host, `platform.arkoiot.com` → MLflow (5000). El túnel `cloudflared.service` está activo; su configuración de ingress no está versionada en este repositorio.
 
-Pendiente de F8. El contrato de la salida (`/predict`, `/predict/upload`, `/historial` y `/desempeno`, errores y variables de entorno) está fijado en [`docs/forecasting/api_salida_d10.md`](docs/forecasting/api_salida_d10.md).
+Servicios relacionados en la VM: `mlflow.service` (5000), `dengue-webhook.service` (8005), `nginx.service`, `cloudflared.service` y `dengue-resource-monitor.service` (§9.9).
 
-### 9.3 Ejemplos de entrada y salida
+### 9.2 URLs y acceso
 
-Pendiente de F8. Los campos de cada respuesta están en [`docs/forecasting/api_salida_d10.md`](docs/forecasting/api_salida_d10.md) §4–§7, y los datos simulados para el frontend, en §11.
+| Ambiente | Frontend | API pública | Upstream |
+|---|---|---|---|
+| Producción | `https://demo.arkoiot.com` (dominio propio, tras Cloudflare Access) y `https://denguealertas.pages.dev` (Pages) | `https://api.arkoiot.com`, con `Origin: https://demo.arkoiot.com` o `https://denguealertas.pages.dev` | `127.0.0.1:8000` |
+| Staging | `https://staging.denguealertas.pages.dev` (tras Cloudflare Access) | `https://api.arkoiot.com`, con `Origin: https://staging.denguealertas.pages.dev` | `127.0.0.1:8001` |
+| Desarrollo local | `http://localhost:5173` / `http://127.0.0.1:5173` | `https://api.arkoiot.com` (o el proxy `/api` de `frontend/vite.config.js`) | Según el `Origin`, hoy Producción |
 
-### 9.4 Credenciales de ejemplo
+Cloudflare Access protege `demo.arkoiot.com` y `platform.arkoiot.com` (aplicaciones `dengue` y `mlflow`). Para una persona: abrir el host e iniciar sesión con correo `@uniandes.edu.co` desde Colombia. Para un servicio o script: enviar las cabeceras `CF-Access-Client-Id` y `CF-Access-Client-Secret` con un service token; los valores se entregan fuera del repositorio. NGINX reenvía la identidad autenticada en `Cf-Access-Authenticated-User-Email` y la API la registra en su telemetría. El frontend de desarrollo lee esas dos variables del entorno local para el proxy; no las versiona.
 
-Pendiente de F8.
+### 9.3 Regla de Cloudflare en Producción (`?new=false`)
+
+Regla **prevista, pendiente de aplicar** en el host `demo.arkoiot.com`: cuando llegue una petición cuyo query incluya `new=false`, responder `302` a la misma ruta sin ese parámetro (conservando cualquier otro parámetro). No bloquea ni muestra un error; simplemente devuelve al usuario a `/`.
+
+Motivo: desde DV-11, el código abre el modo v0.2 por defecto en `/`, pero todavía respeta un `?new=false` explícito (útil en Staging y desarrollo). En Producción se quiere que el usuario no pueda volver al modo manual de DV-09 escribiendo la URL. Esa es la diferencia entre el código y lo que verá el usuario de `demo.arkoiot.com` una vez aplicada la regla. Al cierre de este PR la regla está documentada en DV-10, **no creada**: no debe afirmarse que ya está activa en Cloudflare.
+
+### 9.4 Panel y datos en el servidor
+
+- Remoto DVC `vps-storage`: `webdavs://api.arkoiot.com/dvc` (`.dvc/config`). En el servidor se sirve como WebDAV en `/dvc/`, con autenticación basic y `alias /opt/dvc-storage/`.
+- Panel versionado: `data/processed/pilot_municipalities_weekly.parquet.dvc`, md5 `82c092dd57f8a316c6992732664d75ce`.
+- Copia materializada: `/opt/dengue-api/data/processed/pilot_municipalities_weekly.parquet`, con el mismo md5. El objeto content-addressed está en `/opt/dvc-storage/files/md5/82/c092dd57f8a316c6992732664d75ce`.
+- `FORECAST_PANEL_PATH` (`src/forecasting/api_v2.py`) permite sustituir la ruta del panel; si no se define, se usa `datos.panel` de `configs/forecasting.yaml`. La semana emisible se deriva del panel y excluye `partial_week` y `n_days < 7`.
+- No hay CLI de DVC instalada en la VM: la materialización observada es copiar el objeto del almacén WebDAV a la ruta indicada y verificar el md5. No se alteran los descriptores `.dvc` versionados.
+
+### 9.5 Variables de entorno
+
+Solo nombres; los valores se entregan por el responsable de infraestructura y viven en archivos ignorados por git.
+
+| Variable | Dónde | Uso |
+|---|---|---|
+| `STAGE` | API (`systemd`) | `Staging` o `Production`; define el alias de MLflow |
+| `MODEL_NAME` | API (`systemd`) | Modelo por defecto/retrocompatible |
+| `MLFLOW_TRACKING_URI` | API y webhook | URI del servidor de MLflow |
+| `MODEL_THRESHOLD` | API | Umbral por defecto del modo manual |
+| `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | API y frontend local | Service token de Cloudflare Access |
+| `FORECAST_PANEL_PATH` | API (opcional) | Ruta alternativa del panel |
+| `WEBHOOK_SECRET`, `LOG_DIR` | Webhook | Firma HMAC y directorio de logs |
+| `CF_ACCOUNT_ID`, `CF_APP_ID`, `CF_API_TOKEN` | `.env` de la API en la VM | Integración de Cloudflare; el código vigente en `src/` no las referencia directamente |
+| `VITE_API_URL` | Frontend, al compilar | URL base de la API; el código usa `https://api.arkoiot.com` si no se define |
+| `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GITHUB_TOKEN` | GitHub Actions (secrets) | Despliegue a Pages; solo nombres aquí |
+
+La unidad `mlflow.service` además define, entre otras, `MLFLOW_DISABLE_TELEMETRY`, `MLFLOW_SERVER_CORS_ALLOWED_ORIGINS`, `MLFLOW_SERVER_ENABLE_JOB_EXECUTION`, `MLFLOW_TRACING_ENABLED`, `MLFLOW_WEBHOOK_ALLOWED_SCHEMES`, `MLFLOW_WEBHOOK_ALLOW_PRIVATE_IPS` y `MLFLOW_WEBHOOK_SECRET_ENCRYPTION_KEY`.
+
+### 9.6 MLflow y promoción de modelos
+
+MLflow corre en `mlflow.service` en `127.0.0.1:5000`, con backend SQLite en `/opt/mlflow/mlflow.db` y artefactos en `/opt/mlflow/artifacts`; la URL pública es `https://platform.arkoiot.com`.
+
+Hoy existen seis modelos registrados `DengueAlertas_Barranquilla`, `DengueAlertas_Cali`, `DengueAlertas_Cucuta`, `DengueAlertas_Neiva`, `DengueAlertas_Soledad` y `DengueAlertas_Villavicencio`. Estado observado en el registro: versión 1, tag `enabled=true` en los seis, alias `staging` → versión 1 en los seis y `current_stage=Staging`. **No hay alias `production` en estos seis modelos**, así que la promoción a Producción sigue pendiente. Por eso `/health` de Producción muestra `model_name=ModeloPrueba` (configuración heredada) aunque los seis modelos municipales ya están cargados para `/predict`.
+
+Promoción: al crear el alias `production` (o `champion`) en MLflow, el webhook `POST /webhook/mlflow` valida la firma HMAC con `WEBHOOK_SECRET`, llama a `transition_model_version_stage(..., stage=Production, archive_existing_versions=True)` y hace `POST http://127.0.0.1:8000/sync` para recargar la API de Producción. Los alias `staging`/`challenger` apuntan al puerto 8001; un alias borrado lleva el modelo a `Archived`. `/sync` también se puede invocar manualmente. El repositorio fija esta secuencia en [`modelos/README.md`](modelos/README.md) y en DV-08.
+
+### 9.7 Frontend y CI/CD
+
+- `ci-frontend.yml`: compila (`npm run build`) en push o PR a `main` cuando cambia `frontend/**`, y también por `workflow_dispatch`. Sube el artefacto `frontend-build` desde `frontend/dist/` (retención de 7 días).
+- `cd-frontend.yml`: se lanza manualmente con `workflow_dispatch`; toma `environment` (`staging` o `production`, por defecto `production`) y un `run_id` opcional. Descarga el artefacto y ejecuta `wrangler pages deploy ./frontend-deploy --project-name=denguealertas`, con rama `main` para Producción y rama `staging` para Staging.
+- Producción: proyecto `denguealertas`, rama `main`, URL de Pages `https://denguealertas.pages.dev` y dominio propio `https://demo.arkoiot.com` (Cloudflare Access). Staging: misma rama `staging`, URL `https://staging.denguealertas.pages.dev` (también con Access).
+- `VITE_API_URL` se lee al compilar. El workflow de CI no lo define, así que el artefacto usa el valor por defecto del código salvo que se construya con otro valor.
+- Desde DV-11, `/` abre el modo v0.2; `?new=false` conserva el modo manual. La regla de §9.3 evitará ese parámetro solo en `demo.arkoiot.com`.
+
+### 9.8 Endpoints existentes y pendientes
+
+Existen hoy en la API (`src/api.py`) y en el servicio de webhook (`src/webhook_api.py`):
+
+| Método | Ruta | Uso |
+|---|---|---|
+| `GET` | `/health` | Estado, etapa, modelos cargados |
+| `GET` | `/municipios` | Códigos y modelos con `enabled=true` |
+| `GET` | `/schema?municipio=<DIVIPOLA>` | Esquema de entrada del modelo |
+| `GET` | `/predict?municipio=&semana_emision=` | Vista v0.2: la API deriva las seis variables del panel |
+| `POST` | `/predict` | Modo manual: seis variables enviadas por el usuario |
+| `POST` | `/sync` | Recarga en caliente desde MLflow |
+| `POST` | `/telemetry/event` | Evento de clickstream del frontend |
+| `POST` | `/webhook/mlflow`, `/webhook` | Receptor de eventos de alias de MLflow (puerto 8005) |
+
+Ejemplo real (la respuesta declara `version_esquema: "0.2"` e incluye `probabilidad`, `decision`, `trayectoria`, `serie_canal` y `referencias`):
+
+```bash
+curl -sS \
+  -H "Origin: https://demo.arkoiot.com" \
+  -H "CF-Access-Client-Id: <service-token-id>" \
+  -H "CF-Access-Client-Secret: <service-token-secret>" \
+  "https://api.arkoiot.com/predict?municipio=54001&semana_emision=2025-12-22"
+```
+
+Desde la VM se puede probar sin service token apuntando a NGINX, por ejemplo con `curl -H "Origin: https://staging.denguealertas.pages.dev" "http://127.0.0.1:8080/predict?municipio=54001&semana_emision=2025-12-22"`.
+
+**Pendiente** (contratado, no implementado): `POST /predict/upload`, `GET /historial` y `GET /desempeno`. No deben considerarse disponibles. El detalle de campos y errores de `/predict` está en [`docs/forecasting/api_salida_d10.md`](docs/forecasting/api_salida_d10.md) §4–§7.
+
+### 9.9 Telemetría y monitoreo
+
+- API: middleware JSONL en `/opt/dengue-api/logs/api_<stage>.jsonl` con `X-Request-ID`/`CF-Ray`, correo de Access, latencia, estado y errores; filtra el polling de `/schema`, `/health` y `/telemetry/event` salvo error. `POST /telemetry/event` registra `action`, `target`, `section` y `metadata` del frontend en el mismo logger. Rotación y respaldos en `/opt/dengue-api/backups/telemetry/`.
+- NGINX: `/var/log/nginx/dengue_telemetry.json` registra tiempo, `request_id`, correo de Access, IP de Cloudflare, `Origin`, método, URI, estado, bytes, latencia y latencia del upstream; excluye las rutas de polling.
+- Webhook: `/opt/dengue-api/logs/webhook_events.jsonl` registra entregas y validación de firma.
+- Monitor de recursos: `src/resource_monitor.py` está diseñado para muestrear cada 10 s CPU/RAM/carga, E/S de disco y red, almacenamiento y estado de los servicios systemd en `/opt/dengue-api/logs/system_resources.jsonl`. **Hoy no está operativo**: `dengue-resource-monitor.service` está en `activating (auto-restart)` y falla con `ModuleNotFoundError: No module named 'src'`; la serie válida más reciente es del 2026-10-21. Su reparación queda fuera de este PR.
 
 ## 10. Documentación
 

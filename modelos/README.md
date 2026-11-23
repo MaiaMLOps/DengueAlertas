@@ -95,6 +95,8 @@ Los seis modelos están registrados en el servidor del equipo desde el 2026-11-2
 
 Los nombres usan el nombre del municipio en ASCII, sin tildes (`DengueAlertas_<Municipio>`, especificación §9).
 
+**Actualización 2026-11-23.** Los seis modelos tienen además una **versión 2** creada como copia exacta de la v1: mismo `source` (`models:/m-…`), mismo `run_id` y mismas probabilidades, sin reentrenamiento. Cada modelo quedó con `staging` → v1 (etapa `Staging`) y `production` → v2 (etapa `Production`). La promoción se hizo con el cliente de MLflow sobre el SQLite del servidor y luego `POST /sync` a la API de Producción; no se usó el webhook para no archivar la v1. La sección «Habilitación en F8» de abajo describe el estado original del registro y ya no refleja los alias actuales.
+
 **Ruta de registro.** El servidor no admite escrituras en el registro de modelos con el token del equipo (`PERMISSION_DENIED`): el registro oficial se hace desde la interfaz de MLflow, a partir del modelo guardado en cada run. Por eso el registro tiene tres pasos (DV-08 en `docs/forecasting/desviaciones.md`):
 
 1. **Runs por script.** `scripts/registrar_modelos_finales.py --solo-runs` crea un run por municipio en el experimento `dengue_h8_final`. El script primero verifica los md5 de esta carpeta y la coherencia del manifiesto con la receta, y no llama al registro de modelos. Cada run lleva:

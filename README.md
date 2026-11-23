@@ -343,10 +343,12 @@ Desde la VM se puede probar sin service token apuntando a NGINX, por ejemplo con
 
 ### 9.9 Telemetría y monitoreo
 
+Son dos cosas distintas: la telemetría registra el uso de la API (peticiones, errores e interacción de la interfaz), mientras que el monitor de recursos solo mide el consumo de la infraestructura de los servicios que se levantaron en la VM. El monitor no registra peticiones, predicciones ni métricas de negocio.
+
 - API: middleware JSONL en `/opt/dengue-api/logs/api_<stage>.jsonl` con `X-Request-ID`/`CF-Ray`, correo de Access, latencia, estado y errores; filtra el polling de `/schema`, `/health` y `/telemetry/event` salvo error. `POST /telemetry/event` registra `action`, `target`, `section` y `metadata` del frontend en el mismo logger. Rotación y respaldos en `/opt/dengue-api/backups/telemetry/`.
 - NGINX: `/var/log/nginx/dengue_telemetry.json` registra tiempo, `request_id`, correo de Access, IP de Cloudflare, `Origin`, método, URI, estado, bytes, latencia y latencia del upstream; excluye las rutas de polling.
 - Webhook: `/opt/dengue-api/logs/webhook_events.jsonl` registra entregas y validación de firma.
-- Monitor de recursos: `src/resource_monitor.py` está diseñado para muestrear cada 10 s CPU/RAM/carga, E/S de disco y red, almacenamiento y estado de los servicios systemd en `/opt/dengue-api/logs/system_resources.jsonl`. **Hoy no está operativo**: `dengue-resource-monitor.service` está en `activating (auto-restart)` y falla con `ModuleNotFoundError: No module named 'src'`; la serie válida más reciente es del 2026-10-21. Su reparación queda fuera de este PR.
+- Monitor de recursos: `src/resource_monitor.py` muestrea cada 10 s CPU/RAM/carga, E/S de disco y red, almacenamiento y estado de **los servicios levantados en la VM** —`mlflow.service`, `dengue-api-prod.service`, `dengue-api-staging.service` y `dengue-webhook.service`— en `/opt/dengue-api/logs/system_resources.jsonl`. Es información operativa de esos procesos, no telemetría de la API ni del modelo. **Hoy no está operativo**: `dengue-resource-monitor.service` está en `activating (auto-restart)` y falla con `ModuleNotFoundError: No module named 'src'`; la serie válida más reciente es del 2026-10-21. Su reparación queda fuera de este PR.
 
 ## 10. Documentación
 

@@ -49,9 +49,9 @@ const FIELD_META = {
     }
 };
 
-// Modo v0.2: se activa solo con ?new=true en la URL del frontend.
-const NEW_MODE = typeof window !== 'undefined'
-    && new URLSearchParams(window.location.search).get('new') === 'true';
+// Modo v0.2 por defecto en `/`; ?new=false conserva el modo manual de DV-09.
+const NEW_MODE = typeof window === 'undefined'
+    || new URLSearchParams(window.location.search).get('new') !== 'false';
 
 // Ventana vigente de api_salida_d10.md §4. La API valida la misma ventana contra el panel.
 const V2_WEEK_OPTIONS = (() => {

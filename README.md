@@ -4,14 +4,16 @@ Alerta temprana de excesos en canales endémicos de dengue en Colombia mediante 
 
 ## Acceso a la demostración y a MLflow
 
-Para ingresar se necesita un **correo institucional `@uniandes.edu.co`** con acceso autorizado. Las dos URLs protegidas son:
+Puede ingresar **cualquier correo con el dominio `@uniandes.edu.co`**; no hace falta una autorización individual por persona. Las dos URLs protegidas son:
 
 | URL | Qué permite |
 |---|---|
 | <https://demo.arkoiot.com/> | Demo del frontend con el pronóstico de los seis municipios piloto |
-| <https://platform.arkoiot.com/> | Experimentos y configuraciones de MLflow, en modo solo lectura |
+| <https://platform.arkoiot.com/> | Experimentos y configuraciones de MLflow; por defecto, en modo solo lectura |
 
 El acceso está protegido por Cloudflare Access. La **primera vez** que se abre cualquiera de esas dos URLs se pide el código **OTP** enviado al correo `@uniandes.edu.co`; el código llega en un plazo **no mayor a 5 minutos**. Después de validarlo, la sesión queda activa por **72 horas** y da acceso a **cualquiera de las dos URLs** sin volver a pedir el código. Vencido ese plazo, el proceso se repite.
+
+Los permisos dentro de `https://platform.arkoiot.com/` dependen del rol asignado. El equipo maneja tres roles: **administradores**, **científicos de datos** y **solo lectura**. Cualquier correo `@uniandes.edu.co` que inicie sesión por OTP obtiene el rol de **solo lectura**: puede consultar experimentos, ejecuciones y configuraciones, pero no crear ni modificar nada. Los integrantes del equipo tienen asignados los otros roles, que habilitan acciones adicionales sobre MLflow según sus responsabilidades; esos roles los asigna el responsable de infraestructura y no se obtienen con el OTP.
 
 Si el correo no llega, revisar la carpeta de correo no deseado, esperar hasta los 5 minutos indicados y solicitar un código nuevo. Los scripts y servicios no usan OTP, sino un service token; los nombres de sus variables están en [§9.2](#92-urls-y-acceso).
 

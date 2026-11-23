@@ -2,6 +2,19 @@
 
 Alerta temprana de excesos en canales endémicos de dengue en Colombia mediante *machine learning*. Prototipo académico retrospectivo de la Maestría en Inteligencia Artificial de la Universidad de los Andes.
 
+## Acceso a la demostración y a MLflow
+
+Para ingresar se necesita un **correo institucional `@uniandes.edu.co`** con acceso autorizado. Las dos URLs protegidas son:
+
+| URL | Qué permite |
+|---|---|
+| <https://demo.arkoiot.com/> | Demo del frontend con el pronóstico de los seis municipios piloto |
+| <https://platform.arkoiot.com/> | Experimentos y configuraciones de MLflow, en modo solo lectura |
+
+El acceso está protegido por Cloudflare Access. La **primera vez** que se abre cualquiera de esas dos URLs se pide el código **OTP** enviado al correo `@uniandes.edu.co`; el código llega en un plazo **no mayor a 5 minutos**. Después de validarlo, la sesión queda activa por **72 horas** y da acceso a **cualquiera de las dos URLs** sin volver a pedir el código. Vencido ese plazo, el proceso se repite.
+
+Si el correo no llega, revisar la carpeta de correo no deseado, esperar hasta los 5 minutos indicados y solicitar un código nuevo. Los scripts y servicios no usan OTP, sino un service token; los nombres de sus variables están en [§9.2](#92-urls-y-acceso).
+
 ## 1. Problema
 
 Las secretarías de salud vigilan el dengue con el **canal endémico**: una banda construida con los conteos de los años anteriores para cada semana del año. Cuando los casos de una semana superan el límite superior del canal, el municipio está en **zona epidémica**. El canal describe la semana que ya ocurrió; no dice qué va a pasar en las semanas siguientes.
@@ -17,7 +30,7 @@ La pregunta del proyecto es: **¿qué tan probable es que un municipio esté en 
 - **Regla de alerta del producto (enmienda D10.1).** Es la que verá el usuario en la API y el frontend: una emisión es positiva si p̂ ≥ τ **y** la zona observada en t no es epidémica, de modo que el modelo no emite alertas en zona epidémica. Cada emisión toma uno de cuatro estados: `sin_alerta`, `senal_en_observacion`, `alerta_inicio_confirmada` (k emisiones positivas consecutivas) y `continuidad_epidemica` (el municipio ya está en zona epidémica). La probabilidad es siempre la misma p̂, pero se etiqueta según el estado: probabilidad de **seguir** en zona epidémica en `continuidad_epidemica` y de **entrar** en ella en los demás. Se fija en `producto.regla_alerta`, usa el τ y el k de la receta y no cambia la receta ni la evaluación preregistrada (DV-07; esquema en [`docs/forecasting/api_salida_d10.md`](docs/forecasting/api_salida_d10.md)).
 - **Validación.** Origen móvil con reentrenamiento anual: desarrollo 2019–2022 para elegir; prueba 2023–2025 evaluada una sola vez, después de congelar la receta.
 - **Análisis complementario.** Posterior a la prueba y descriptivo: contraste de familias de modelos en desarrollo, modelo mínimo de posición (M0), sensibilidad a la regularización, regla de alerta del producto (B01) y calidad de la probabilidad en continuidad epidémica. Está en [`docs/forecasting/analisis_complementario.md`](docs/forecasting/analisis_complementario.md); no modifica la receta ni las conclusiones preregistradas.
-- **Entrega.** Modelos finales en [`modelos/`](modelos/README.md), cuadernos de lectura en [`notebooks/`](notebooks/README.md) y, pendientes de F8, la API FastAPI y el frontend React con cuatro vistas: pronóstico vigente, historial fuera de muestra, carga de datos y desempeño en prueba.
+- **Entrega.** Modelos finales en [`modelos/`](modelos/README.md), cuadernos de lectura en [`notebooks/`](notebooks/README.md), API FastAPI y frontend React. La operación de estos dos últimos está descrita en [§9](#9-despliegue).
 
 La metodología completa, sus decisiones (D0–D10) y la secuencia de fases están en [`docs/forecasting/README.md`](docs/forecasting/README.md). Este README no reporta resultados: están en la evidencia indexada en [`reports/forecasting/INDICE.md`](reports/forecasting/INDICE.md). El análisis integrado de los resultados está en [`docs/forecasting/analisis_resultados.md`](docs/forecasting/analisis_resultados.md), con versiones en Word y presentación en [`reports/forecasting/entregables/`](reports/forecasting/entregables/).
 
@@ -234,9 +247,9 @@ Las variables nuevas de la API (`ALERT_K`, `DATA_VERSION` y la URL de la API en 
 
 ## 9. Despliegue
 
-Estado al 2026-11-23: F8 está desplegado de forma parcial. La API corre en una VM, el frontend se publica en Cloudflare Pages y el panel se materializa en el servidor. El contrato predictivo (§9.6) y [`docs/forecasting/api_salida_d10.md`](docs/forecasting/api_salida_d10.md) siguen siendo la referencia de la salida; las secciones a continuación distinguen lo que ya existe de lo que queda pendiente.
+Estado al 2026-11-23: la API corre en una VM, el frontend se publica en Cloudflare Pages y el panel se materializa en el servidor. El contrato predictivo (§9.6) y [`docs/forecasting/api_salida_d10.md`](docs/forecasting/api_salida_d10.md) siguen siendo la referencia de la salida; las secciones a continuación describen cómo se accede y se opera ese despliegue.
 
-Estrategia contractual (no todo implementado): modelos pequeños cargados al arrancar; inferencia en CPU con τ y k congelados de la receta; `/predict` para el pronóstico vigente; y vistas precalculadas `/historial` y `/desempeno`. Hoy están operativos la carga de modelos y `/predict` v0.2; `/predict/upload`, `/historial` y `/desempeno` siguen pendientes (§9.8).
+Estrategia implementada: modelos pequeños cargados al arrancar, inferencia en CPU con τ y k congelados de la receta y `/predict` para el pronóstico vigente. Los seis modelos municipales están cargados en los dos ambientes y sirven la vista v0.2 a través del frontend.
 
 ### 9.1 Ambientes y arranque de la API
 
@@ -261,7 +274,7 @@ Servicios relacionados en la VM: `mlflow.service` (5000), `dengue-webhook.servic
 | Staging | `https://staging.denguealertas.pages.dev` (tras Cloudflare Access) | `https://api.arkoiot.com`, con `Origin: https://staging.denguealertas.pages.dev` | `127.0.0.1:8001` |
 | Desarrollo local | `http://localhost:5173` / `http://127.0.0.1:5173` | `https://api.arkoiot.com` (o el proxy `/api` de `frontend/vite.config.js`) | Según el `Origin`, hoy Producción |
 
-Cloudflare Access protege `demo.arkoiot.com` y `platform.arkoiot.com` (aplicaciones `dengue` y `mlflow`). Para una persona: abrir el host e iniciar sesión con correo `@uniandes.edu.co` desde Colombia. Para un servicio o script: enviar las cabeceras `CF-Access-Client-Id` y `CF-Access-Client-Secret` con un service token; los valores se entregan fuera del repositorio. NGINX reenvía la identidad autenticada en `Cf-Access-Authenticated-User-Email` y la API la registra en su telemetría. El frontend de desarrollo lee esas dos variables del entorno local para el proxy; no las versiona.
+Cloudflare Access protege `demo.arkoiot.com` y `platform.arkoiot.com` (aplicaciones `dengue` y `mlflow`). Para una persona, el flujo de OTP con correo `@uniandes.edu.co` y la sesión de 72 horas están descritos al inicio de este README, en [«Acceso a la demostración y a MLflow»](#acceso-a-la-demostración-y-a-mlflow). Para un servicio o script: enviar las cabeceras `CF-Access-Client-Id` y `CF-Access-Client-Secret` con un service token; los valores se entregan fuera del repositorio. NGINX reenvía la identidad autenticada en `Cf-Access-Authenticated-User-Email` y la API la registra en su telemetría. El frontend de desarrollo lee esas dos variables del entorno local para el proxy; no las versiona.
 
 ### 9.3 Regla de Cloudflare en Producción (`?new=false`)
 
@@ -300,9 +313,11 @@ La unidad `mlflow.service` además define, entre otras, `MLFLOW_DISABLE_TELEMETR
 
 MLflow corre en `mlflow.service` en `127.0.0.1:5000`, con backend SQLite en `/opt/mlflow/mlflow.db` y artefactos en `/opt/mlflow/artifacts`; la URL pública es `https://platform.arkoiot.com`.
 
-Hoy existen seis modelos registrados `DengueAlertas_Barranquilla`, `DengueAlertas_Cali`, `DengueAlertas_Cucuta`, `DengueAlertas_Neiva`, `DengueAlertas_Soledad` y `DengueAlertas_Villavicencio`. Estado observado en el registro: versión 1, tag `enabled=true` en los seis, alias `staging` → versión 1 en los seis y `current_stage=Staging`. **No hay alias `production` en estos seis modelos**, así que la promoción a Producción sigue pendiente. Por eso `/health` de Producción muestra `model_name=ModeloPrueba` (configuración heredada) aunque los seis modelos municipales ya están cargados para `/predict`.
+Hoy existen seis modelos registrados `DengueAlertas_Barranquilla`, `DengueAlertas_Cali`, `DengueAlertas_Cucuta`, `DengueAlertas_Neiva`, `DengueAlertas_Soledad` y `DengueAlertas_Villavicencio`. Estado al 2026-11-23: cada uno tiene **versión 1 y versión 2**, con el mismo `source` (`models:/m-…`) y el mismo `run_id` que la v1; la v2 es una copia exacta, no un reentrenamiento. Los seis tienen tag `enabled=true`, alias `staging` → v1 y `current_stage=Staging` en la v1; alias `production` → v2 y `current_stage=Production` en la v2. Las probabilidades de `/predict` en Producción son idénticas a las de la v1. `/health` de Producción sigue mostrando `model_name=ModeloPrueba` (configuración heredada del modelo por defecto), aunque los seis modelos municipales ya están cargados para `/predict`.
 
 Promoción: al crear el alias `production` (o `champion`) en MLflow, el webhook `POST /webhook/mlflow` valida la firma HMAC con `WEBHOOK_SECRET`, llama a `transition_model_version_stage(..., stage=Production, archive_existing_versions=True)` y hace `POST http://127.0.0.1:8000/sync` para recargar la API de Producción. Los alias `staging`/`challenger` apuntan al puerto 8001; un alias borrado lleva el modelo a `Archived`. `/sync` también se puede invocar manualmente. El repositorio fija esta secuencia en [`modelos/README.md`](modelos/README.md) y en DV-08.
+
+La promoción del 2026-11-23 se hizo con el cliente de MLflow sobre el SQLite del servidor (`sqlite:////opt/mlflow/mlflow.db`), no por el webhook: así se pudo poner la v2 en `Production` **sin archivar la v1**, que sigue sirviendo a Staging por el alias `staging`. Después se llamó a `POST http://127.0.0.1:8000/sync` para recargar la API. Quedó un respaldo de la base anterior a la creación de las v2 en `/opt/mlflow/backups/mlflow_pre_v2_20261123T231851Z.db`. Durante el procedimiento se creó por error una v3 huérfana en `DengueAlertas_Barranquilla`; se eliminó de inmediato y MLflow la conserva como `Deleted_Internal`, invisible para la API y sin alias.
 
 ### 9.7 Frontend y CI/CD
 
@@ -312,9 +327,11 @@ Promoción: al crear el alias `production` (o `champion`) en MLflow, el webhook 
 - `VITE_API_URL` se lee al compilar. El workflow de CI no lo define, así que el artefacto usa el valor por defecto del código salvo que se construya con otro valor.
 - Desde DV-11, `/` abre el modo v0.2; `?new=false` conserva el modo manual. La regla de §9.3 evitará ese parámetro solo en `demo.arkoiot.com`.
 
-### 9.8 Endpoints existentes y pendientes
+### 9.8 Endpoints de la API
 
-Existen hoy en la API (`src/api.py`) y en el servicio de webhook (`src/webhook_api.py`):
+**Los endpoints no son accesibles directamente: se consumen únicamente a través de [`https://demo.arkoiot.com/`](https://demo.arkoiot.com/).** Después de autenticarse con el OTP descrito al inicio del README, la aplicación de la demo realiza las llamadas con su propio `Origin`; NGINX en `api.arkoiot.com` acepta ese origen, las enruta al puerto 8000 y rechaza cualquier otro origen con 403. No hay una URL pública de la API para invocar estas rutas por separado desde un navegador o desde un script. El ambiente de Staging hace lo propio desde su URL de Pages hacia el puerto 8001, también de forma interna.
+
+Rutas disponibles en la API (`src/api.py`) y en el servicio auxiliar (`src/webhook_api.py`); las primeras se consumen detrás de la demo y el webhook es interno:
 
 | Método | Ruta | Uso |
 |---|---|---|
@@ -325,21 +342,9 @@ Existen hoy en la API (`src/api.py`) y en el servicio de webhook (`src/webhook_a
 | `POST` | `/predict` | Modo manual: seis variables enviadas por el usuario |
 | `POST` | `/sync` | Recarga en caliente desde MLflow |
 | `POST` | `/telemetry/event` | Evento de clickstream del frontend |
-| `POST` | `/webhook/mlflow`, `/webhook` | Receptor de eventos de alias de MLflow (puerto 8005) |
+| `POST` | `/webhook/mlflow`, `/webhook` | Receptor interno de eventos de alias de MLflow (puerto 8005), invocado por el servidor de MLflow |
 
-Ejemplo real (la respuesta declara `version_esquema: "0.2"` e incluye `probabilidad`, `decision`, `trayectoria`, `serie_canal` y `referencias`):
-
-```bash
-curl -sS \
-  -H "Origin: https://demo.arkoiot.com" \
-  -H "CF-Access-Client-Id: <service-token-id>" \
-  -H "CF-Access-Client-Secret: <service-token-secret>" \
-  "https://api.arkoiot.com/predict?municipio=54001&semana_emision=2025-12-22"
-```
-
-Desde la VM se puede probar sin service token apuntando a NGINX, por ejemplo con `curl -H "Origin: https://staging.denguealertas.pages.dev" "http://127.0.0.1:8080/predict?municipio=54001&semana_emision=2025-12-22"`.
-
-**Pendiente** (contratado, no implementado): `POST /predict/upload`, `GET /historial` y `GET /desempeno`. No deben considerarse disponibles. El detalle de campos y errores de `/predict` está en [`docs/forecasting/api_salida_d10.md`](docs/forecasting/api_salida_d10.md) §4–§7.
+La respuesta de `/predict` declara `version_esquema: "0.2"` e incluye `probabilidad`, `decision`, `trayectoria`, `serie_canal` y `referencias`. El detalle de campos y errores está en [`docs/forecasting/api_salida_d10.md`](docs/forecasting/api_salida_d10.md) §4–§7.
 
 ### 9.9 Telemetría y monitoreo
 
@@ -348,7 +353,7 @@ Son dos cosas distintas: la telemetría registra el uso de la API (peticiones, e
 - API: middleware JSONL en `/opt/dengue-api/logs/api_<stage>.jsonl` con `X-Request-ID`/`CF-Ray`, correo de Access, latencia, estado y errores; filtra el polling de `/schema`, `/health` y `/telemetry/event` salvo error. `POST /telemetry/event` registra `action`, `target`, `section` y `metadata` del frontend en el mismo logger. Rotación y respaldos en `/opt/dengue-api/backups/telemetry/`.
 - NGINX: `/var/log/nginx/dengue_telemetry.json` registra tiempo, `request_id`, correo de Access, IP de Cloudflare, `Origin`, método, URI, estado, bytes, latencia y latencia del upstream; excluye las rutas de polling.
 - Webhook: `/opt/dengue-api/logs/webhook_events.jsonl` registra entregas y validación de firma.
-- Monitor de recursos: `src/resource_monitor.py` muestrea cada 10 s CPU/RAM/carga, E/S de disco y red, almacenamiento y estado de **los servicios levantados en la VM** —`mlflow.service`, `dengue-api-prod.service`, `dengue-api-staging.service` y `dengue-webhook.service`— en `/opt/dengue-api/logs/system_resources.jsonl`. Es información operativa de esos procesos, no telemetría de la API ni del modelo. Estado al 2026-11-23: **operativo**. Entre el 2026-10-21 y esta fecha estuvo caído por `ModuleNotFoundError: No module named 'src'`; se corrigió con el drop-in `/etc/systemd/system/dengue-resource-monitor.service.d/10-pythonpath.conf`, que define `Environment=PYTHONPATH=/opt/dengue-api` sin modificar la unidad original.
+- Monitor de recursos: `src/resource_monitor.py` muestrea cada 10 s CPU/RAM/carga, E/S de disco y red, almacenamiento y estado de **los servicios levantados en la VM** —`mlflow.service`, `dengue-api-prod.service`, `dengue-api-staging.service` y `dengue-webhook.service`— en `/opt/dengue-api/logs/system_resources.jsonl`.
 
 ## 10. Documentación
 

@@ -1,0 +1,13 @@
+.git
+.github
+data
+*.parquet
+reports
+notebooks
+frontend
+mlruns
+.env
+.env.*
+__pycache__
+*.py[cod]
+.pytest_cache

@@ -137,4 +137,4 @@ Orden:
 
 **Precaución.** `src/api.py` carga cada modelo habilitado por el alias igual a `STAGE`. Si ese alias no existe, recurre a la etapa clásica y después a la **última versión**. Por eso, con `enabled = true`, la API de producción cargaría la versión 1 aunque todavía no tenga el alias `production`. Antes de habilitar, F8 decide si elimina ese último recurso o acepta que ambos ambientes carguen los modelos al habilitarlos.
 
-**Dependencias de la API (F8).** `requirements/serve.txt` debe fijar `scikit-learn==1.7.2`, la versión con la que se serializaron los modelos, y `mlflow==3.17.0`, la versión del servidor. Hoy fija `scikit-learn>=1.3.0` y `mlflow>=2.0.0`. El cambio lo hace el responsable del despliegue, junto con el `Dockerfile`.
+**Dependencias de la API (F8).** `requirements/serve.txt` fija `scikit-learn==1.7.2`, la versión con la que se serializaron los modelos, y `mlflow==3.17.0`, la versión del servidor. El `Dockerfile` usa ese archivo y copia también `configs/`, que la vista v0.2 necesita; es una imagen de referencia para un eventual PaaS, no la vía de despliegue de la demostración (README §9.10).

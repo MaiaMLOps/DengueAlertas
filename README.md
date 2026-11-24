@@ -60,11 +60,11 @@ src/data/                 Integración de SIVIGILA y covariables (panel maestro)
 src/pilot_selection/      Selección descriptiva de los seis pilotos y derivado territorial
 src/epidemiology/         Canal de epiCo (channel_epico.py) y etiquetas EWT de legado
 src/forecasting/          Pipeline de pronóstico: ejemplos, cortes, líneas base, modelos, búsqueda, selección, prueba
-src/api.py                API FastAPI de inferencia (se adapta en F8)
+src/api.py                API FastAPI de inferencia (vista v0.2 en src/forecasting/api_v2.py)
 src/webhook_api.py, src/resource_monitor.py   Servicios auxiliares de la infraestructura del equipo
 tests/                    Pruebas: unitarias por paquete y de aceptación por fase (tests/acceptance/)
 .github/workflows/        CI y despliegue del frontend
-Dockerfile                Imagen de la API
+Dockerfile, .dockerignore Imagen de referencia de la API para un eventual PaaS (§9.10; no es el despliegue actual)
 ```
 
 ## 4. Dependencias y entorno
@@ -213,7 +213,7 @@ Sin las opciones, las pruebas con datos se omiten; con una opción y sin el arch
   3. alias `production`.
 
   `src/api.py` carga cada modelo por el alias igual a `STAGE`. Si no lo encuentra, recurre a la etapa clásica y después a la última versión. Por eso, con `enabled = true`, la API de producción cargaría la versión 1 aunque aún no tenga el alias `production`; F8 decide cómo tratar ese último recurso antes de habilitar (detalle en [`modelos/README.md`](modelos/README.md)).
-- **Dependencias de la API (nota para F8).** `requirements/serve.txt` debe fijar `scikit-learn==1.7.2`, la versión con la que se serializaron los modelos, y `mlflow==3.17.0`, la versión del servidor. Hoy fija `scikit-learn>=1.3.0` y `mlflow>=2.0.0`. Este cambio y el del `Dockerfile` corresponden al responsable del despliegue.
+- **Dependencias de la API.** `requirements/serve.txt` fija `scikit-learn==1.7.2`, la versión con la que se serializaron los modelos, y `mlflow==3.17.0`, la versión del servidor. El `Dockerfile` usa ese archivo y copia también `configs/`, que la vista v0.2 necesita; es una imagen de referencia para PaaS, no la vía de despliegue actual (§9.1 y §9.10).
 - **Requerimientos de hardware.** Solo CPU; ni el entrenamiento ni la inferencia de la receta usan GPU. Cada modelo es una regresión logística sobre seis variables, y los seis ocupan unos 28 KB en disco. La inferencia requiere scikit-learn 1.7.2, la versión con la que se serializaron (`requirements/forecasting.txt`). Solo las familias secuenciales del contraste de familias (GRU y CNN-1D, fuera de la receta) se entrenaron con PyTorch y admiten GPU.
 - **Tiempos de inferencia.** Medición local del 2026-11-20 en un portátil con Intel Core i7-12650H (10 núcleos, 16 hilos), 64 GB de RAM y Windows 11, con Python 3.11.0 y scikit-learn 1.7.2, en un proceso de Python sin MLflow ni API. No es una medición de la API desplegada, que añadirá la carga desde el registro de MLflow, la red y la serialización de la respuesta.
 
@@ -249,13 +249,13 @@ Las variables nuevas de la API (`ALERT_K`, `DATA_VERSION` y la URL de la API en 
 
 ## 9. Despliegue
 
-Estado al 2026-11-23: la API corre en una VM, el frontend se publica en Cloudflare Pages y el panel se materializa en el servidor. El contrato predictivo (§9.6) y [`docs/forecasting/api_salida_d10.md`](docs/forecasting/api_salida_d10.md) siguen siendo la referencia de la salida; las secciones a continuación describen cómo se accede y se opera ese despliegue.
+La API corre en una VM, el frontend se publica en Cloudflare Pages y el panel se materializa en el servidor. El contrato predictivo (§9.6) y [`docs/forecasting/api_salida_d10.md`](docs/forecasting/api_salida_d10.md) siguen siendo la referencia de la salida; las secciones a continuación describen cómo se accede y se opera ese despliegue.
 
 Estrategia implementada: modelos pequeños cargados al arrancar, inferencia en CPU con τ y k congelados de la receta y `/predict` para el pronóstico vigente. Los seis modelos municipales están cargados en los dos ambientes y sirven la vista v0.2 a través del frontend.
 
 ### 9.1 Ambientes y arranque de la API
 
-Servidor: `ubuntu-mlops-01` (`116.203.114.120`). Código de la API en `/opt/dengue-api`, entorno Python en `/opt/mlflow-env`. **Docker no se usa**: el comando `docker` no está instalado en la VM; el `Dockerfile` del repositorio no es la vía de despliegue actual.
+Servidor: `ubuntu-mlops-01` (`116.203.114.120`). Código de la API en `/opt/dengue-api`, entorno Python en `/opt/mlflow-env`. **Docker no se usa**: el comando `docker` no está instalado en la VM; el `Dockerfile` del repositorio, actualizado como imagen de referencia para un eventual PaaS (§9.10), no es la vía de despliegue actual.
 
 | Ambiente | Unidad systemd | Puerto local | Proceso |
 |---|---|---|---|
@@ -274,7 +274,7 @@ Servicios relacionados en la VM: `mlflow.service` (5000), `dengue-webhook.servic
 |---|---|---|---|
 | Producción | `https://demo.arkoiot.com` (dominio propio, tras Cloudflare Access) y `https://denguealertas.pages.dev` (Pages) | `https://api.arkoiot.com`, con `Origin: https://demo.arkoiot.com` o `https://denguealertas.pages.dev` | `127.0.0.1:8000` |
 | Staging | `https://staging.denguealertas.pages.dev` (tras Cloudflare Access) | `https://api.arkoiot.com`, con `Origin: https://staging.denguealertas.pages.dev` | `127.0.0.1:8001` |
-| Desarrollo local | `http://localhost:5173` / `http://127.0.0.1:5173` | `https://api.arkoiot.com` (o el proxy `/api` de `frontend/vite.config.js`) | Según el `Origin`, hoy Producción |
+| Desarrollo local | `http://localhost:5173` / `http://127.0.0.1:5173` | `https://api.arkoiot.com` (o el proxy `/api` de `frontend/vite.config.js`) | Según el `Origin`: Producción |
 
 Cloudflare Access protege `demo.arkoiot.com` y `platform.arkoiot.com` (aplicaciones `dengue` y `mlflow`). Para una persona, el flujo de OTP con correo `@uniandes.edu.co` y la sesión de 72 horas están descritos al inicio de este README, en [«Acceso a la demostración y a MLflow»](#acceso-a-la-demostración-y-a-mlflow). Para un servicio o script: enviar las cabeceras `CF-Access-Client-Id` y `CF-Access-Client-Secret` con un service token; los valores se entregan fuera del repositorio. NGINX reenvía la identidad autenticada en `Cf-Access-Authenticated-User-Email` y la API la registra en su telemetría. El frontend de desarrollo lee esas dos variables del entorno local para el proxy; no las versiona.
 
@@ -299,7 +299,7 @@ Solo nombres; los valores se entregan por el responsable de infraestructura y vi
 | Variable | Dónde | Uso |
 |---|---|---|
 | `STAGE` | API (`systemd`) | `Staging` o `Production`; define el alias de MLflow |
-| `MODEL_NAME` | API (`systemd`) | Modelo por defecto/retrocompatible |
+| `MODEL_NAME` | API (`systemd`) e imagen | Modelo base retrocompatible; en la imagen, `DengueAlertas_Barranquilla` (los seis municipales se descubren por el prefijo `DengueAlertas_` y el tag `enabled=true`) |
 | `MLFLOW_TRACKING_URI` | API y webhook | URI del servidor de MLflow |
 | `MODEL_THRESHOLD` | API | Umbral por defecto del modo manual |
 | `CF_ACCESS_CLIENT_ID`, `CF_ACCESS_CLIENT_SECRET` | API y frontend local | Service token de Cloudflare Access |
@@ -315,7 +315,7 @@ La unidad `mlflow.service` además define, entre otras, `MLFLOW_DISABLE_TELEMETR
 
 MLflow corre en `mlflow.service` en `127.0.0.1:5000`, con backend SQLite en `/opt/mlflow/mlflow.db` y artefactos en `/opt/mlflow/artifacts`; la URL pública es `https://platform.arkoiot.com`.
 
-Hoy existen seis modelos registrados `DengueAlertas_Barranquilla`, `DengueAlertas_Cali`, `DengueAlertas_Cucuta`, `DengueAlertas_Neiva`, `DengueAlertas_Soledad` y `DengueAlertas_Villavicencio`. Estado al 2026-11-23: cada uno tiene **versión 1 y versión 2**, con el mismo `source` (`models:/m-…`) y el mismo `run_id` que la v1; la v2 es una copia exacta, no un reentrenamiento. Los seis tienen tag `enabled=true`, alias `staging` → v1 y `current_stage=Staging` en la v1; alias `production` → v2 y `current_stage=Production` en la v2. Las probabilidades de `/predict` en Producción son idénticas a las de la v1. `/health` de Producción sigue mostrando `model_name=ModeloPrueba` (configuración heredada del modelo por defecto), aunque los seis modelos municipales ya están cargados para `/predict`.
+El registro contiene seis modelos: `DengueAlertas_Barranquilla`, `DengueAlertas_Cali`, `DengueAlertas_Cucuta`, `DengueAlertas_Neiva`, `DengueAlertas_Soledad` y `DengueAlertas_Villavicencio`. Cada uno tiene **versión 1 y versión 2**, con el mismo `source` (`models:/m-…`) y el mismo `run_id` que la v1; la v2 es una copia exacta, no un reentrenamiento. Los seis tienen tag `enabled=true`, alias `staging` → v1 y `current_stage=Staging` en la v1; alias `production` → v2 y `current_stage=Production` en la v2. Las probabilidades de `/predict` en Producción son idénticas a las de la v1. `/health` de Producción sigue mostrando `model_name=ModeloPrueba` (configuración heredada del modelo por defecto en la VM), aunque los seis modelos municipales ya están cargados para `/predict`; la imagen de referencia de §9.10 no replica ese valor heredado y usa `DengueAlertas_Barranquilla` como modelo base.
 
 Promoción: al crear el alias `production` (o `champion`) en MLflow, el webhook `POST /webhook/mlflow` valida la firma HMAC con `WEBHOOK_SECRET`, llama a `transition_model_version_stage(..., stage=Production, archive_existing_versions=True)` y hace `POST http://127.0.0.1:8000/sync` para recargar la API de Producción. Los alias `staging`/`challenger` apuntan al puerto 8001; un alias borrado lleva el modelo a `Archived`. `/sync` también se puede invocar manualmente. El repositorio fija esta secuencia en [`modelos/README.md`](modelos/README.md) y en DV-08.
 
@@ -356,6 +356,14 @@ Son dos cosas distintas: la telemetría registra el uso de la API (peticiones, e
 - NGINX: `/var/log/nginx/dengue_telemetry.json` registra tiempo, `request_id`, correo de Access, IP de Cloudflare, `Origin`, método, URI, estado, bytes, latencia y latencia del upstream; excluye las rutas de polling.
 - Webhook: `/opt/dengue-api/logs/webhook_events.jsonl` registra entregas y validación de firma.
 - Monitor de recursos: `src/resource_monitor.py` muestrea cada 10 s CPU/RAM/carga, E/S de disco y red, almacenamiento y estado de **los servicios levantados en la VM** —`mlflow.service`, `dengue-api-prod.service`, `dengue-api-staging.service` y `dengue-webhook.service`— en `/opt/dengue-api/logs/system_resources.jsonl`.
+
+### 9.10 Imagen Docker para un eventual despliegue en PaaS
+
+`Dockerfile` y `.dockerignore` forman una **imagen de referencia** para una futura migración a un servicio PaaS (Cloud Run, Container Apps, Fargate u otros). **No se usan en la demostración**, que sigue corriendo con systemd (§9.1), y la imagen no ha sido probada en producción.
+
+La imagen parte de `python:3.11-slim`, instala `requirements/serve.txt` y copia `src/` y `configs/`; este último directorio es necesario porque la vista v0.2 resuelve `configs/forecasting.yaml` y lee `configs/receta_congelada.yaml` con ruta relativa al directorio de trabajo. `.dockerignore` excluye del contexto de construcción `data/`, `*.parquet`, `.env*`, `.git/`, `frontend/` y `mlruns/`, de modo que ni el panel ni credenciales quedan dentro de la imagen.
+
+Para ejecutarla hay que montar el panel materializado con DVC en `FORECAST_PANEL_PATH` (por defecto `/app/data/processed/pilot_municipalities_weekly.parquet`); sin ese archivo `/predict` responde `503 panel_no_disponible`. Los valores de `STAGE`, `MODEL_THRESHOLD` y `MLFLOW_TRACKING_URI` se sobreescriben según el ambiente; el valor por defecto de `MODEL_NAME` en la imagen es `DengueAlertas_Barranquilla`, nunca `ModeloPrueba`, y los seis modelos municipales se descubren automáticamente por el prefijo `DengueAlertas_` y el tag `enabled=true`. `CF_ACCESS_CLIENT_ID` y `CF_ACCESS_CLIENT_SECRET` se inyectan como secretos de la plataforma para autenticar las consultas a MLflow. El `HEALTHCHECK` consulta `/health`, aunque muchas plataformas ignoran esa instrucción y exigen configurar su propia sonda sobre la misma ruta. La telemetría se escribe en `/app/logs`, enlazado a `/tmp` para ambientes con sistema de archivos de solo lectura; conservarla en un PaaS exigiría redirigirla a stdout o a un volumen.
 
 ## 10. Documentación
 

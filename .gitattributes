@@ -10,3 +10,7 @@ reports/epidemiology/evidence/labels_20261021/*.svg binary
 
 # Delivery copy of the final models (modelos/README.md): exact bytes, so their md5 match the DVC output.
 /modelos/** -text
+
+# Data of the frontend view «Desempeño en prueba»: exact bytes, compared byte by byte by
+# scripts/construir_desempeno_prueba.py --verificar.
+/frontend/public/desempeno_prueba.json -text

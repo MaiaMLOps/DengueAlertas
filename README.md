@@ -365,6 +365,12 @@ La imagen parte de `python:3.11-slim`, instala `requirements/serve.txt` y copia 
 
 Para ejecutarla hay que montar el panel materializado con DVC en `FORECAST_PANEL_PATH` (por defecto `/app/data/processed/pilot_municipalities_weekly.parquet`); sin ese archivo `/predict` responde `503 panel_no_disponible`. Los valores de `STAGE`, `MODEL_THRESHOLD` y `MLFLOW_TRACKING_URI` se sobreescriben según el ambiente; el valor por defecto de `MODEL_NAME` en la imagen es `DengueAlertas_Barranquilla`, nunca `ModeloPrueba`, y los seis modelos municipales se descubren automáticamente por el prefijo `DengueAlertas_` y el tag `enabled=true`. `CF_ACCESS_CLIENT_ID` y `CF_ACCESS_CLIENT_SECRET` se inyectan como secretos de la plataforma para autenticar las consultas a MLflow. El `HEALTHCHECK` consulta `/health`, aunque muchas plataformas ignoran esa instrucción y exigen configurar su propia sonda sobre la misma ruta. La telemetría se escribe en `/app/logs`, enlazado a `/tmp` para ambientes con sistema de archivos de solo lectura; conservarla en un PaaS exigiría redirigirla a stdout o a un volumen.
 
+### 9.11 Vista de desempeño en prueba
+
+`frontend/public/desempeno_prueba.json` es un archivo estático que la pestaña «Desempeño en prueba» del frontend lee como `/desempeno_prueba.json`, sin API ni MLflow. Reúne la ficha de desempeño de la prueba 2023–2025 (contrato §9.4), los eventos de las reglas de umbral, del producto y del canal, y la serie semanal de cada municipio.
+
+Lo genera `scripts/construir_desempeno_prueba.py` a partir de la evidencia versionada de la prueba única (`reports/forecasting/evidence/prueba_20261112/`) y del análisis complementario (`reports/forecasting/evidence/complementario_20261120/`). No carga el modelo desplegado ni ningún otro: las probabilidades son las de los modelos de origen móvil de la prueba. El esquema, las fuentes y los comandos de regeneración están en [`docs/forecasting/desempeno_prueba.md`](docs/forecasting/desempeno_prueba.md).
+
 ## 10. Documentación
 
 - [`docs/forecasting/README.md`](docs/forecasting/README.md): guía metodológica del pronóstico (fases, módulos, reproducibilidad, gobernanza, figuras y glosario).

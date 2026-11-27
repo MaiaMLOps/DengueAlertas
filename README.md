@@ -253,6 +253,112 @@ La API corre en una VM, el frontend se publica en Cloudflare Pages y el panel se
 
 Estrategia implementada: modelos pequeños cargados al arrancar, inferencia en CPU con τ y k congelados de la receta y `/predict` para el pronóstico vigente. Los seis modelos municipales están cargados en los dos ambientes y sirven la vista v0.2 a través del frontend.
 
+### Ejecución local de la API y del frontend
+
+La API y la interfaz se pueden ejecutar como procesos locales. **No es una ejecución completamente offline:** la API consulta los modelos registrados en el MLflow del equipo y necesita el panel semanal de los seis pilotos. La pestaña **Desempeño en prueba** es la excepción: funciona solo con `frontend/public/desempeno_prueba.json`, sin API, MLflow ni DVC.
+
+> **Dependencia actual de MLflow.** `src/api.py` no carga directamente los seis `modelos/*.joblib` ni tiene un modo local de respaldo. Arrancar Uvicorn en el equipo solo cambia dónde corre la API: el descubrimiento (`enabled=true`), los alias de ambiente y la carga de modelos siguen dependiendo del MLflow remoto. Sin ese servicio o sin su service token, `/municipios` queda vacío y el Dashboard no puede producir pronósticos; una ejecución desconectada requeriría modificar la API, cosa que estas instrucciones no hacen.
+
+**Requisitos:** Python 3.11, Node.js 24 (versión usada en CI), npm, credenciales de lectura para MLflow/Cloudflare Access y, si el panel aún no está materializado, credenciales del remoto DVC. Todos los secretos se guardan en archivos locales ignorados por git.
+
+#### 1. Preparar el entorno de la API
+
+Desde la raíz del repositorio, en Windows PowerShell:
+
+```powershell
+py -3.11 -m venv .venv
+.venv/Scripts/python.exe -m pip install -r requirements/serve.txt
+.venv/Scripts/python.exe -m pip install pyarrow==21.0.0 python-dotenv==1.2.4 dvc==3.67.1 dvc-webdav==3.0.1
+```
+
+En macOS o Linux, crear el entorno con `python3.11 -m venv .venv` y sustituir `.venv/Scripts/python.exe` por `.venv/bin/python` en esos comandos y en los siguientes.
+
+Si `data/processed/pilot_municipalities_weekly.parquet` todavía no existe, configurar las credenciales DVC entregadas por infraestructura y descargar solo ese producto:
+
+```powershell
+.venv/Scripts/dvc.exe remote modify --local vps-storage user <usuario>
+.venv/Scripts/dvc.exe remote modify --local vps-storage ask_password true
+.venv/Scripts/dvc.exe pull data/processed/pilot_municipalities_weekly.parquet.dvc
+```
+
+En macOS o Linux, el ejecutable es `.venv/bin/dvc`. Las credenciales quedan en `.dvc/config.local`, fuera de git. Si el panel está en otra ubicación, se puede señalar con `FORECAST_PANEL_PATH`; no hace falta copiarlo ni modificar su contenido.
+
+Crear o editar el archivo `.env` **en la raíz del repositorio** con esta configuración de ejemplo:
+
+```dotenv
+STAGE=Production
+MODEL_NAME=DengueAlertas_Barranquilla
+MLFLOW_TRACKING_URI=https://platform.arkoiot.com
+MODEL_THRESHOLD=0.205
+FORECAST_PANEL_PATH=data/processed/pilot_municipalities_weekly.parquet
+CF_ACCESS_CLIENT_ID=<client_id>.access
+CF_ACCESS_CLIENT_SECRET=<client_secret>
+```
+
+Los dos últimos valores son marcadores: usar el service token real entregado por infraestructura, nunca el ejemplo. `STAGE=Production` carga el alias `production`; para probar el otro ambiente, usar `STAGE=Staging` con los modelos habilitados correspondientes.
+
+#### 2. Arrancar la API local
+
+Desde la raíz y con el `.env` anterior:
+
+```powershell
+.venv/Scripts/python.exe -B -X utf8 -m uvicorn src.api:app --host 127.0.0.1 --port 8000
+```
+
+En macOS o Linux:
+
+```bash
+.venv/bin/python -B -X utf8 -m uvicorn src.api:app --host 127.0.0.1 --port 8000
+```
+
+Comprobar en otro terminal o en el navegador:
+
+- Estado: <http://127.0.0.1:8000/health>. Además de `status: "ok"`, revisar `active_codes` y `municipal_models_active`; un HTTP 200 con cero modelos no basta para el Dashboard.
+- Modelos habilitados: <http://127.0.0.1:8000/municipios>.
+- Documentación interactiva: <http://127.0.0.1:8000/docs>.
+- Ejemplo de pronóstico: <http://127.0.0.1:8000/predict?municipio=41001&semana_emision=2025-12-22>.
+
+Si no cargan los modelos, revisar el service token, `MLFLOW_TRACKING_URI`, `STAGE` y los logs del arranque. Si `/predict` responde `panel_no_disponible`, revisar el Parquet y `FORECAST_PANEL_PATH`.
+
+#### 3. Arrancar la interfaz contra esa API
+
+En un **segundo terminal**, desde la raíz:
+
+```powershell
+cd frontend
+npm ci
+Copy-Item .env.example .env
+```
+
+En macOS o Linux, copiar el archivo con `cp .env.example .env`. Editar `frontend/.env` para que apunte al proceso local:
+
+```dotenv
+VITE_API_URL=http://127.0.0.1:8000
+```
+
+Arrancar Vite desde `frontend/`:
+
+```bash
+npm run dev
+```
+
+Abrir:
+
+- Dashboard: <http://localhost:5173/>.
+- Desempeño en prueba: <http://localhost:5173/desempeno>.
+
+En el Dashboard, elegir un municipio y una semana y pulsar **Consultar pronóstico**. La UI debe mostrar «API En Línea» y los municipios devueltos por el `/municipios` local. La vista de desempeño sigue leyendo `/desempeno_prueba.json` y no depende del puerto 8000.
+
+Para verificar la interfaz como en producción, detener Vite y ejecutar desde `frontend/`:
+
+```bash
+npm run lint
+npm run build
+npm run preview
+```
+
+La guía específica del frontend está en [`frontend/README.md`](frontend/README.md). Los comandos anteriores no ejecutan la prueba única, no reentrenan modelos y no despliegan cambios en la VM o Cloudflare Pages.
+
 ### 9.1 Ambientes y arranque de la API
 
 Servidor: `ubuntu-mlops-01` (`116.203.114.120`). Código de la API en `/opt/dengue-api`, entorno Python en `/opt/mlflow-env`. **Docker no se usa**: el comando `docker` no está instalado en la VM; el `Dockerfile` del repositorio, actualizado como imagen de referencia para un eventual PaaS (§9.10), no es la vía de despliegue actual.
@@ -274,7 +380,7 @@ Servicios relacionados en la VM: `mlflow.service` (5000), `dengue-webhook.servic
 |---|---|---|---|
 | Producción | `https://demo.arkoiot.com` (dominio propio, tras Cloudflare Access) y `https://denguealertas.pages.dev` (Pages) | `https://api.arkoiot.com`, con `Origin: https://demo.arkoiot.com` o `https://denguealertas.pages.dev` | `127.0.0.1:8000` |
 | Staging | `https://staging.denguealertas.pages.dev` (tras Cloudflare Access) | `https://api.arkoiot.com`, con `Origin: https://staging.denguealertas.pages.dev` | `127.0.0.1:8001` |
-| Desarrollo local | `http://localhost:5173` / `http://127.0.0.1:5173` | `https://api.arkoiot.com` (o el proxy `/api` de `frontend/vite.config.js`) | Según el `Origin`: Producción |
+| Desarrollo local | `http://localhost:5173` / `http://127.0.0.1:5173` | API local: `http://127.0.0.1:8000`; API remota: `https://api.arkoiot.com` (o el proxy `/api` de `frontend/vite.config.js`) | Proceso local o, si se usa la remota, `127.0.0.1:8000` en la VM |
 
 Cloudflare Access protege `demo.arkoiot.com` y `platform.arkoiot.com` (aplicaciones `dengue` y `mlflow`). Para una persona, el flujo de OTP con correo `@uniandes.edu.co` y la sesión de 72 horas están descritos al inicio de este README, en [«Acceso a la demostración y a MLflow»](#acceso-a-la-demostración-y-a-mlflow). Para un servicio o script: enviar las cabeceras `CF-Access-Client-Id` y `CF-Access-Client-Secret` con un service token; los valores se entregan fuera del repositorio. NGINX reenvía la identidad autenticada en `Cf-Access-Authenticated-User-Email` y la API la registra en su telemetría. El frontend de desarrollo lee esas dos variables del entorno local para el proxy; no las versiona.
 

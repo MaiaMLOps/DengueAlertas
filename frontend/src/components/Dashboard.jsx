@@ -63,6 +63,17 @@ const V2_WEEK_OPTIONS = (() => {
     return options;
 })();
 
+// Misma convención de week_ordinal: ordena los lunes dentro de su año, sin ISO.
+const weekOrdinal = (dateString) => {
+    const start = Date.parse(`${dateString}T00:00:00Z`);
+    if (!Number.isFinite(start)) return null;
+    const year = new Date(start).getUTCFullYear();
+    const firstDay = new Date(Date.UTC(year, 0, 1));
+    const daysToMonday = (1 - firstDay.getUTCDay() + 7) % 7;
+    const firstMonday = Date.UTC(year, 0, 1 + daysToMonday);
+    return Math.floor((start - firstMonday) / (7 * 24 * 60 * 60 * 1000)) + 1;
+};
+
 const FEATURE_NAMES = Object.keys(FIELD_META);
 const MODEL_INPUT_SCHEMA = FEATURE_NAMES.map(name => ({
     name,
@@ -161,6 +172,7 @@ export default function Dashboard() {
         .filter(mun => activeCodes.includes(mun.codigo))
         .map(mun => mun.codigo)
         .join(',');
+    const selectedWeekOrdinal = weekOrdinal(v2Week);
 
     // Consultar el esquema del modelo del municipio seleccionado.
     const fetchSchema = async (codigo) => {
@@ -508,7 +520,7 @@ export default function Dashboard() {
                             Vigilancia Epidemiológica de Precisión
                         </span>
                         <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-300 border border-neutral-700">
-                            Semana 42
+                            {NEW_MODE ? `Semana ${selectedWeekOrdinal} · emisión ${v2Week}` : 'Modo manual'}
                         </span>
                     </div>
                     <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">
@@ -575,9 +587,11 @@ export default function Dashboard() {
                         <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                     </div>
                     <div className="text-xl font-extrabold text-neutral-900 dark:text-white">
-                        Semana 42
+                        {NEW_MODE ? `Semana ${selectedWeekOrdinal}` : 'Modo manual'}
                     </div>
-                    <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">Monitoreo activo y sincronizado</p>
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+                        {NEW_MODE ? `Ordinal del canal · emisión ${v2Week}` : 'Sin semana de emisión seleccionada'}
+                    </p>
                 </div>
             </div>
 

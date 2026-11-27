@@ -84,10 +84,41 @@ const apiErrorMessage = async (res, fallback) => {
     return `HTTP ${res.status} · ${detail}`;
 };
 
+const ALERT_STATE_LABELS = {
+    sin_alerta: 'Sin alerta',
+    senal_en_observacion: 'Señal en observación',
+    alerta_inicio_confirmada: 'Alerta de inicio confirmada',
+    continuidad_epidemica: 'Continuidad epidémica'
+};
+const ALERT_STATES = new Set(Object.keys(ALERT_STATE_LABELS));
+
+// La misma respuesta alimenta el detalle del municipio y los colores del mapa.
+// El frontend nunca deduce el estado a partir de la probabilidad.
+const requestV2Prediction = async (codigo, semana, signal) => {
+    const query = new URLSearchParams({ municipio: codigo, semana_emision: semana });
+    const res = await fetch(`${API_BASE_URL}/predict?${query.toString()}`, {
+        credentials: 'include',
+        signal
+    });
+    if (!res.ok) {
+        throw new Error(await apiErrorMessage(res, 'La API rechazó la consulta v0.2.'));
+    }
+
+    const data = await res.json();
+    if (data.version_esquema !== '0.2' || typeof data.probabilidad !== 'number'
+        || !Number.isFinite(data.probabilidad) || data.semana_emision !== semana
+        || data.municipio?.codigo !== codigo || !ALERT_STATES.has(data.decision?.estado_alerta)) {
+        throw new Error('La API no devolvió una respuesta v0.2 válida; no se muestra ningún valor sustituto.');
+    }
+    return data;
+};
+
 export default function Dashboard() {
     // Municipio Estratégico Seleccionado en el Mapa (por defecto Cali)
     const [selectedMunicipio, setSelectedMunicipio] = useState(MUNICIPIOS_ESTRATEGICOS[0]);
-    const [activeCodes, setActiveCodes] = useState(['08001', '08758', '41001', '50001', '54001', '76001']);
+    // La fuente es GET /municipios: no se presupone ningún modelo habilitado.
+    const [activeCodes, setActiveCodes] = useState([]);
+    const [activeModelsStatus, setActiveModelsStatus] = useState('loading');
     const [showTechDetails, setShowTechDetails] = useState(false);
 
     // Estado del esquema y de la API
@@ -123,6 +154,13 @@ export default function Dashboard() {
     const [v2Data, setV2Data] = useState(null);
     const [v2Error, setV2Error] = useState(null);
     const [isPredictingV2, setIsPredictingV2] = useState(false);
+    const [mapStatuses, setMapStatuses] = useState(() => Object.fromEntries(
+        MUNICIPIOS_ESTRATEGICOS.map(mun => [mun.codigo, { status: 'loading' }])
+    ));
+    const activeCodesKey = MUNICIPIOS_ESTRATEGICOS
+        .filter(mun => activeCodes.includes(mun.codigo))
+        .map(mun => mun.codigo)
+        .join(',');
 
     // Consultar el esquema del modelo del municipio seleccionado.
     const fetchSchema = async (codigo) => {
@@ -168,24 +206,29 @@ export default function Dashboard() {
         }
     };
 
-    // Consultar municipios activos con tag 'enabled == true' en MLflow
+    // /municipios descubre en la API los DengueAlertas_* con enabled=true en MLflow.
+    // También se acepta una lista vacía: significa que no hay modelos habilitados.
     const fetchActiveMunicipios = async () => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3000);
             const res = await fetch(`${API_BASE_URL}/municipios`, {
                 credentials: 'include',
                 signal: controller.signal
             });
-            clearTimeout(timeoutId);
-            if (res.ok) {
-                const data = await res.json();
-                if (data.active_codes && Array.isArray(data.active_codes) && data.active_codes.length > 0) {
-                    setActiveCodes(data.active_codes);
-                }
-            }
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            if (!Array.isArray(data.active_codes)) throw new Error('active_codes ausente o inválido');
+            setActiveCodes(data.active_codes.filter(codigo =>
+                MUNICIPIOS_ESTRATEGICOS.some(mun => mun.codigo === codigo)
+            ));
+            setActiveModelsStatus('ready');
         } catch {
-            // Mantener configuracion inicial
+            // Sin respuesta no se muestran modelos como activos por defecto.
+            setActiveCodes([]);
+            setActiveModelsStatus('error');
+        } finally {
+            clearTimeout(timeoutId);
         }
     };
 
@@ -222,6 +265,45 @@ export default function Dashboard() {
         }, 60000);
         return () => clearInterval(interval);
     }, [selectedMunicipio.codigo]);
+
+    // Consulta los estados de todos los pilotos activos para la semana elegida.
+    // Las respuestas fallidas o pendientes quedan en gris, nunca toman un color supuesto.
+    useEffect(() => {
+        if (!NEW_MODE || !activeCodesKey) return;
+
+        const codes = activeCodesKey.split(',');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        let cancelled = false;
+
+        const requests = codes.map(async (codigo) => {
+            try {
+                const data = await requestV2Prediction(codigo, v2Week, controller.signal);
+                if (!cancelled) {
+                    setMapStatuses(prev => ({ ...prev, [codigo]: { status: 'ready', data } }));
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    setMapStatuses(prev => ({
+                        ...prev,
+                        [codigo]: {
+                            status: 'error',
+                            message: error.name === 'AbortError'
+                                ? 'Tiempo de espera agotado al consultar la API.'
+                                : error.message
+                        }
+                    }));
+                }
+            }
+        });
+        Promise.allSettled(requests).then(() => clearTimeout(timeoutId));
+
+        return () => {
+            cancelled = true;
+            clearTimeout(timeoutId);
+            controller.abort();
+        };
+    }, [v2Week, activeCodesKey]);
 
     const handleSelectMunicipio = (mun) => {
         setSelectedMunicipio(mun);
@@ -393,32 +475,23 @@ export default function Dashboard() {
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 8000);
-            const query = new URLSearchParams({
-                municipio: formValues.municipio,
-                semana_emision: v2Week
-            });
-            const res = await fetch(`${API_BASE_URL}/predict?${query.toString()}`, {
-                credentials: 'include',
-                signal: controller.signal
-            });
-            clearTimeout(timeoutId);
-
-            if (!res.ok) {
-                setV2Error(await apiErrorMessage(res, 'La API rechazó la consulta v0.2.'));
-                return;
-            }
-
-            const data = await res.json();
-            if (data.version_esquema !== '0.2' || typeof data.probabilidad !== 'number'
-                || !Number.isFinite(data.probabilidad)) {
-                setV2Error('La API no devolvió una respuesta v0.2 válida; no se muestra ningún valor sustituto.');
-                return;
+            let data;
+            try {
+                data = await requestV2Prediction(formValues.municipio, v2Week, controller.signal);
+            } finally {
+                clearTimeout(timeoutId);
             }
             setV2Data(data);
+            setMapStatuses(prev => ({
+                ...prev,
+                [formValues.municipio]: { status: 'ready', data }
+            }));
         } catch (e) {
             setV2Error(e.name === 'AbortError'
                 ? 'Tiempo de espera agotado al consultar /predict; no se muestra ningún valor sustituto.'
-                : `No se pudo conectar con ${API_BASE_URL}/predict (${e.message}).`);
+                : e.message?.startsWith('HTTP ') || e.message?.startsWith('La API no devolvió')
+                    ? e.message
+                    : `No se pudo conectar con ${API_BASE_URL}/predict (${e.message}).`);
         } finally {
             setIsPredictingV2(false);
         }
@@ -468,22 +541,16 @@ export default function Dashboard() {
                     <p className="text-xs text-neutral-500 mt-0.5 truncate">{selectedMunicipio.departamento} • DANE {selectedMunicipio.codigo}</p>
                 </div>
 
-                {/* 2. Nivel de Riesgo Base */}
+                {/* 2. Frecuencia histórica en zona epidémica */}
                 <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 shadow-sm">
                     <div className="flex items-center justify-between text-neutral-500 dark:text-neutral-400 mb-1">
-                        <span className="text-[11px] font-semibold uppercase tracking-wider">Nivel de Alerta Base</span>
+                        <span className="text-[11px] font-semibold uppercase tracking-wider">Semanas en zona epidémica</span>
                         <Activity className="w-4 h-4 text-rose-500" />
                     </div>
-                    <div className="flex items-baseline gap-2">
-                        <span className={`text-xl font-extrabold ${
-                            selectedMunicipio.riesgo === 'Crítico' ? 'text-rose-600' :
-                            selectedMunicipio.riesgo === 'Alto' ? 'text-amber-600' :
-                            'text-sky-600'
-                        }`}>
-                            Riesgo {selectedMunicipio.riesgo}
-                        </span>
+                    <div className="text-xl font-extrabold text-neutral-900 dark:text-white">
+                        {selectedMunicipio.porcentaje_semanas_epidemia_2012_2025.toFixed(1).replace('.', ',')} %
                     </div>
-                    <p className="text-xs text-neutral-500 mt-0.5">Probabilidad histórica: {(selectedMunicipio.probabilidad_base * 100).toFixed(0)}%</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">Histórico 2012–2025 · Tabla 1 del informe</p>
                 </div>
 
                 {/* 3. Densidad Poblacional (DANE) */}
@@ -544,6 +611,9 @@ export default function Dashboard() {
                             setV2Week(e.target.value);
                             setV2Data(null);
                             setV2Error(null);
+                            setMapStatuses(Object.fromEntries(
+                                activeCodesKey.split(',').filter(Boolean).map(codigo => [codigo, { status: 'loading' }])
+                            ));
                           }}
                           className="w-full px-2 py-1.5 rounded-lg text-xs bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white"
                         >
@@ -568,7 +638,7 @@ export default function Dashboard() {
                         className="w-full py-2.5 px-4 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2 shadow-sm bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white cursor-pointer"
                       >
                         <Zap className={`w-4 h-4 ${isPredictingV2 ? 'animate-spin' : ''}`} />
-                        {isPredictingV2 ? 'Consultando la API...' : '🔍 Consultar predicción v0.2'}
+                        {isPredictingV2 ? 'Consultando la API...' : '🔍 Consultar pronóstico'}
                       </button>
 
                       {v2Data ? (
@@ -593,11 +663,11 @@ export default function Dashboard() {
 
                           <div className="grid grid-cols-2 gap-2 text-[11px]">
                             <div className="p-2 rounded-lg bg-white dark:bg-neutral-900/60">
-                              <span className="block text-neutral-500">Referencia B2</span>
+                              <span className="block text-neutral-500">Referencia: lo esperable solo por la zona actual del canal (B2)</span>
                               <span className="font-mono font-bold">{(v2Data.referencias.b2_estado_canal * 100).toFixed(1)}%</span>
                             </div>
                             <div className="p-2 rounded-lg bg-white dark:bg-neutral-900/60">
-                              <span className="block text-neutral-500">Referencia B1</span>
+                              <span className="block text-neutral-500">Referencia: lo esperable solo por la época del año (B1)</span>
                               <span className="font-mono font-bold">{(v2Data.referencias.b1_climatologia_estacional * 100).toFixed(1)}%</span>
                             </div>
                           </div>
@@ -612,11 +682,53 @@ export default function Dashboard() {
                                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
                                     : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
                               }`}>
-                                {String(v2Data.decision.estado_alerta).replaceAll('_', ' ')}
+                                {ALERT_STATE_LABELS[v2Data.decision.estado_alerta] || String(v2Data.decision.estado_alerta).replaceAll('_', ' ')}
                               </span>
                             </p>
-                            <p><strong>Zona observada en t:</strong> {v2Data.canal_actual.zona} · casos {v2Data.canal_actual.casos} · central {v2Data.canal_actual.central} · U1e {v2Data.canal_actual.u1e}</p>
-                            <p><strong>Regla:</strong> τ = {v2Data.decision.tau}, k = {v2Data.decision.k}, racha = {v2Data.decision.emisiones_positivas_consecutivas}</p>
+
+                            <details className="my-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900/60 p-2.5">
+                              <summary className="cursor-pointer select-none font-semibold text-neutral-800 dark:text-neutral-200">
+                                ¿Cómo leer este resultado?
+                              </summary>
+                              <div className="mt-2 overflow-x-auto">
+                                <table className="w-full text-left text-[10px]">
+                                  <thead className="bg-neutral-50 dark:bg-neutral-800/70 text-neutral-500">
+                                    <tr>
+                                      <th className="px-2 py-1.5 font-semibold">Estado</th>
+                                      <th className="px-2 py-1.5 font-semibold">Qué significa</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                                    <tr>
+                                      <td className="px-2 py-1.5 font-semibold whitespace-nowrap">Sin alerta</td>
+                                      <td className="px-2 py-1.5">No hay señal esta semana</td>
+                                    </tr>
+                                    <tr>
+                                      <td className="px-2 py-1.5 font-semibold whitespace-nowrap">Señal en observación</td>
+                                      <td className="px-2 py-1.5">Una semana con señal, fuera de zona epidémica</td>
+                                    </tr>
+                                    <tr>
+                                      <td className="px-2 py-1.5 font-semibold whitespace-nowrap">Alerta de inicio confirmada</td>
+                                      <td className="px-2 py-1.5">Dos semanas seguidas con señal: posible inicio de brote</td>
+                                    </tr>
+                                    <tr>
+                                      <td className="px-2 py-1.5 font-semibold whitespace-nowrap">Continuidad epidémica</td>
+                                      <td className="px-2 py-1.5">El municipio ya está en zona epidémica; la probabilidad es la de seguir en ella</td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </div>
+                              <p className="mt-2 leading-relaxed text-neutral-500">
+                                La probabilidad del modelo se compara con dos referencias. Si es mayor que la referencia, el modelo ve más riesgo del que indica el canal por sí solo.
+                              </p>
+                            </details>
+
+                            <p><strong>Zona observada en t:</strong> {v2Data.canal_actual.zona} · <strong>Casos:</strong> {v2Data.canal_actual.casos}</p>
+                            <p><strong>Tendencia central del canal (casos esperados):</strong> {v2Data.canal_actual.central}</p>
+                            <p><strong>Límite superior del canal (por encima: zona epidémica):</strong> {v2Data.canal_actual.u1e}</p>
+                            <p><strong>Umbral de señal:</strong> probabilidad de {(v2Data.decision.tau * 100).toLocaleString('es-CO')} % o más</p>
+                            <p>La alerta se confirma con {v2Data.decision.k} señales seguidas</p>
+                            <p><strong>Señales seguidas hasta hoy:</strong> {v2Data.decision.emisiones_positivas_consecutivas}</p>
                             <p><strong>Modelo:</strong> <span className="font-mono">{v2Data.versiones.modelo}</span></p>
                           </div>
 
@@ -647,7 +759,7 @@ export default function Dashboard() {
                         <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
                           <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">Predicción de la API</p>
                           <p className="mt-2 text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed">
-                            Sin evaluación. Elige la semana de emisión y pulsa «Consultar predicción v0.2».
+                            Sin evaluación. Elige la semana de emisión y pulsa «Consultar pronóstico».
                           </p>
                         </div>
                       )}
@@ -808,6 +920,9 @@ export default function Dashboard() {
                         selectedMunicipioId={selectedMunicipio.id}
                         onSelectMunicipio={handleSelectMunicipio}
                         activeCodes={activeCodes}
+                        activeModelsStatus={activeModelsStatus}
+                        mapStatuses={NEW_MODE ? mapStatuses : {}}
+                        emissionWeek={NEW_MODE ? v2Week : undefined}
                     />
                 </div>
             </div>

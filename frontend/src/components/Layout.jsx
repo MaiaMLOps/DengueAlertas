@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Activity, BarChart3, AlertOctagon, Sparkles } from 'lucide-react';
+import { Activity, BarChart3, AlertOctagon, Sparkles, TrendingUp } from 'lucide-react';
 
 export default function Layout() {
     const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
@@ -26,7 +26,7 @@ export default function Layout() {
             )}
 
             <header className={`bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800 sticky ${isStaging ? 'top-8' : 'top-0'} z-50 transition-all`}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex justify-between items-center">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 min-h-16 py-3 flex flex-wrap justify-between items-center gap-3">
                     <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md ${isStaging
                             ? 'bg-gradient-to-tr from-amber-500 to-orange-500 shadow-amber-500/20'
@@ -56,11 +56,12 @@ export default function Layout() {
                     </div>
 
                     {/* Nav Links */}
-                    <nav className="hidden md:flex items-center gap-1 text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                    <nav className="order-3 md:order-none flex w-full md:w-auto items-center gap-1 overflow-x-auto text-xs font-medium text-neutral-600 dark:text-neutral-400">
                         <NavLink
                             to="/"
+                            end
                             className={({ isActive }) =>
-                                `flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${isActive
+                                `flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${isActive
                                     ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white font-semibold'
                                     : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50'
                                 }`
@@ -69,10 +70,22 @@ export default function Layout() {
                             <BarChart3 className="w-4 h-4" />
                             Dashboard
                         </NavLink>
+                        <NavLink
+                            to="/desempeno"
+                            className={({ isActive }) =>
+                                `flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${isActive
+                                    ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white font-semibold'
+                                    : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50'
+                                }`
+                            }
+                        >
+                            <TrendingUp className="w-4 h-4" />
+                            Desempeño en prueba
+                        </NavLink>
                     </nav>
 
                     {/* Right cluster */}
-                    <div className="flex items-center gap-3">
+                    <div className="hidden lg:flex items-center gap-3">
                         <div className="flex items-center gap-2 text-xs text-neutral-500 border border-neutral-200 dark:border-neutral-800 px-3 py-1.5 rounded-full bg-neutral-50 dark:bg-neutral-800/40">
                             <span className={`w-2 h-2 rounded-full animate-pulse ${isStaging ? 'bg-amber-500' : 'bg-emerald-500'}`} />
                             <span className="font-mono text-[11px]">

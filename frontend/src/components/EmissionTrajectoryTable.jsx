@@ -19,7 +19,9 @@ export default function EmissionTrajectoryTable({ trayectoria = [], continuidad,
                 <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-300">
                     Trayectoria de emisiones
                 </p>
-                <span className="text-[10px] text-neutral-400">{trayectoria.length} emisiones · τ = {tau}</span>
+                <span className="text-[10px] text-neutral-400">
+                    {trayectoria.length} emisiones · Umbral de señal: probabilidad de {(tau * 100).toLocaleString('es-CO')} % o más
+                </span>
             </div>
 
             <div className="overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-800">
@@ -29,7 +31,7 @@ export default function EmissionTrajectoryTable({ trayectoria = [], continuidad,
                             <th className="px-2 py-1.5 font-semibold">Emisión</th>
                             <th className="px-2 py-1.5 font-semibold">Objetivo</th>
                             <th className="px-2 py-1.5 font-semibold">Prob.</th>
-                            <th className="px-2 py-1.5 font-semibold">≥ τ</th>
+                            <th className="px-2 py-1.5 font-semibold">Umbral de señal</th>
                             <th className="px-2 py-1.5 font-semibold">Zona</th>
                             <th className="px-2 py-1.5 font-semibold">Emisión positiva</th>
                             <th className="px-2 py-1.5 font-semibold">Origen</th>
@@ -80,8 +82,9 @@ export default function EmissionTrajectoryTable({ trayectoria = [], continuidad,
             </div>
 
             <p className="text-[9px] leading-relaxed text-neutral-500">
-                «≥ τ» usa solo la probabilidad. «Emisión positiva» aplica la regla {decision?.regla_alerta}: en zona
-                <em> epidemia</em> la emisión se marca negativa aunque la probabilidad supere τ.
+                «Umbral de señal» usa solo la probabilidad: indica si es de {(tau * 100).toLocaleString('es-CO')} % o más.
+                «Emisión positiva» aplica la regla {decision?.regla_alerta}: en zona<em> epidemia</em> la emisión se marca
+                negativa aunque la probabilidad supere ese umbral.
             </p>
 
             {continuidad && (
@@ -91,7 +94,7 @@ export default function EmissionTrajectoryTable({ trayectoria = [], continuidad,
                             Episodio epidémico desde {continuidad.semana_inicio_episodio}
                         </span>
                         <span className="font-mono text-neutral-600 dark:text-neutral-300">
-                            P(seguir) {(continuidad.probabilidad_seguir * 100).toFixed(1)}% · B2 {(continuidad.b2_estado_epidemia * 100).toFixed(1)}%
+                            Probabilidad de seguir: {(continuidad.probabilidad_seguir * 100).toFixed(1)}% · Referencia: lo esperable solo por la zona actual del canal (B2): {(continuidad.b2_estado_epidemia * 100).toFixed(1)}%
                         </span>
                     </div>
                     <div className="flex h-10 items-end gap-1.5">

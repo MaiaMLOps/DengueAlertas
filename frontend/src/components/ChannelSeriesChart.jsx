@@ -46,7 +46,7 @@ function ChartCanvas({ serie, semanaEmision, semanaObjetivo }) {
 
     return (
         <div className="relative w-full overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50">
-            <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="block w-full" role="img" aria-label="Serie del canal con casos observados, central y U1e">
+            <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="block w-full" role="img" aria-label="Serie del canal con casos observados, tendencia central y límite superior">
                 {futureStart >= 0 && (
                     <rect
                         x={x(futureStart) - step / 2}
@@ -121,7 +121,7 @@ function ChartCanvas({ serie, semanaEmision, semanaObjetivo }) {
 
             {hovered && (
                 <div
-                    className="pointer-events-none absolute top-2 z-10 w-40 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white/95 dark:bg-neutral-900/95 p-2 text-[10px] shadow-lg"
+                    className="pointer-events-none absolute top-2 z-10 w-64 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white/95 dark:bg-neutral-900/95 p-2 text-[10px] shadow-lg"
                     style={{
                         left: `${(x(hover) / WIDTH) * 100}%`,
                         transform: hover > n / 2 ? 'translateX(-100%)' : 'none',
@@ -129,8 +129,8 @@ function ChartCanvas({ serie, semanaEmision, semanaObjetivo }) {
                 >
                     <p className="font-bold text-neutral-800 dark:text-neutral-100">{hovered.semana}</p>
                     <p className="text-neutral-500">{hovered.tipo === 'observada' ? `Casos: ${hovered.casos}` : 'Sin observación'}</p>
-                    <p className="text-sky-600 dark:text-sky-400">central: {hovered.central}</p>
-                    <p className="text-rose-600 dark:text-rose-400">U1e: {hovered.u1e}</p>
+                    <p className="text-sky-600 dark:text-sky-400">Tendencia central del canal (casos esperados): {hovered.central}</p>
+                    <p className="text-rose-600 dark:text-rose-400">Límite superior del canal (por encima: zona epidémica): {hovered.u1e}</p>
                     {hovered.zona && (
                         <p className="mt-1 font-semibold" style={{ color: ZONE_COLORS[hovered.zona] }}>
                             {hovered.zona}
@@ -148,8 +148,8 @@ function Legend() {
             <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-sm bg-emerald-500" /> seguridad</span>
             <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-sm bg-amber-500" /> alerta</span>
             <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-sm bg-rose-500" /> epidemia</span>
-            <span className="flex items-center gap-1"><i className="h-0.5 w-4 bg-sky-500" /> central</span>
-            <span className="flex items-center gap-1"><i className="h-0.5 w-4 border-t border-dashed border-rose-500" /> U1e</span>
+            <span className="flex items-center gap-1"><i className="h-0.5 w-4 bg-sky-500" /> Tendencia central del canal (casos esperados)</span>
+            <span className="flex items-center gap-1"><i className="h-0.5 w-4 border-t border-dashed border-rose-500" /> Límite superior del canal (por encima: zona epidémica)</span>
             <span>Las semanas futuras muestran la referencia estacional, no casos predichos.</span>
         </div>
     );
